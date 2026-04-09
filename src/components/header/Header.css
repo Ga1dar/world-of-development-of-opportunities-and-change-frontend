@@ -1,0 +1,62 @@
+
+.header {
+  @apply flex relative w-full
+         items-center justify-between
+         bg-[#F0E8F0] py-[40px];
+}
+
+.logo {
+  @apply  absolute 
+          left-[23px] 
+          w-[138px] 
+          h-[138px];
+}
+
+@media (min-width: 1024px) {
+  .logo {
+    @apply  top-[5px]  
+            left-[23px] 
+            w-[316px] 
+            h-[316px];
+  }
+}
+
+.menuImg {
+ 
+}
+
+@media (min-width: 768px) {
+  .menuImg {
+    @apply  hidden;
+  }
+}
+
+.menu {
+   @apply flex absolute  w-full items-center 
+          justify-end bg-[#4029401A] 
+           invisible; }
+
+@media (min-width: 768px) {
+  .menu {
+    @apply  visible static h-[112px] 
+            gap-[24px] px-[100px] py-[40px];
+  }
+}
+
+.nav {
+  
+}
+
+@media (min-width: 768px) {
+  .nav {
+    @apply  flex items-center justify-between gap-[24px];
+  }
+}
+
+.navLink{
+  @apply font-[Montserrat_Alternates] text-[18px] text-center font-[18px] no-underline leading-[50px] h-[50px];
+}
+
+.navLinkActive {
+  @apply text-[#83105F] bg-[#83105F33] rounded-[30px] border-[1px] border-[#83105F];
+}
