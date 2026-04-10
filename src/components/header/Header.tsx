@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import "./Header.css";
+import {  LogIn } from "../elements/enterpage/LogIn";
 
 export function Header() {
   return (
@@ -39,11 +40,7 @@ export function Header() {
             Контакти
           </NavLink>
         </nav>
-        <button
-          className="enter sm:w-18.25"
-        >
-          Вхід
-        </button>
+        <LogIn />  
         <Link
           to="/"
           className="support sm:w-41.25"

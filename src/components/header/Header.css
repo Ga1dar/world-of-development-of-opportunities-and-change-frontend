@@ -52,7 +52,7 @@
 }
 
 .navLink {
-  @apply font-[Montserrat_Alternates];
+  @apply font-[Montserrat];
 }
 
 @media (min-width: 1024px) {
@@ -70,7 +70,7 @@
 }
 
 .enter {
-  @apply  font-[Montserrat_Alternates] 
+  @apply  font-[Montserrat] 
           bg-[#FFFFFF]
           rounded-[30px];
           box-shadow: 0 4px 10px rgba(255, 196, 1, 0.25);
@@ -86,7 +86,7 @@
 
 
 .support {
-  @apply  font-[Montserrat_Alternates] 
+  @apply  font-[Montserrat] 
           rounded-[30px]
           border-2 border-[#FEF85C];
           background: linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%);
