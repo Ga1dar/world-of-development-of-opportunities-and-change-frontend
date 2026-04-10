@@ -1,4 +1,3 @@
-
 .header {
   @apply flex relative w-full
          items-center justify-between
@@ -6,7 +5,7 @@
 }
 
 .logo {
-  @apply  absolute 
+  @apply absolute 
           left-[23px] 
           w-[138px] 
           h-[138px];
@@ -14,7 +13,7 @@
 
 @media (min-width: 1024px) {
   .logo {
-    @apply  top-[5px]  
+    @apply top-[5px]  
             left-[23px] 
             w-[316px] 
             h-[316px];
@@ -22,41 +21,82 @@
 }
 
 .menuImg {
- 
 }
 
 @media (min-width: 768px) {
   .menuImg {
-    @apply  hidden;
+    @apply hidden;
   }
 }
 
 .menu {
-   @apply flex absolute  w-full items-center 
+  @apply flex absolute  w-full items-center 
           justify-end bg-[#4029401A] 
-           invisible; }
+           invisible;
+}
 
 @media (min-width: 768px) {
   .menu {
-    @apply  visible static h-[112px] 
+    @apply visible static h-[112px] 
             gap-[24px] px-[100px] py-[40px];
   }
 }
 
 .nav {
-  
 }
 
 @media (min-width: 768px) {
   .nav {
-    @apply  flex items-center justify-between gap-[24px];
+    @apply flex items-center justify-between gap-[24px];
   }
 }
 
-.navLink{
-  @apply font-[Montserrat_Alternates] text-[18px] text-center font-[18px] no-underline leading-[50px] h-[50px];
+.navLink {
+  @apply font-[Montserrat_Alternates];
+}
+
+@media (min-width: 1024px) {
+  .navLink {
+    @apply text-[18px] text-center 
+           font-[18px] no-underline 
+           leading-[45px] h-[50px];
+  }
 }
 
 .navLinkActive {
-  @apply text-[#83105F] bg-[#83105F33] rounded-[30px] border-[1px] border-[#83105F];
+  @apply text-[#83105F] bg-[#83105F33] 
+          rounded-[30px] border-[1px] 
+          border-[#83105F];
+}
+
+.enter {
+  @apply  font-[Montserrat_Alternates] 
+          bg-[#FFFFFF]
+          rounded-[30px];
+          box-shadow: 0 4px 10px rgba(255, 196, 1, 0.25);
+}
+
+@media (min-width: 1024px) {
+  .enter {
+    @apply text-[18px] font-[500] 
+          text-center no-underline 
+          leading-[45px] w-[73px] h-[50px]
+  }
+}
+
+
+.support {
+  @apply  font-[Montserrat_Alternates] 
+          rounded-[30px]
+          border-2 border-[#FEF85C];
+          background: linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%);
+          box-shadow: 0 4px 10px rgba(255, 196, 1, 0.25);
+}
+
+@media (min-width: 1024px) {
+  .support {
+    @apply text-[18px] font-[500] 
+          text-center no-underline 
+          leading-[45px] w-[165px] h-[50px]
+  }
 }
