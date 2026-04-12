@@ -11,7 +11,7 @@
           h-[138px];
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .logo {
     @apply top-[5px]  
             left-[23px] 
@@ -55,7 +55,7 @@
   @apply font-[Montserrat];
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .navLink {
     @apply text-[18px] text-center 
            font-[18px] no-underline 
@@ -76,7 +76,7 @@
           box-shadow: 0 4px 10px rgba(255, 196, 1, 0.25);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .enter {
     @apply text-[18px] font-[500] 
           text-center no-underline 
@@ -93,7 +93,7 @@
           box-shadow: 0 4px 10px rgba(255, 196, 1, 0.25);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .support {
     @apply text-[18px] font-[500] 
           text-center no-underline 

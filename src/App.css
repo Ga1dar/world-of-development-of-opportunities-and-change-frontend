@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+@theme {
+  --color-primary: #402940;
+  --color-secondary: #F0E8F0;
+  --color-text-light: #E0E2DF;
+  --color-accent: #FBEEE2;
+
+  --breakpoint-tablet: 768px;
+  --breakpoint-laptop: 1024px;
+}

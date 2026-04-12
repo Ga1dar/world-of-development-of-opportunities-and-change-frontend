@@ -1,0 +1,55 @@
+.specialistsSection {
+  @apply flex gap-y-[23px] w-[100%]
+}
+
+@media (min-width: 768px) {
+  .specialistsSection {
+    @apply flex-row gap-x-[24px] gap-y-[23px]
+           justify-between 
+  }
+};
+
+.specialistCard {
+  width: 100%;  
+}
+
+@media (min-width: 768px) {
+  .specialistCard {
+    @apply flex flex-col items-center gap-y-[16px] 
+            px-[16px] pb-[16px] pt-[0]
+  }
+};
+
+.specialistPhoto {
+  display: inline-block;  
+}
+@media (min-width: 768px) {
+  .specialistPhoto {
+    @apply  w-[257px] h-[257px]
+            rounded-[50%]
+  }
+};
+
+.specialistName {
+  font-family: 'Montserrat Alternates', sans-serif;
+  font-weight: 500;
+  font-style: regular;
+  color: #080707;
+}
+@media (min-width: 768px) {
+  .specialistName {
+    @apply h-[58px] text-[24px]
+  }
+};
+
+.specialistRole {
+  font-family: 'Montserrat Alternates', sans-serif;
+  font-weight: 500;
+  font-style: regular;
+  color: #080707;
+}
+@media (min-width: 768px) {
+  .specialistRole {
+    @apply h-[22px] text-[18px]
+  }
+};
