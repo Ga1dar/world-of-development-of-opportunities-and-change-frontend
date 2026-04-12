@@ -1,0 +1,139 @@
+@media (min-width: 768px) {
+  .footer {
+    @apply flex flex-col bg-[#402940] w-full justify-center
+          px-[80px] py-[24px] rounded-t-[40px] box-border
+  }
+  
+}
+
+.footerInfo{
+  @apply flex justify-between
+}
+
+.footerSubscribe {
+  @apply flex 
+}
+
+@media (min-width: 768px) {
+  .footerSubscribe {
+    @apply w-[630px]
+  }
+}
+
+@media (min-width: 768px) {
+  .footerLabel {
+    @apply  font-[Montserrat] text-[#F0E8F0]  font-[600]
+            text-[24px] h-[30px] leading-[30px] my-[24px]
+  }
+}
+
+@media (min-width: 768px) {
+  .footerInput {
+    @apply  h-[48px] w-[410px] bg-[#F0E8F0]
+            rounded-[30px] text-[#2D302D]
+            font-[Montserrat] p-[12px] text-[16px]
+            font-[400] placeholder:text-[#2D302D]
+            mr-[24px] leading-[48px]
+  }
+}
+
+@media (min-width: 768px) {
+  .inputText {
+    @apply h-[22px] font-[Montserrat] text-[#E0E2DF]
+           text-[16px] font-[400] leading-[22px]
+  }
+}
+
+@media (min-width: 768px) {
+  .footerButton {
+    @apply  h-[40px] w-[194px] bg-[#F0E8F0]
+            rounded-[30px] text-[#2D302D]
+            font-[Montserrat] text-[18px]
+            font-[500] no-underline leading-[40px] 
+            placeholder:text-[#2D302D] mr-[24px]
+
+  }
+}
+
+@media (min-width: 768px) {
+  .contactInfo {
+    @apply flex flex-col font-[Montserrat] w-[410px] h-[50px]
+            mt-[24px] gap-y-[8px]
+  }
+}
+
+@media (min-width: 768px) {
+  .contactTitle {
+    @apply  font-[Montserrat] font-[600]
+            text-[24px] text-[#F0E8F0]
+            h-[30px] leading-[30px]
+  }
+}
+
+@media (min-width: 768px) {
+  .contactText {
+    @apply font-[Montserrat] text-[#E0E2DF]
+            text-[16px] font-[400]
+            h-[24px] leading-[24px] no-underline
+  }
+}
+
+@media (min-width: 768px) {
+  .footerLogo {
+    @apply w-[195px] h-[195px]
+  }
+}
+
+@media (min-width: 768px) {
+  .footerBottom {
+    @apply  flex font-[Montserrat]
+            mt-[40px] justify-between
+  }
+}
+
+/* .footerBottomInfo {
+  @apply mr-[200px]
+} */
+
+@media (min-width: 768px) {
+  .bottomTitle {
+    @apply  h-[30px] w-[630px] text-[24px] text-[#FBEEE2]
+            font-[600] leading-[30px] mr-[24px] font-[Montserrat]
+  }
+}
+
+@media (min-width: 768px) {
+  .bottomText {
+    @apply  h-[50px] w-[630px] text-[18px] text-[#FBEEE2]
+            font-[400] leading-[50px] mr-[24px] font-[Montserrat]
+  }
+}
+
+@media (min-width: 768px) {
+  .footerNav {
+    @apply  grid grid-cols-3 grid-rows-2
+            grid-flow-col gap-x-[315px]
+            justify-end;
+            
+  }
+}
+
+.successText {
+  @apply h-[22px] font-[Montserrat] text-[#2d720a]
+           text-[16px] font-[400] leading-[22px]
+}
+
+.errorText {
+  @apply h-[22px] font-[Montserrat] text-[#c9184a]
+         text-[16px] font-[400] leading-[22px]
+}
+
+@media (min-width: 768px) {
+  .footerGrig {
+    @apply  w-[140px] h-[21px]
+            text-[14px] text-[#E8E8E8]
+            font-[400] leading-[21px] 
+            font-[Montserrat]
+            bg-[#402940] 
+  }
+}

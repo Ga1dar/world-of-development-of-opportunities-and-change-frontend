@@ -1,6 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
 import "./Header.css";
-import {  LogIn } from "../elements/enterpage/LogIn";
+import { LogIn } from "../elements/Login/LogIn";
 
 export function Header() {
   return (
@@ -40,11 +40,8 @@ export function Header() {
             Контакти
           </NavLink>
         </nav>
-        <LogIn />  
-        <Link
-          to="/"
-          className="support sm:w-41.25"
-        >
+        <LogIn variant={"header"} />
+        <Link to="/" className="support sm:w-41.25">
           Підтримка
         </Link>
       </menu>

@@ -12,7 +12,12 @@ import { Label } from "@/components/ui/label"
 import "./LogIn.css"
 import { useState } from "react"
 
-export function LogIn() {
+type LogInProps = {
+  variant?: "header" | "footer";
+  text?: string;
+};
+
+export function LogIn({ variant = "header", text }: LogInProps) {
   // #region Hooks and states
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -74,6 +79,19 @@ export function LogIn() {
     }
   }
    
+  const handleOpen = () => {
+  if (variant === "footer") {
+    setMode("register");
+  } else {
+    setMode("login");
+  }
+};
+  const buttonText = variant === text || (variant === "footer" ? "Реєстрація" : "Вхід");
+  const triggerClassName =
+    variant === 'footer'
+      ? "footerGrig order-[6] justify-start text-left p-0 rounded-none"
+      : "enter sm:w-18.25 text-black";
+  
   const fakeSocialAuth = async (provider: "google" | "apple") => {
   setIsLoading(true)
   setError("")
@@ -95,7 +113,9 @@ export function LogIn() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="enter sm:w-18.25 text-black" >Вхід</Button>
+        <Button className={triggerClassName} onClick={handleOpen}>
+          {buttonText}
+        </Button>
       </DialogTrigger>
         <DialogContent className="form">
           <form  onSubmit={handleSubmit}>
