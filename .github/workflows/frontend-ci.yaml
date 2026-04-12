@@ -3,17 +3,12 @@ name: frontend-ci
 on:
   push:
     branches:
-      - develop
       - main
-      - feature/**
-      - chore/**
-      - hotfix/**
-
+      - develop
   pull_request:
     branches:
-      - develop
       - main
-
+      - develop
   workflow_dispatch:
 
 permissions:
