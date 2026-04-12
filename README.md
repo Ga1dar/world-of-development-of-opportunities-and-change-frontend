@@ -24,7 +24,7 @@ docker build -t wdoc-frontend:local .
 
 Run container:
 ```bash
-docker run -p 8080:80 wdoc-frontend:local
+docker run --env-file .env -p 8080:80 wdoc-frontend:local
 ```
 
 Open in browser:
