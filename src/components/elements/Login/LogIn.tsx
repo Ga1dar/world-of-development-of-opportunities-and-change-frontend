@@ -184,18 +184,28 @@ export function LogIn({ variant = "header", text }: LogInProps) {
             </Field>
             {mode === "register" && (
               <Field className="emailForm">
-                <Label htmlFor="password" className="emailFormTitle">Пароль</Label>
+                <Label
+                  htmlFor="password"
+                  className="emailFormTitle"
+                >
+                  Пароль
+                </Label>
                 <Input
                   className="emailInput"
                   id="password"
                   name="password"
                   type="password"
                   placeholder="Пароль"
+                  pattern="^(?=.*[A-Z])(?=.*[\W_]).{6,}$"
+                   title="Мінімум 6 символів, 1 велика літера та 1 спецсимвол"
                   required
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <p className="text-sm text-gray-500 mt-0">
+                    Мінімум 6 символів, 1 велика літера та 1 спецсимвол
+                </p>
               </Field>
             )}
           </FieldGroup>
@@ -221,7 +231,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 <button
                   type="button"
                   onClick={() => setMode("register")}
-                  className="text-[#B03E8A]"
+                  className="text-[#B03E8A] cursor-pointer"
                 >
                   Зареєструйтесь
                 </button>
@@ -232,7 +242,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className="text-[#B03E8A]"
+                  className="text-[#B03E8A] cursor-pointer"
                 >
                   Увійти
                 </button>

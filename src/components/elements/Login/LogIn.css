@@ -71,7 +71,7 @@
 }
 
 .buttonSubmit {
-  @apply w-full h-[57px] 
+  @apply w-full h-[57px] cursor-pointer
           rounded-[30px]  
           text-[#1C100E] font-[Montserrat] 
           text-[18px] leading-[57px] text-center
