@@ -51,13 +51,14 @@
             font-[Montserrat] text-[18px]
             font-[500] no-underline leading-[40px] 
             placeholder:text-[#2D302D] mr-[24px]
+            cursor-pointer
 
   }
 }
 
 @media (min-width: 768px) {
   .contactInfo {
-    @apply flex flex-col font-[Montserrat] w-[410px] h-[50px]
+    @apply flex flex-col font-[Montserrat] w-[410px]
             mt-[24px] gap-y-[8px]
   }
 }
@@ -86,34 +87,37 @@
 
 @media (min-width: 768px) {
   .footerBottom {
-    @apply  flex font-[Montserrat]
-            mt-[40px] justify-between
+    @apply  flex justify-between 
+            font-[Montserrat] items-start    
+            mt-[40px] gap-x-[20px] 
+            p-[0]
+            
   }
 }
 
-/* .footerBottomInfo {
-  @apply mr-[200px]
-} */
+.footerBottomInfo {
+  @apply w-[50%]
+}
 
 @media (min-width: 768px) {
   .bottomTitle {
     @apply  h-[30px] w-[630px] text-[24px] text-[#FBEEE2]
-            font-[600] leading-[30px] mr-[24px] font-[Montserrat]
+            font-[600] leading-[30px]  font-[Montserrat]
   }
 }
 
 @media (min-width: 768px) {
   .bottomText {
     @apply  h-[50px] w-[630px] text-[18px] text-[#FBEEE2]
-            font-[400] leading-[50px] mr-[24px] font-[Montserrat]
+            font-[400] leading-[50px] font-[Montserrat]
   }
 }
 
 @media (min-width: 768px) {
   .footerNav {
-    @apply  grid grid-cols-3 grid-rows-2
-            grid-flow-col gap-x-[315px]
-            justify-end;
+    @apply  grid auto-cols-auto grid-rows-2
+            grid-flow-col gap-y-[24px] 
+            justify-between w-[50%];
             
   }
 }
@@ -130,7 +134,7 @@
 
 @media (min-width: 768px) {
   .footerGrig {
-    @apply  w-[140px] h-[21px]
+    @apply  order-[6] h-[21px] w-fit
             text-[14px] text-[#E8E8E8]
             font-[400] leading-[21px] 
             font-[Montserrat]

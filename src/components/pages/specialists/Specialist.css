@@ -1,5 +1,5 @@
 .specialistsSection {
-  @apply flex gap-y-[23px] w-[100%]
+  @apply flex h-full gap-y-[23px] w-[100%]
 }
 
 @media (min-width: 768px) {
