@@ -129,6 +129,12 @@ export function Footer() {
           <Link to="/" className="footerGrig">
             Підтримка
           </Link>
+          <Link to="/" className="footerGrig  order-7">
+            © 2026 Розробники
+          </Link>
+          <div className="footerGrig order-8">
+            Зроблнно в Україні
+          </div>
         </nav>
       </div>
     </footer>

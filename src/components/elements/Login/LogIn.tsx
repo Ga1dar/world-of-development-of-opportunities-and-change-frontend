@@ -89,7 +89,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const buttonText = variant === text || (variant === "footer" ? "Реєстрація" : "Вхід");
   const triggerClassName =
     variant === 'footer'
-      ? "footerGrig order-[6] justify-start text-left p-0 rounded-none"
+      ? "footerGrig order-[6] cursor-pointer justify-start text-left p-0 rounded-none"
       : "enter sm:w-18.25 text-black";
   
   const fakeSocialAuth = async (provider: "google" | "apple") => {
