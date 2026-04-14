@@ -1,7 +1,7 @@
 export function Events() {
   return (
-    <div className='bg-[#F0E8F0] h-screen'>
+    <div className="bg-secondary h-screen">
       <h1>Події</h1>
     </div>
-  )
+  );
 }

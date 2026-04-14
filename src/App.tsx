@@ -4,14 +4,14 @@ import { Home } from "./components/pages/home/Home.tsx";
 import { Aboutus } from "./components/pages/Aboutus.tsx";
 import { Contacts } from "./components/pages/Contacts.tsx";
 import { Events } from "./components/pages/Events.tsx";
-import { Specialists } from "./components/pages/specialists/Specialists.tsx";
+import { Specialists } from "./components/pages/Specialists.tsx";
 import { Footer } from "./components/footer/Footer.tsx";
-import './App.css'
+import "./App.css";
 
 function App() {
   return (
     <>
-      <div className="bg-[#F0E8F0] h-full">
+      <div className="bg-secondary h-full">
         <Header />
 
         <Routes>
