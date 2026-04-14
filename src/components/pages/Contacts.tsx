@@ -1,7 +1,7 @@
 export function Contacts() {
   return (
-    <div className='bg-[#F0E8F0] h-screen'>
+    <div className="bg-secondary h-screen">
       <h1>Контакти</h1>
     </div>
-  )
+  );
 }
