@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import "./LogIn.css"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 type LogInProps = {
   variant?: "header" | "footer";
@@ -26,6 +27,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
   // #endregion
   
   // #region Handlers (раздуплться с 
@@ -85,8 +87,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   } else {
     setMode("login");
   }
-};
-  const buttonText = variant === text || (variant === "footer" ? "Реєстрація" : "Вхід");
+  };
+  
+  const buttonText =
+    text || (variant === "footer" ? t("buttonText.footer") : t("buttonText.header"));
   const triggerClassName =
     variant === 'footer'
       ? "footerGrig order-[6] cursor-pointer justify-start text-left p-0 rounded-none"
@@ -122,7 +126,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
           <DialogHeader className="dialogHeader">
             <img src="/Logo1.png" alt="Logo" className="headerImg" />
             <DialogTitle className="headerTitle">
-              {mode === "login" ? "Увійти" : "Зареєструватись"}
+              {mode === "login" ? t("headerTitle.login") : t("headerTitle.registered")}
             </DialogTitle>
             {mode === "login" && (
               <>
