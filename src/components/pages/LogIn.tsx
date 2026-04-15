@@ -59,8 +59,8 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       if (!response.ok) {
         throw new Error(
           mode === 'login'
-          ? 'Невдалося увшйти. Перевірте email та спробуйте ще раз.' 
-          : 'Невдалося зареєструватися. Перевірте email та спробуйте ще раз.'
+          ? t("modeError.login") 
+          : t("modeError.registered")
         )
       }
 
@@ -74,7 +74,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Сталася невідома помилка. Спробуйте ще раз.');
+        setError(t("loginSetError"));
       }
     } finally {
       setIsLoading(false);
@@ -137,7 +137,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
               onClick={handleAppleLogin}
             >
               <img src="/apple.png" alt="Apple" className="closeBtnIcon" />
-              Увійти за допомогою Apple 
+             {t("buttonApple")}
             </Button>
             <Button 
               type="button" 
@@ -145,7 +145,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
               className="closeBtn" 
               onClick={handleGoogleLogin}>
               <img src="/google.png" alt="Google" className="closeBtnIcon" />
-              Увійти за допомогою Google 
+              {t("buttonGoogle")}
                 </Button>
               </>
             )}            
@@ -155,14 +155,14 @@ export function LogIn({ variant = "header", text }: LogInProps) {
             {mode === "register" && (
               <Field className="emailForm">
                 <Label htmlFor="name" className="emailFormTitle">
-                  Ім’я
+                  {t("emailFormTitleName")}
                 </Label>
                 <Input
                   className="emailInput"
                   id="name"
                   name="name"
                   type="text"
-                  placeholder="Ваше ім’я"
+                  placeholder={t("emailFormTitleName")}
                   required
                   minLength={2}
                   value={name}
@@ -174,13 +174,13 @@ export function LogIn({ variant = "header", text }: LogInProps) {
               <div className="welcomeText">або</div>
             )}
             <Field className="emailForm">
-              <Label htmlFor="email" className="emailFormTitle">Телефон/ Електронна пошта</Label>
+              <Label htmlFor="email" className="emailFormTitle">{t("emailFormTitle")}</Label>
               <Input
                 className="emailInput"  
                 id="email" 
                 name="email" 
                 type="email" 
-                placeholder="Телефон/ Електронна пошта" 
+                placeholder={t("emailFormTitle")} 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}               
@@ -192,23 +192,23 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                   htmlFor="password"
                   className="emailFormTitle"
                 >
-                  Пароль
+                  {t("password")}
                 </Label>
                 <Input
                   className="emailInput"
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="Пароль"
+                  placeholder={t("password")}
                   pattern="^(?=.*[A-Z])(?=.*[\W_]).{6,}$"
-                   title="Мінімум 6 символів, 1 велика літера та 1 спецсимвол"
+                   title={t("titlePassword")}
                   required
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <p className="text-sm text-gray-500 mt-0">
-                    Мінімум 6 символів, 1 велика літера та 1 спецсимвол
+                    {t("titlePassword")}
                 </p>
               </Field>
             )}
@@ -223,32 +223,32 @@ export function LogIn({ variant = "header", text }: LogInProps) {
               disabled={isLoading}
               className="buttonSubmit">
               {isLoading
-                ? "Відправка..."
+                ? t("buttonSubmit.sending")
                 : mode === "login"
-                ? "Далі"
-                : "Зареєструватись"
+                ? t("buttonSubmit.further")
+                : t("buttonSubmit.registered")
               }
             </Button>
             {mode === "login" ? (
               <div className="dialogText">
-                Не маєте профілю?{" "}
+                {t("dialogTextNoneProf")}{" "}
                 <button
                   type="button"
                   onClick={() => setMode("register")}
                   className="text-[#B03E8A] cursor-pointer"
                 >
-                  Зареєструйтесь
+                  {t("headerTitle.registered")}
                 </button>
               </div>
             ) : (
               <p className="dialogText">
-                Уже маєте профіль?{" "}
+                {t("dialogTextProf")}{" "}
                 <button
                   type="button"
                   onClick={() => setMode("login")}
                   className="text-[#B03E8A] cursor-pointer"
                 >
-                  Увійти
+                  {t("headerTitle.login")}
                 </button>
               </p>
             )}

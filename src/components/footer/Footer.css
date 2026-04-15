@@ -115,7 +115,7 @@
 
 @media (min-width: 768px) {
   .footerNav {
-    @apply  grid auto-cols-auto grid-rows-2
+    @apply  grid auto-cols-auto grid-rows-3
             grid-flow-col gap-y-[24px] 
             justify-between w-[50%];
             

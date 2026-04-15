@@ -1,26 +1,80 @@
 {
-  "homeTopText": "A space for development and mental well-being for children and adults",
+  "homeTopText": "A space for development and mental health for children and adults",
   "homeMiddleTitle": "Who takes care of those who support others?",
   "homeMiddleTextContent": [
     "A teacher’s work is more",
-    "than just a profession. It is a daily experience of",
-    "other people's emotions. Joy, laughter, and excitement of children,",
-    "but at the same time — their",
-    "fear, despair, insecurity, irritation, and aggression.",
+    "than just a profession. It is a daily experience",
+    "of other people's emotions. Joy, laughter and excitement",
+    "of children, but at the same time — their",
+    "fear, despair, insecurity, irritation and aggression.",
     "All of this",
     "passes through the heart of every educator every day"
   ],
-  "homeMiddleTextContent2": "But who takes care of those who support others?",
+  "homeMiddleTextContent2": "So who takes care of those who support others?",
   "homeBottomText": [
-    "Who helps to cope with children's emotions, while also dealing with",
-    "their own experiences, fatigue, and responsibility?"
+    "Who helps cope with children's emotions, while also dealing with",
+    "their own переживания, fatigue and responsibility?"
   ],
-  "homeBottomText1": "The NGO “SVITY” invites educators to a space of support, learning, and recovery.",
+  "homeBottomText1": "NGO “SVITY” invites educators to a space of support, learning, and recovery.",
   "homeBottomLink": "Event details",
   "specialistsTitle": "Our Specialists",
   "homeSpecialistsLink": "All specialists",
+
+  "modeError": {
+    "login": "Failed to log in. Please check your email and try again.",
+    "registered": "Failed to register. Please check your email and try again."
+  },
+  "loginSetError": "An unknown error occurred. Please try again.",
+
   "buttonText": {
-    "footer": "Registration",
+    "footer": "Register",
     "header": "Login"
-  }
+  },
+  "headerTitle": {
+    "login": "Login",
+    "registered": "Register"
+  },
+
+  "buttonApple": "Sign in with Apple",
+  "buttonGoogle": "Sign in with Google",
+
+  "emailFormTitle": "Email",
+  "emailFormTitleName": "Name",
+  "password": "Password",
+  "titlePassword": "Minimum 6 characters, 1 uppercase letter and 1 special character",
+
+  "buttonSubmit": {
+    "sending": "Sending...",
+    "further": "Next",
+    "registered": "Register"
+  },
+
+  "dialogTextNoneProf": "Don't have an account?",
+  "dialogTextProf": "Already have an account?",
+
+  "aboutUs": "About us",
+  "events": "Events",
+  "contacts": "Contacts",
+  "support": "Support",
+
+  "footerLabel": "Stay up to date with the latest news",
+  "footer-email": "Email address...",
+  "footerButton": {
+    "sending": "Sending...",
+    "subscribe": "Subscribe"
+  },
+
+  "inputText": "No spam. Unsubscribe anytime.",
+
+  "contactTitle": "Contacts:",
+  "contactNumber": "Phone: 097 147 63 97",
+  "telegram": "t.me/svity_pokrov",
+  "inst": "inst: svity_pokrov",
+  "facebook": "Facebook: Svity Pokrov Development Space",
+
+  "bottomTitle": "Svity",
+  "bottomText": "A space for development and mental health for children and adults",
+  "developers": "© 2026 Developers",
+  "mdInUkr": "Made in Ukraine",
+  "materials": "Educational materials"
 }

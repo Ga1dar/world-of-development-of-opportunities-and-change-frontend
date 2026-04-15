@@ -19,6 +19,11 @@
   "homeBottomLink": "Деталі події",
   "specialistsTitle": "Наші Спеціалісти",
   "homeSpecialistsLink" : "Усі спеціалісти",
+  "modeError": {
+    "login": "'Невдалося увійти. Перевірте email та спробуйте ще раз.'",
+    "registered": "'Невдалося зареєструватися. Перевірте email та спробуйте ще раз.'"
+  },
+  "loginSetError": "'Сталася невідома помилка. Спробуйте ще раз.'", 
   "buttonText": {
     "footer": "Реєстрація",
     "header": "Вхід"
@@ -27,7 +32,38 @@
     "login": "Увійти",
     "registered": "Зареєструватись"
   },
-  "buttonApple": "Увійти за допомогою Apple ",
-  "buttonGoogle": "Увійти за допомогою Google "
-  
+  "buttonApple": "Увійти за допомогою Apple",
+  "buttonGoogle": "Увійти за допомогою Google",
+  "emailFormTitle": "Електронна пошта",
+  "emailFormTitleName": "Ім’я",
+  "password": "Пароль",
+  "titlePassword": "Мінімум 6 символів, 1 велика літера та 1 спецсимвол",
+  "buttonSubmit": {
+    "sending": "Відправка...",
+    "further": "Далі",
+    "registered": "Зареєструватись"    
+  },
+  "dialogTextNoneProf": "Не маєте профілю?",
+  "dialogTextProf": "Уже маєте профіль?",
+  "aboutUs": "Про нас",
+  "events": "Події",
+  "contacts": "Контакти",
+  "support": "Підтримати",
+  "footerLabel": "Будьте завжди в курсі новин",
+  "footer-email": "Адреса електронної пошти ...",
+  "footerButton": {
+    "sending": "Відправка...",
+    "subscribe": "Підписатися"
+  },
+  "inputText": "Без спаму. Відпишіться будь-коли.",
+  "contactTitle": "Контакти:",
+  "contactNumber": "Тел. 097 147 63 97",
+  "telegram": "t.me/svity_pokrov",
+  "inst": " inst: svity_pokrov",
+  "facebook": "Facebook: Світи Покров Простір Розвитку",
+  "bottomTitle": "СвіTи",
+  "bottomText": "Простір розвитку та ментального здоров’я для дітей і дорослих",
+  "developers": "© 2026 Розробники",
+  "mdInUkr": "Зроблнно в Україні",
+  "materials": "Освітні матеріали"
 }

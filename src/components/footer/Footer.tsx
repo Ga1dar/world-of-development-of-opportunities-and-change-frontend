@@ -4,14 +4,15 @@ import { Field } from "../ui/field";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import "./Footer.css";
-import { LogIn } from "../elements/Login/LogIn";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export function Footer() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"; // заменить на реальный URL из переменных окружения
 
@@ -52,31 +53,33 @@ export function Footer() {
         <Field className="footerSubscribe">
           <form onSubmit={handleSubscribe}>
             <Label htmlFor="footer-email" className="footerLabel">
-              Будьте завжди в курсі новин
+              {t("footerLabel")}
             </Label>
             <div className="flex">
               <Input
                 id="footer-email"
                 type="email"
-                placeholder="Адреса електронної пошти ..."
+                placeholder={t("footer-email")}
                 className="footerInput"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
               <Button className="footerButton" disabled={isLoading}>
-                {isLoading ? "Відправка..." : "Підписатися"}
+                {isLoading
+                  ? t("footerButton.sending")
+                  : t("footerButton.subscribe")}
               </Button>
             </div>
-            <div className="inputText">Без спаму. Відпишіться будь-коли.</div>
+            <div className="inputText">{t("inputText")}</div>
             {message && <p className="successText">{message}</p>}
             {error && <p className="errorText">{error}</p>}
           </form>
         </Field>
         <div className="contactInfo">
-          <h3 className="contactTitle">Контакти:</h3>
+          <h3 className="contactTitle">{t("contactTitle")}</h3>
           <a className="contactText" href="tel:+380971476397">
-            Тел. 097 147 63 97
+            {t("contactNumber")}
           </a>
           <a
             href="https://t.me/svity_pokrov"
@@ -84,7 +87,7 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            t.me/svity_pokrov
+            {t("telegram")}
           </a>
           <a
             href="https://instagram.com/svity_pokrov"
@@ -92,7 +95,7 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            inst: svity_pokrov
+            {t("inst")}
           </a>
           <a
             href="https://facebook.com/svity.pokrov"
@@ -100,41 +103,40 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Facebook: Світи Покров Простір Розвитку
+            {t("facebook")}
           </a>
         </div>
-        <img src="/Logo1.png" alt="Logo" className="footerLogo" />
+          <img src="/Logo1.png" alt="Logo" className="footerLogo" />        
       </div>
       <div className="footerBottom">
         <div className="footerBottomInfo">
-          <h3 className="bottomTitle"> СвіTи</h3>
-          <div className="bottomText">
-            Простір розвитку та ментального здоров’я для дітей і дорослих
-          </div>
+          <h3 className="bottomTitle"> {t("bottomTitle")}</h3>
+          <div className="bottomText">{t("bottomText")}</div>
         </div>
         <nav className="footerNav">
           <Link to="/about" className="footerGrig">
-            Про нас
+            {t("aboutUs")}
           </Link>
           <Link to="/specialists" className="footerGrig">
-            Наші спеціалісти
+            {t("specialistsTitle")}
           </Link>
           <Link to="/events" className="footerGrig">
-            Події
+            {t("events")}
+          </Link>
+          <Link to="/events" className="footerGrig">
+             {t("materials")}
           </Link>
           <Link to="/contacts" className="footerGrig">
-            Контакти
+            {t("contacts")}
           </Link>
-          <LogIn variant="footer"/>
+          
           <Link to="/" className="footerGrig">
-            Підтримка
+            {t("support")}
           </Link>
           <Link to="/" className="footerGrig  order-7">
-            © 2026 Розробники
+            {t("developers")}
           </Link>
-          <div className="footerGrig order-8">
-            Зроблнно в Україні
-          </div>
+          <div className="footerGrig order-8">{t("mdInUkr")}</div>
         </nav>
       </div>
     </footer>

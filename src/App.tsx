@@ -7,6 +7,7 @@ import { Events } from "./components/pages/Events.tsx";
 import { Specialists } from "./components/pages/Specialists.tsx";
 import { Footer } from "./components/footer/Footer.tsx";
 import "./App.css";
+import { Edukationmaterial } from "./components/pages/EducationMaterial.tsx";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/about" element={<Aboutus />} />
           <Route path="/specialists" element={<Specialists />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/materials" element={<Edukationmaterial />} />
           <Route path="/contacts" element={<Contacts />} />
         </Routes>
         <Footer />
