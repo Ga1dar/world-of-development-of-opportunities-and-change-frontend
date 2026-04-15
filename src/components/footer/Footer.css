@@ -134,7 +134,7 @@
 
 @media (min-width: 768px) {
   .footerGrig {
-    @apply  order-[6] h-[21px] w-fit
+    @apply  order-6 h-[21px] w-fit
             text-[14px] text-[#E8E8E8]
             font-[400] leading-[21px] 
             font-[Montserrat]
