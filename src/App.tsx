@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import { Header } from "./components/header/Header.tsx";
-import { Home } from "./components/pages/home/Home.tsx";
+import { Home } from "./components/pages/Home.tsx";
 import { Aboutus } from "./components/pages/Aboutus.tsx";
 import { Contacts } from "./components/pages/Contacts.tsx";
 import { Events } from "./components/pages/Events.tsx";
@@ -12,7 +12,7 @@ import { Edukationmaterial } from "./components/pages/EducationMaterial.tsx";
 function App() {
   return (
     <>
-      <div className="bg-secondary h-full">
+      <div className="bg-secondary h-full w-full">
         <Header />
 
         <Routes>

@@ -106,7 +106,7 @@ export function Footer() {
             {t("facebook")}
           </a>
         </div>
-          <img src="/Logo1.png" alt="Logo" className="footerLogo" />        
+          {/* <img src="/Logo1.png" alt="Logo" className="footerLogo" />         */}
       </div>
       <div className="footerBottom">
         <div className="footerBottomInfo">
