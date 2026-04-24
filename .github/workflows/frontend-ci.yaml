@@ -21,6 +21,7 @@ concurrency:
 jobs:
   lint-and-security-audit:
     runs-on: ubuntu-latest
+
     if: github.event_name == 'pull_request'
 
     env:
