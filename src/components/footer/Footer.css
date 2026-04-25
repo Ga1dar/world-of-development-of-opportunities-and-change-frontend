@@ -115,7 +115,7 @@
 
 @media (min-width: 768px) {
   .footerNav {
-    @apply  grid auto-cols-auto grid-rows-2
+    @apply  grid auto-cols-auto grid-rows-3
             grid-flow-col gap-y-[24px] 
             justify-between w-[50%];
             
@@ -134,7 +134,7 @@
 
 @media (min-width: 768px) {
   .footerGrig {
-    @apply  order-[6] h-[21px] w-fit
+    @apply  order-6 h-[21px] w-fit
             text-[14px] text-[#E8E8E8]
             font-[400] leading-[21px] 
             font-[Montserrat]
