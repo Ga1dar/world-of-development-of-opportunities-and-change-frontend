@@ -1,7 +1,88 @@
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { getEvents } from "../../api/events.ts";
+
+type EventItem = {
+  id: number;
+  title_ua: string;
+  title_en: string;
+  description_ua: string[];
+  description_en: string[];
+  category_ua: string;
+  category_en: string;
+  image: string;
+};
+
+const EVENTS_PER_PAGE = 4;
+
 export function Events() {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    getEvents()
+      .then(setEvents)
+      .catch(console.error);
+  }, []);
+
+  const getField = (
+    event: EventItem,
+    field: "title" | "description" | "category"
+  ) => {
+    return event[`${field}_${lang}` as keyof EventItem] as string;
+  };
+
+  const start = (page - 1) * EVENTS_PER_PAGE;
+  const currentEvents = events.slice(start, start + EVENTS_PER_PAGE);
+
   return (
-    <div className="bg-secondary h-screen">
-      <h1>Події</h1>
-    </div>
+    <section className="px-4 py-6">
+      <h1 className="mb-6 text-2xl font-bold">
+        {t("eventsTitle")}
+      </h1>
+
+      <div className="flex flex-col gap-6">
+        {currentEvents.map((event) => (
+          <div key={event.id} className="rounded-[20px] bg-white p-4 shadow">
+            <img
+              src={event.image}
+              alt={getField(event, "title")}
+              className="mb-4 w-full rounded-2xl"
+            />
+
+            <h2 className="text-xl font-semibold">
+              {getField(event, "title")}
+            </h2>
+
+            <p className="mt-2 text-sm text-gray-600">
+              {getField(event, "description")}
+            </p>
+
+            <span className="mt-3 inline-block text-xs text-purple-600">
+              {getField(event, "category")}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 flex justify-center gap-4">
+        <button
+          onClick={() => setPage((p) => p - 1)}
+          disabled={page === 1}
+        >
+          {t("prev")}
+        </button>
+
+        <button
+          onClick={() => setPage((p) => p + 1)}
+          disabled={start + EVENTS_PER_PAGE >= events.length}
+        >
+          {t("next")}
+        </button>
+      </div>
+    </section>
   );
 }

@@ -1,5 +1,8 @@
 {
-  "homeTopText": "A space for development and mental health for children and adults",
+  "homeTopTitle": "A space for development and mental health for children and adults",
+  "homeTopText1": "Svity is a space for support, development, and mental well-being.",
+  "homeTopText2": "We bring together specialists who help children and adults better understand themselves, overcome challenges, and find inner balance.",
+  "homeTopText3": "Our goal is to create an environment where everyone can receive support and restore their inner resources.",
   "homeMiddleTitle": "Who takes care of those who support others?",
   "homeMiddleTextContent": [
     "A teacher’s work is more",
@@ -76,5 +79,18 @@
   "bottomText": "A space for development and mental health for children and adults",
   "developers": "© 2026 Developers",
   "mdInUkr": "Made in Ukraine",
-  "materials": "Educational materials"
+  "materials": "Educational materials",
+  "politics": "Privacy Policy",
+  "conditions": "Terms of Use",
+  "or": "or",
+  "enterPassword": "Enter your password",
+  "forgotPassword": "Forgot your password?",
+  "recoverPassword": "Recover password",
+  "backToEmailText": "Not your email?",
+  "backToEmail": "Back",
+  "passwordRecoveryTitle": "Password recovery",
+  "sendRecoveryLink": "Send recovery link",
+  "rememberPassword": "Remembered your password?",
+  "recoveryMessageSent": "If this email exists, a recovery link will be sent.",
+  "recoveryMessageError": "Could not send recovery link. Please try again."
 }

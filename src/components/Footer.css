@@ -1,3 +1,7 @@
+.footer{
+  @apply bg-[#402940]
+}
+
 @media (min-width: 768px) {
   .footer {
     @apply flex flex-col bg-[#402940] w-full justify-center

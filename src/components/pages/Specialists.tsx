@@ -4,9 +4,10 @@ import { useTranslation } from "react-i18next";
 
 type Props = {
   limit?: number;
+  isSlider?: boolean;
 };
 
-export function Specialists({ limit }: Props) {
+export function Specialists({ limit, isSlider = false }: Props) {
   const [data, setData] = useState<Specialist[]>([]);
   const { i18n } = useTranslation();
 
@@ -17,7 +18,11 @@ export function Specialists({ limit }: Props) {
   }, [limit]);
 
   return (
-    <section className="flex h-full w-full flex-col gap-y-6 md:flex-row md:gap-x-6 md:justify-center">
+    <section className={
+    isSlider
+      ? "mt-6 flex w-full gap-4 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      : "mt-6 flex w-full flex-wrap justify-center px-4"
+  }>
       {data.map((item) => {
         const name = i18n.language === "ua" ? item.nameUa : item.nameEn;
         const role = i18n.language === "ua" ? item.roleUa : item.roleEn;
@@ -25,19 +30,23 @@ export function Specialists({ limit }: Props) {
         return (
           <article
             key={item.id}
-            className="w-full md:flex md:flex-col md:items-center md:gap-y-4 md:px-4 md:pb-4 md:pt-0"
+            className={
+             isSlider
+            ? "flex w-36 shrink-0 snap-start flex-col items-center px-2 pb-4 pt-0 sm:w-61"
+            : "mt-6 flex w-36 flex-col items-center px-4 pb-4 pt-0 sm:w-61"
+          }
           >
             <img
-              className="inline-block md:w-64 md:h-64 md:rounded-full"
+              className="inline-block h-30 w-30 rounded-[50%] mb-3 mx-auto sm:h-61 sm:w-61 "
               src={item.photo}
               alt={name}
             />
 
-            <h3 className="font-montserrat font-medium text-primary-foreground md:h-14 md:text-2xl">
+            <h3 className="font-montserrat font-medium text-center text-[sidebar] text-xl mb-3 sm:mb-4 sm:text-2xl">
               {name}
             </h3>
 
-            <p className="font-montserrat font-medium text-primary-foreground md:h-6 md:text-lg">
+              <p className="font-montserrat font-medium text-[sidebar] text-center text-[10px] sm:text-lg">
               {role}
             </p>
           </article>
