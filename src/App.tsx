@@ -14,17 +14,19 @@ import { ScrollToTop } from "./components/ScrollToTop.tsx";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
-  
 
   return (
-    <div className="flex min-h-screen flex-col bg-secondary ">
+    <div className="flex min-h-screen flex-col bg-secondary">
       <Header isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <main className="relative flex-1 xl:flex">
         <Menu isOpen={isOpen} setIsOpen={setIsOpen} />
 
-        <div className={`${isOpen ? "hidden" : "block"} xl:block flex-1`}>
-           <ScrollToTop />
+        <div
+          className={`${isOpen ? "hidden min-[744px]:block" : "block"} flex-1 xl:block`}
+        >
+          <ScrollToTop />
+
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<Aboutus />} />
