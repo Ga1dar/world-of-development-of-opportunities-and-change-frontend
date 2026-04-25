@@ -80,13 +80,16 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         body: JSON.stringify(payload),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
 
       if (!response.ok) {
         throw new Error(
-          mode === "login"
-            ? t("modeError.login")
-            : t("modeError.registered")
+        data?.detail ||
+        data?.email?.[0] ||
+        data?.password?.[0] ||
+        (mode === "login"
+          ? t("modeError.login")
+          : t("modeError.registered"))
         )
       }
 
@@ -164,8 +167,8 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     variant === "footer"
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
-        ? "mx-auto h-[60px] w-[360px] bg-[#FFFFFF] font-montserrat font-[500] text-[18px] text-black rounded-[30px] py-4 px-2"
-        : "h-[57px] w-[57px] bg-[#FFFFFF] font-montserrat font-[500] text-[18px] text-black my-auto rounded-[30px] sm:w-18.25 xl:z-51 xl:mt-16"
+        ? "mx-auto h-[60px] w-[360px] bg-[#FFFFFF] font-montserrat font-[500] text-[18px] text-black rounded-[30px] py-4 px-2 min-[744px]:h-8 min-[744px]:w-full min-[744px]:px-2 min-[744px]:py-0 min-[744px]:text-[11px]"
+        : "h-[57px] w-[57px] bg-[#FFFFFF] font-montserrat font-[500] text-[18px] text-black my-auto rounded-[30px] sm:w-18.25 xl:z-51 xl:mt-16 xl:z-51"
 
   return (
     <>

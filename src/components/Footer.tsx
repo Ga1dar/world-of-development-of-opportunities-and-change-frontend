@@ -48,11 +48,11 @@ export function Footer() {
   };
 
   return (
-    <footer className="flex flex-col w-full gap-x-6 bg-primary text-[#F0E8F0] box-border p-4">
-      <div className="flex flex-col mb-6">
+    <footer className="flex flex-col w-full gap-x-6 bg-primary text-[#F0E8F0] box-border p-4 xl:px-20 xl:py-6">
+      <div className="flex flex-col xl:flex-row xl:gap-x-8 mb-6">
         <Field className="flex flex-col">
           <form onSubmit={handleSubscribe} className="flex flex-col gap-y-4 mb-6">
-            <Label htmlFor="footer-email" className="flex flex-col font-montserrat font-normal text-lg items-start text-[#F0E8F0]">
+            <Label htmlFor="footer-email" className="flex flex-col font-montserrat font-normal text-lg xl:text-2xl items-start text-[#F0E8F0]">
               {t("footerLabel")}
             </Label>
             <div className="flex flex-col sm:grid sm:grid-cols-[3fr_1fr] sm:gap-x-8">
@@ -77,8 +77,8 @@ export function Footer() {
             {error && <p className="font-montserrat font-normal text-[12px] text-center text-red-600">{error}</p>}
           </form>
         </Field>
-        <div className="sm:flex sm:w-full gap-x-6">
-          <div className="flex justify-between">
+        <div className="sm:flex sm:w-full gap-x-6 justify-between">
+          <div className="flex justify-between sm:w-[35%]">
             <div className="flex flex-col gap-y-2">
               <h3 className="font-montserrat font-medium text-2xl sm:mb-2">{t("contactTitle")}</h3>
               <a
@@ -118,18 +118,19 @@ export function Footer() {
             </Link>
           </div>
           <nav
-            className="grid grid-cols-[auto_auto_auto] grid-rows-[25px_25px]
-            font-montserrat font-normal text-xs
-            justify-between gap-y-4 mb-4 sm:w-full sm:mt-2"
+            className="grid grid-cols-[auto_auto_auto] grid-rows-[25px_25px] 
+            xl:grid-cols-[auto_auto] xl:grid-rows-[25px_25px]
+            font-montserrat font-normal text-xs xl:text-sm
+            justify-between gap-y-4 mb-4 sm:w-full sm:mt-2 xl:w-103"
           >
             <Link
               to="/about"
-              className="col-start-1">
+              className="col-start-1 row-start-1">
               {t("aboutUs")}
             </Link>
             <Link
               to="/events"
-              className="col-start-1 row-start-2">
+              className="col-start-1 row-start-2 xl:row-start-3">
               {t("events")}
             </Link>
             <Link
@@ -139,43 +140,49 @@ export function Footer() {
             </Link>
             <Link
               to="/specialists"
-              className="col-start-3 row-start-2">
+              className="col-start-3 row-start-2 xl:col-start-1 xl:row-start-2">
               {t("specialistsTitle")}
             </Link>
             <Link
               to="/events"
-              className="col-start-3 row-start-1">
+              className="col-start-3 row-start-1 xl:col-start-2 xl:row-start-2">
               {t("materials")}
             </Link>
             <Link
               to="/"
-              className="col-start-2 row-start-2">
+              className="col-start-2 row-start-2 xl:col-start-2 xl:row-start-3">
               {t("support")}
             </Link>
           </nav>
         </div>
       </div>
-      <div className="flex flex-col">
-        
-        <div className="w-full font-montserrat text-[#E8E8E8]">
+      <div className="flex flex-col xl:flex-row xl:gap-x-6">
+        <div className="w-full xl:w-157 font-montserrat text-[#E8E8E8]">
           <h3 className="font-montserrat font-medium text-2xl mb-2">
             {t("bottomTitle")}
           </h3>
-          <div className="text-sm mb-4">
+          <div className="text-sm mb-4 xl:text-lg">
             {t("bottomText")}
           </div>
         </div>
-          <div className="grid grid-cols-[auto_auto] grid-rows-[auto-auto] justify-between gap-y-2 mb-4">
-            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs">
+         <div className="grid grid-cols-[auto_auto_auto] grid-rows-[24px_24px_24px] xl:grid-rows-[40px_40px_40px] justify-between gap-y-2 xl:w-[65%] ">
+            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs row-start-2">
               {t("politics")}
             </Link>
-            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-2">
+            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-3">
               {t("conditions")}
             </Link>
             <Link to="/" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-2 row-start-2">
               {t("developers")}
             </Link>
-            <div className="font-montserrat font-normal text-[#B6B6B6] text-xs">{t("mdInUkr")}</div>
+            <div className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-2 row-start-3">{t("mdInUkr")}</div>
+            <Link to="/" className="hidden sm:block sm:col-start-3 sm:row-start-1 sm:row-end-4 mt-0">
+              <img 
+              src="/Logo1.png" 
+              alt="Logo" 
+              className="h-30 w-30 hidden sm:inline-block sm:col-start-3 sm:row-start-1 sm:row-end-4 xl:h-40 xl:w-40"
+            />
+            </Link>
           </div>
       </div>
     </footer>
