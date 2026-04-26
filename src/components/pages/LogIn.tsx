@@ -9,7 +9,8 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { Check, Eye, EyeOff } from "lucide-react"
+import { type FormEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
 
@@ -19,6 +20,29 @@ type LogInProps = {
 }
 
 type LoginStep = "email" | "password"
+type RegisterStep = "email" | "password" | "role" | "success"
+type UserRole = "specialist" | "user"
+
+type GoogleWindow = Window &
+  typeof globalThis & {
+    google?: {
+      accounts?: {
+        oauth2?: {
+          initTokenClient: (options: {
+            client_id: string
+            scope: string
+            callback: (response: {
+              access_token?: string
+              error?: string
+              error_description?: string
+            }) => void
+          }) => {
+            requestAccessToken: () => void
+          }
+        }
+      }
+    }
+  }
 
 export function LogIn({ variant = "header", text }: LogInProps) {
   const [open, setOpen] = useState(false)
@@ -26,10 +50,14 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   const [mode, setMode] = useState<"login" | "register">("login")
   const [loginStep, setLoginStep] = useState<LoginStep>("email")
+  const [registerStep, setRegisterStep] = useState<RegisterStep>("email")
 
   const [email, setEmail] = useState("")
-  const [name, setName] = useState("")
   const [password, setPassword] = useState("")
+  const [passwordConfirm, setPasswordConfirm] = useState("")
+  const [role, setRole] = useState<UserRole | "">("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -39,21 +67,107 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   const API_URL =
     import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   const resetForm = () => {
     setEmail("")
-    setName("")
     setPassword("")
+    setPasswordConfirm("")
+    setRole("")
     setError("")
     setLoginStep("email")
+    setRegisterStep("email")
+    setShowPassword(false)
+    setShowPasswordConfirm(false)
     setShowRecoveryLink(false)
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const storeTokens = (data: { access?: string; refresh?: string }) => {
+    if (data.access) {
+      localStorage.setItem("accessToken", data.access)
+    }
+
+    if (data.refresh) {
+      localStorage.setItem("refreshToken", data.refresh)
+    }
+  }
+
+  const getResponseError = (
+    data: Record<string, string[] | string> | null,
+    fallback: string
+  ) => {
+    const detail = data?.detail
+    const emailError = data?.email
+    const passwordError = data?.password
+    const roleError = data?.role
+    const nonFieldError = data?.non_field_errors
+
+    return (
+      (typeof detail === "string" && detail) ||
+      (Array.isArray(emailError) && emailError[0]) ||
+      (Array.isArray(passwordError) && passwordError[0]) ||
+      (Array.isArray(roleError) && roleError[0]) ||
+      (Array.isArray(nonFieldError) && nonFieldError[0]) ||
+      fallback
+    )
+  }
+
+  const registerUser = async (selectedRole: UserRole) => {
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const response = await fetch(`${API_URL}/users/register/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          role: selectedRole,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(getResponseError(data, t("modeError.registered")))
+      }
+
+      storeTokens(data || {})
+      setRegisterStep("success")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("loginSetError"))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError("")
 
-    if (mode === "login" && loginStep === "email") {
+    if (mode === "register") {
+      if (registerStep === "email") {
+        setRegisterStep("password")
+        return
+      }
+
+      if (registerStep === "password") {
+        if (password !== passwordConfirm) {
+          setError(t("registerPasswordMismatch"))
+          return
+        }
+
+        setRegisterStep("role")
+        return
+      }
+
+      return
+    }
+
+    if (loginStep === "email") {
       setLoginStep("password")
       setShowRecoveryLink(false)
       return
@@ -61,58 +175,29 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
     setIsLoading(true)
 
-    const url =
-      mode === "login"
-        ? `${API_URL}/users/login/`
-        : `${API_URL}/users/register/`
-
-    const payload =
-      mode === "login"
-        ? { email, password }
-        : { email, name, password }
-
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${API_URL}/users/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        throw new Error(
-        data?.detail ||
-        data?.email?.[0] ||
-        data?.password?.[0] ||
-        (mode === "login"
-          ? t("modeError.login")
-          : t("modeError.registered"))
-        )
+        throw new Error(getResponseError(data, t("modeError.login")))
       }
 
-      if (mode === "login") {
-        localStorage.setItem("accessToken", data.access)
-        localStorage.setItem("refreshToken", data.refresh)
-      }
-
-      console.log("Success", data)
+      storeTokens(data || {})
 
       resetForm()
       setOpen(false)
       setMode("login")
     } catch (err) {
-      if (mode === "login" && loginStep === "password") {
-        setShowRecoveryLink(true)
-      }
-
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError(t("loginSetError"))
-      }
+      setShowRecoveryLink(true)
+      setError(err instanceof Error ? err.message : t("loginSetError"))
     } finally {
       setIsLoading(false)
     }
@@ -133,26 +218,130 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setMode(newMode)
   }
 
-  const fakeSocialAuth = async (provider: "google") => {
-    setIsLoading(true)
-    setError("")
+  const loadGoogleScript = () =>
+    new Promise<void>((resolve, reject) => {
+      if ((window as GoogleWindow).google?.accounts?.oauth2) {
+        resolve()
+        return
+      }
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log(`${provider} auth success`)
+      const script = document.createElement("script")
+      script.src = "https://accounts.google.com/gsi/client"
+      script.async = true
+      script.defer = true
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error(t("googleAuthUnavailable")))
+      document.head.appendChild(script)
+    })
+
+  const submitGoogleToken = async (
+    accessToken: string,
+    authMode: "login" | "register"
+  ) => {
+    const response = await fetch(`${API_URL}/users/google/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        access_token: accessToken,
+      }),
+    })
+
+    const data = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      throw new Error(
+        getResponseError(
+          data,
+          authMode === "login" ? t("modeError.login") : t("modeError.registered")
+        )
+      )
+    }
+
+    storeTokens(data || {})
+
+    if (authMode === "register") {
+      setRegisterStep("success")
+    } else {
+      resetForm()
+      setMode("login")
       setOpen(false)
-    } catch {
-      setError("Помилка авторизації")
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const handleGoogleLogin = () => fakeSocialAuth("google")
+  const handleGoogleAuth = async (authMode: "login" | "register") => {
+    setError("")
+
+    if (!GOOGLE_CLIENT_ID) {
+      setError(t("googleClientMissing"))
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      await loadGoogleScript()
+
+      const google = (window as GoogleWindow).google?.accounts?.oauth2
+
+      if (!google) {
+        throw new Error(t("googleAuthUnavailable"))
+      }
+
+      const tokenClient = google.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: "openid email profile",
+        callback: async (response) => {
+          if (response.error) {
+            setIsLoading(false)
+            setError(response.error_description || t("googleAuthUnavailable"))
+            return
+          }
+
+          if (!response.access_token) {
+            setIsLoading(false)
+            setError(t("googleAuthUnavailable"))
+            return
+          }
+
+          try {
+            setIsLoading(true)
+            await submitGoogleToken(response.access_token, authMode)
+          } catch (err) {
+            setError(err instanceof Error ? err.message : t("loginSetError"))
+          } finally {
+            setIsLoading(false)
+          }
+        },
+      })
+
+      tokenClient.requestAccessToken()
+      setIsLoading(false)
+    } catch (err) {
+      setIsLoading(false)
+      setError(err instanceof Error ? err.message : t("loginSetError"))
+    }
+  }
+
+  const handleGoogleRegistration = () => handleGoogleAuth("register")
+
+  const handleGoogleLogin = () => handleGoogleAuth("login")
+
+  const handleRoleSelect = (selectedRole: UserRole) => {
+    setRole(selectedRole)
+    void registerUser(selectedRole)
+  }
 
   const handleRecoverPassword = () => {
     setOpen(false)
     setRecoveryOpen(true)
+  }
+
+  const handleSuccessLogin = () => {
+    resetForm()
+    setMode("login")
+    setOpen(false)
   }
 
   const buttonText =
@@ -167,8 +356,24 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     variant === "footer"
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
-        ? "mx-auto h-[60px] w-[360px] bg-[#FFFFFF] font-montserrat font-[500] text-[18px] text-black rounded-[30px] py-4 px-2 min-[744px]:h-8 min-[744px]:w-full min-[744px]:px-2 min-[744px]:py-0 min-[744px]:text-[11px]"
-        : "h-[57px] w-[57px] bg-[#FFFFFF] font-montserrat font-[500] text-[18px] text-black my-auto rounded-[30px] sm:w-18.25 xl:z-51 xl:mt-16 xl:z-51"
+        ? "mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] bg-[#FFFFFF] px-2 py-4 font-montserrat text-[18px] font-[500] text-black sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px]"
+        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51"
+
+  const modalTitle =
+    mode === "login"
+      ? t("headerTitle.login")
+      : registerStep === "password"
+        ? t("registerPasswordTitle")
+        : registerStep === "role"
+          ? t("registerRoleTitle")
+          : t("headerTitle.registered")
+
+  const primaryButtonLabel =
+    isLoading
+      ? t("buttonSubmit.sending")
+      : mode === "login" || registerStep !== "password"
+        ? t("buttonSubmit.further")
+        : t("registerSavePassword")
 
   return (
     <>
@@ -180,192 +385,279 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         </DialogTrigger>
 
         <DialogContent
-          className="flex flex-col justify-between bg-[#F0E8F0]   
-          md:max-w-150 md:rounded-[30px] md:px-23.75 md:py-9"
+          className="top-1/2 flex max-h-[calc(100vh-32px)] flex-col overflow-y-auto bg-[#F0E8F0] px-5 py-8 md:max-w-[600px] md:rounded-[24px] md:px-[95px] md:py-9"
         >
-          <form onSubmit={handleSubmit}>
-            <DialogHeader className="mb-4 xl:mb-9 flex flex-col items-center gap-y-0">
+          {mode === "register" && registerStep === "success" ? (
+            <div className="flex flex-col items-center">
               <img
                 src="/Logo1.png"
                 alt="Logo"
-                className="mx-auto h-20 w-20 xl:h-30.5 xl:w-46 sm:w-30"
+                className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
               />
 
-              <DialogTitle
-                className="font-montserrat text-[24px] my-1 xl:my-2 xl:h-13.75 text-center 
-                  xl:text-[38px] font-medium
-                  leading-13.75 text-[#2D302D]"
-              >
-                {mode === "login"
-                  ? t("headerTitle.login")
-                  : t("headerTitle.registered")}
+              <Check className="mt-2 h-16 w-16 stroke-[#4C3156] stroke-[1.75]" />
+
+              <DialogTitle className="mt-3 max-w-[410px] text-center font-montserrat text-[24px] font-medium leading-[1.2] text-[#2D302D] xl:text-[32px]">
+                {t("registerSuccessTitle")}
               </DialogTitle>
 
-              {mode === "login" && loginStep === "email" && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10  xl:h-14 w-full text-[16px] items-center rounded-[30px] bg-[#1C100E] 
-                  px-13.5 text-center font-[Montserrat] xl:text-[18px] 
-                  leading-14 text-[#F3F2F3]"
-                  onClick={handleGoogleLogin}
-                >
-                  <img
-                    src="/google.png"
-                    alt="Google"
-                    className="mr-auto xl:h-5 w-4.25"
-                  />
-                  {t("buttonGoogle")}
-                </Button>
-              )}
-            </DialogHeader>
-
-            <FieldGroup className="gap-y-2">
-              {mode === "register" && (
-                <Field className="flex flex-col gap-y-2">
-                  <Label
-                    htmlFor="name"
-                    className="h-4 xl:h-5.5 font-montserrat text-[14px] xl:text-[16px] xl:mb-6 font-normal leading-5.5 text-[#1C100E]"
-                  >
-                    {t("emailFormTitleName")}
-                  </Label>
-
-                  <Input
-                    className="h-10 xl:h-12 w-full rounded-[30px] border border-primary bg-[#F0E8F0] 
-                    px-3 font-montserrat text-[14px] xl:text-[16px] font-normal leading-5.5 text-[#1C100E]"
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder={t("emailFormTitleName")}
-                    required
-                    minLength={2}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </Field>
-              )}
-
-              {mode === "login" && loginStep === "email" && (
-                <div
-                  className=" h-3 xl:h-5.5 text-center font-montserrat 
-                  text-[12px] xl:text-[16px] font-normal leading-5.5 text-[#1C100E]"
-                >
-                  {t("or")}
-                </div>
-              )}
-
-              {(mode === "register" ||
-                (mode === "login" && loginStep === "email")) && (
-                <Field className="xl:mb-6 flex flex-col gap-y-2">
-                  <Label
-                    htmlFor="email"
-                    className=" font-montserrat h-4 xl:h-5.5 xl:text-[16px] font-normal leading-5.5 text-[#1C100E]"
-                  >
-                    {t("emailFormTitle")}
-                  </Label>
-
-                  <Input
-                    className="h-10 mb-4 xl:mb-[6] xl:h-12 w-full rounded-[30px] 
-                      border border-primary
-                    bg-[#F0E8F0] px-3 font-montserrat
-                    text-[14px] xl:text-[16px] font-normal leading-5.5 text-[#1C100E]"
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder={t("emailFormTitle")}
-                    required
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value)
-                      setError("")
-                      setShowRecoveryLink(false)
-                    }}
-                  />
-                </Field>
-              )}
-
-              {(mode === "register" ||
-                (mode === "login" && loginStep === "password")) && (
-                <Field className=" mb-4 xl:mb-6 flex flex-col gap-y-2">
-                  <Label
-                    htmlFor="password"
-                    className=" h-4 xl:h-5.5 font-montserrat text-[14px] xl:text-[16px] font-normal leading-5.5 text-[#1C100E]"
-                  >
-                    {t("password")}
-                  </Label>
-
-                  <Input
-                    className="h-10 xl:h-12 w-full rounded-[30px] 
-                      border border-primary bg-[#F0E8F0]
-                      px-3 font-montserrat text-[14px] xl:text-[16px] 
-                      font-normal leading-5.5 text-[#1C100E]"
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder={t("password")}
-                    required
-                    minLength={8}
-                    maxLength={128}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value)
-                      setError("")
-                      setShowRecoveryLink(false)
-                    }}
-                  />
-
-                  {mode === "register" && (
-                    <p className="mt-0 text-[8px] xl:text-sm text-gray-500">
-                      {t("titlePassword")}
-                    </p>
-                  )}
-                </Field>
-              )}
-            </FieldGroup>
-
-            {error && (
-              <p className="mt-2 text-[8px] xl:text-sm text-red-500">
-                {error}
-              </p>
-            )}
-
-            {mode === "login" && loginStep === "password" && !showRecoveryLink && (
-              <button
-                type="button"
-                onClick={() => {
-                  setPassword("")
-                  setError("")
-                  setShowRecoveryLink(false)
-                  setLoginStep("email")
-                }}
-                className="mb-4 cursor-pointer font-montserrat text-[16px] text-[#B03E8A]"
-              >
-                {t("backToEmail")}
-              </button>
-            )}
-
-            <div>
               <Button
-                type="submit"
-                disabled={isLoading}
-                className="h-12 xl:h-14.25 w-full cursor-pointer rounded-[30px] 
-                border-2 border-[#FEF85C] text-center font-montserrat 
-                text-[14px] xl:text-[18px] leading-14.25 text-[#1C100E] 
-                shadow-btn"
+                type="button"
+                onClick={handleSuccessLogin}
+                className="mt-5 h-12 w-full cursor-pointer rounded-[30px] border-2 border-[#FEF85C] text-center font-montserrat text-[14px] leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
                 style={{
                   background:
                     "linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%)",
                 }}
               >
-                {isLoading
-                  ? t("buttonSubmit.sending")
-                  : mode === "login"
-                    ? t("buttonSubmit.further")
-                    : t("buttonSubmit.registered")}
+                {t("headerTitle.login")}
               </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <DialogHeader className="mb-4 flex flex-col items-center gap-y-0 xl:mb-7">
+                <img
+                  src="/Logo1.png"
+                  alt="Logo"
+                  className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
+                />
+
+                <DialogTitle className="my-1 text-center font-montserrat text-[24px] font-medium leading-[1.2] text-[#2D302D] xl:my-2 xl:text-[32px]">
+                  {modalTitle}
+                </DialogTitle>
+
+                {mode === "register" && registerStep === "password" && (
+                  <p className="mt-3 w-full font-montserrat text-[12px] leading-[1.35] text-[#6C6370] xl:text-[14px]">
+                    {t("registerPasswordHint")}
+                  </p>
+                )}
+
+                {mode === "register" && registerStep === "email" && (
+                  <div className="mt-4 flex w-full flex-col gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isLoading}
+                      className="h-10 w-full items-center rounded-[30px] bg-[#1C100E] px-5 text-center font-montserrat text-[12px] leading-10 text-[#F3F2F3] xl:h-12 xl:text-[14px]"
+                      onClick={handleGoogleRegistration}
+                    >
+                      <img src="/google.png" alt="Google" className="h-4 w-4" />
+                      {t("buttonGoogle")}
+                    </Button>
+
+                    <div className="text-center font-montserrat text-[12px] leading-5 text-[#1C100E] xl:text-[14px]">
+                      {t("or")}
+                    </div>
+                  </div>
+                )}
+
+                {mode === "login" && loginStep === "email" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4 h-10 w-full items-center rounded-[30px] bg-[#1C100E] px-5 text-center font-montserrat text-[12px] leading-10 text-[#F3F2F3] xl:h-12 xl:text-[14px]"
+                    onClick={handleGoogleLogin}
+                  >
+                    <img src="/google.png" alt="Google" className="h-4 w-4" />
+                    {t("buttonGoogle")}
+                  </Button>
+                )}
+              </DialogHeader>
+
+              <FieldGroup className="gap-y-2">
+                {(mode === "register" && registerStep === "email") ||
+                (mode === "login" && loginStep === "email") ? (
+                  <>
+                    {mode === "login" && (
+                      <div className="text-center font-montserrat text-[12px] leading-5 text-[#1C100E] xl:text-[14px]">
+                        {t("or")}
+                      </div>
+                    )}
+
+                    <Field className="flex flex-col gap-y-2">
+                      <Label
+                        htmlFor="email"
+                        className="font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:text-[16px]"
+                      >
+                        {t("emailFormTitle")}
+                      </Label>
+
+                      <Input
+                        className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-3 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder={t("emailFormTitle")}
+                        required
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value)
+                          setError("")
+                          setShowRecoveryLink(false)
+                        }}
+                      />
+                    </Field>
+                  </>
+                ) : null}
+
+                {(mode === "login" && loginStep === "password") ||
+                (mode === "register" && registerStep === "password") ? (
+                  <Field className="flex flex-col gap-y-2">
+                    <Label
+                      htmlFor="password"
+                      className="font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:text-[16px]"
+                    >
+                      {t("password")}
+                    </Label>
+
+                    <div className="relative">
+                      <Input
+                        className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-10 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder={t("password")}
+                        required
+                        minLength={8}
+                        maxLength={128}
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value)
+                          setError("")
+                          setShowRecoveryLink(false)
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((value) => !value)}
+                        className="absolute top-1/2 left-3 flex -translate-y-1/2 cursor-pointer text-[#1C100E]"
+                        aria-label={
+                          showPassword ? t("hidePassword") : t("showPassword")
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+
+                    {mode === "register" && (
+                      <>
+                        <Label
+                          htmlFor="passwordConfirm"
+                          className="mt-2 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:text-[16px]"
+                        >
+                          {t("repeatPassword")}
+                        </Label>
+
+                        <div className="relative">
+                          <Input
+                            className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-10 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                            id="passwordConfirm"
+                            name="passwordConfirm"
+                            type={showPasswordConfirm ? "text" : "password"}
+                            placeholder={t("repeatPassword")}
+                            required
+                            minLength={8}
+                            maxLength={128}
+                            value={passwordConfirm}
+                            onChange={(e) => {
+                              setPasswordConfirm(e.target.value)
+                              setError("")
+                            }}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowPasswordConfirm((value) => !value)
+                            }
+                            className="absolute top-1/2 left-3 flex -translate-y-1/2 cursor-pointer text-[#1C100E]"
+                            aria-label={
+                              showPasswordConfirm
+                                ? t("hidePassword")
+                                : t("showPassword")
+                            }
+                          >
+                            {showPasswordConfirm ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </Field>
+                ) : null}
+              </FieldGroup>
+
+              {mode === "register" && registerStep === "role" && (
+                <div className="mt-5 flex flex-col gap-4">
+                  <Button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => handleRoleSelect("specialist")}
+                    className="h-12 w-full rounded-[30px] bg-[#1C100E] font-montserrat text-[14px] text-[#F3F2F3] hover:bg-[#1C100E]/90"
+                    aria-pressed={role === "specialist"}
+                  >
+                    {t("roleSpecialist")}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => handleRoleSelect("user")}
+                    className="h-12 w-full rounded-[30px] bg-[#1C100E] font-montserrat text-[14px] text-[#F3F2F3] hover:bg-[#1C100E]/90"
+                    aria-pressed={role === "user"}
+                  >
+                    {t("roleUser")}
+                  </Button>
+                </div>
+              )}
+
+              {error && (
+                <p className="mt-3 font-montserrat text-[12px] text-red-500 xl:text-sm">
+                  {error}
+                </p>
+              )}
+
+              {mode === "login" &&
+                loginStep === "password" &&
+                !showRecoveryLink && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPassword("")
+                      setError("")
+                      setShowRecoveryLink(false)
+                      setLoginStep("email")
+                    }}
+                    className="mt-3 mb-4 cursor-pointer font-montserrat text-[14px] text-[#B03E8A] xl:text-[16px]"
+                  >
+                    {t("backToEmail")}
+                  </button>
+                )}
+
+              {!(mode === "register" && registerStep === "role") && (
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="mt-4 h-12 w-full cursor-pointer rounded-[30px] border-2 border-[#FEF85C] text-center font-montserrat text-[14px] leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%)",
+                  }}
+                >
+                  {primaryButtonLabel}
+                </Button>
+              )}
 
               {mode === "login" ? (
-                <div className="my-[50px] flex h-[22px] justify-between font-[Montserrat] text-[16px] font-[400] leading-[22px] text-[#1C100E]">
+                <div className="mt-7 flex min-h-[22px] justify-between gap-4 font-montserrat text-[12px] font-[400] leading-[22px] text-[#1C100E] xl:mt-10 xl:text-[16px]">
                   {showRecoveryLink && loginStep === "password" ? (
                     <>
                       <span>{t("forgotPassword")}</span>
@@ -380,7 +672,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                     </>
                   ) : (
                     <>
-                      {t("dialogTextNoneProf")}{" "}
+                      <span>{t("dialogTextNoneProf")}</span>
                       <button
                         type="button"
                         onClick={() => handleChangeMode("register")}
@@ -392,23 +684,21 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                   )}
                 </div>
               ) : (
-                <p
-                  className=" my-5 xl:my-12.5 flex h-5.5 justify-between 
-                    font-montserrat text-[12px] xl:text-[16px] font-normal leading-5.5
-                    text-[#1C100E]"
-                >
-                  {t("dialogTextProf")}{" "}
-                  <button
-                    type="button"
-                    onClick={() => handleChangeMode("login")}
-                    className="cursor-pointer text-[#B03E8A]"
-                  >
-                    {t("headerTitle.login")}
-                  </button>
-                </p>
+                registerStep !== "role" && (
+                  <p className="mt-7 flex min-h-5.5 justify-between gap-4 font-montserrat text-[12px] font-normal leading-[22px] text-[#1C100E] xl:mt-10 xl:text-[16px]">
+                    <span>{t("dialogTextProf")}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleChangeMode("login")}
+                      className="cursor-pointer text-[#B03E8A]"
+                    >
+                      {t("headerTitle.login")}
+                    </button>
+                  </p>
+                )
               )}
-            </div>
-          </form>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 

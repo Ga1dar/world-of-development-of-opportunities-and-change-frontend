@@ -12,21 +12,21 @@
     "страх, розпач, невпевненість роздратування й агресія.",
     "Усе це",
     "проходить крізь серце кожної освітянки щодня"
-    ],
+  ],
   "homeMiddleTextContent2": "Та хто подбає про тих, хто підтримує інших?",
   "homeBottomText": [
     "Хто допоможе впоратися з дитячими емоціями, ще й у поєднанні з",
     "власними переживаннями, втомою та відповідальністю?"
   ],
-  "homeBottomText1":"ГО «СВІТИ» запрошує освітян на простір підтримки, навчання та відновлення.",
+  "homeBottomText1": "ГО «СВІТИ» запрошує освітян на простір підтримки, навчання та відновлення.",
   "homeBottomLink": "Деталі події",
   "specialistsTitle": "Наші Спеціалісти",
-  "homeSpecialistsLink" : "Усі спеціалісти",
+  "homeSpecialistsLink": "Усі спеціалісти",
   "modeError": {
     "login": "'Невдалося увійти. Перевірте email та спробуйте ще раз.'",
     "registered": "'Невдалося зареєструватися. Перевірте email та спробуйте ще раз.'"
   },
-  "loginSetError": "'Сталася невідома помилка. Спробуйте ще раз.'", 
+  "loginSetError": "'Сталася невідома помилка. Спробуйте ще раз.'",
   "buttonText": {
     "footer": "Реєстрація",
     "header": "Вхід"
@@ -44,7 +44,7 @@
   "buttonSubmit": {
     "sending": "Відправка...",
     "further": "Далі",
-    "registered": "Зареєструватись"    
+    "registered": "Зареєструватись"
   },
   "dialogTextNoneProf": "Не маєте профілю?",
   "dialogTextProf": "Уже маєте профіль?",
@@ -81,5 +81,25 @@
   "sendRecoveryLink": "Надіслати посилання",
   "rememberPassword": "Згадали пароль?",
   "recoveryMessageSent": "Якщо цей email існує, ми надішлемо посилання для відновлення.",
-  "recoveryMessageError": "Не вдалося надіслати посилання. Спробуйте ще раз."
+  "recoveryMessageError": "Не вдалося надіслати посилання. Спробуйте ще раз.",
+  "registerPasswordTitle": "Вкажіть пароль",
+  "registerPasswordHint": "Ваш пароль має містити не менше 8 символів, мінімум 1 велику літеру, 1 цифру тощо.",
+  "registerSavePassword": "Зберегти пароль",
+  "repeatPassword": "Повторити пароль",
+  "registerPasswordMismatch": "Паролі не збігаються.",
+  "registerRoleTitle": "Оберіть вашу роль",
+  "roleSpecialist": "Спеціаліст",
+  "roleUser": "Користувач",
+  "registerSuccessTitle": "Реєстрація пройшла успішно",
+  "showPassword": "Показати пароль",
+  "hidePassword": "Сховати пароль",
+  "googleClientMissing": "Для реєстрації через Google потрібно додати VITE_GOOGLE_CLIENT_ID.",
+  "googleAuthUnavailable": "Не вдалося відкрити реєстрацію через Google.",
+  "resetPasswordTitle": "Задайте новий пароль",
+  "newPassword": "Новий пароль",
+  "confirmResetPassword": "Зберегти пароль",
+  "resetPasswordSuccess": "Пароль успішно оновлено. Тепер ви можете увійти.",
+  "resetPasswordMissingToken": "Посилання для відновлення некоректне або застаріле.",
+  "resetPasswordError": "Не вдалося оновити пароль. Спробуйте ще раз.",
+  "passwordMinLength": "Пароль має містити щонайменше 8 символів."
 }

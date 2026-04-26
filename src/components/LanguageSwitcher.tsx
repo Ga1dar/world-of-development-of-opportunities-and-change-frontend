@@ -15,9 +15,8 @@ export function LanguageSwitcher() {
     <button
       type="button"
       onClick={changeLanguage}
-      className=" text-base font-medium uppercase opacity-80 
-      transition-opacity duration-200 hover:opacity-100 
-      xl:-order-1  xl:-mt-7 xl:z-100"
+      className="font-montserrat text-[12px] font-medium uppercase text-[#1C100E] opacity-80 
+      transition-opacity duration-200 hover:opacity-100 sm:text-sm xl:text-[18px]"
     >
       {currentLanguage.toUpperCase()}
     </button>
