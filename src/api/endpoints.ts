@@ -7,6 +7,8 @@ export const endpoints = {
   me: `${API_URL}/users/list/me/`,
   specialists: `${API_URL}/profiles/specialists/`,
   profiles: `${API_URL}/profiles/`,
-  events: `${API_URL}/events`
+  events: `${API_URL}/events/`,
+  passwordReset: `${API_URL}/users/password-reset/`,
+  passwordResetConfirm: `${API_URL}/users/password-reset/confirm/`
 
 };

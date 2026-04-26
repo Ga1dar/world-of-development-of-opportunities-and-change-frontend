@@ -11,19 +11,20 @@ import { Footer } from "./components/Footer.tsx";
 import "./App.css";
 import { Edukationmaterial } from "./components/pages/EducationMaterial.tsx";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
+import { PasswordResetConfirm } from "./components/pages/PasswordResetConfirm.tsx";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col bg-secondary">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-secondary">
       <Header isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      <main className="relative flex-1 xl:flex">
+      <main className="relative flex-1 min-[1420px]:flex">
         <Menu isOpen={isOpen} setIsOpen={setIsOpen} />
 
         <div
-          className={`${isOpen ? "hidden min-[744px]:block" : "block"} flex-1 xl:block`}
+          className={`${isOpen ? "hidden sm:block" : "block"} flex-1 min-[1420px]:block`}
         >
           <ScrollToTop />
 
@@ -34,6 +35,14 @@ function App() {
             <Route path="/events" element={<Events />} />
             <Route path="/materials" element={<Edukationmaterial />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route
+              path="/password-reset/confirm"
+              element={<PasswordResetConfirm />}
+            />
+            <Route
+              path="/users/password-reset/confirm"
+              element={<PasswordResetConfirm />}
+            />
           </Routes>
         </div>
       </main>

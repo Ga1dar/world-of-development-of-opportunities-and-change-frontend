@@ -1,3 +1,4 @@
+import { requestPasswordReset } from "@/api/passwordReset"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -8,7 +9,7 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 type PasswordRecoveryDialogProps = {
@@ -31,6 +32,14 @@ export function PasswordRecoveryDialog({
 
   const { t } = useTranslation()
 
+  useEffect(() => {
+    if (open) {
+      setRecoveryEmail(email)
+      setError("")
+      setMessage("")
+    }
+  }, [email, open])
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError("")
@@ -38,23 +47,10 @@ export function PasswordRecoveryDialog({
     setIsLoading(true)
 
     try {
-      console.log("Password recovery email:", recoveryEmail)
-
-      // В README пока нет endpoint для восстановления пароля.
-      // Когда бекенд даст endpoint, сюда добавишь fetch.
-      // Например:
-      //
-      // await fetch(`${API_URL}/users/password-reset/`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({ email: recoveryEmail }),
-      // })
-
+      await requestPasswordReset(recoveryEmail, t("recoveryMessageError"))
       setMessage(t("recoveryMessageSent"))
-    } catch {
-      setError(t("recoveryMessageError"))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("recoveryMessageError"))
     } finally {
       setIsLoading(false)
     }
@@ -63,44 +59,43 @@ export function PasswordRecoveryDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex flex-col justify-between bg-[#F0E8F0]   
-        md:max-w-150 md:rounded-[30px] md:px-23.75 md:py-9"
+        className="flex max-h-[calc(100vh-32px)] flex-col justify-between overflow-y-auto bg-[#F0E8F0]
+        px-5 py-8 md:max-w-[600px] md:rounded-[24px] md:px-[95px] md:py-9"
       >
         <form onSubmit={handleSubmit}>
-          <DialogHeader className="mb-4 xl:mb-9 flex flex-col items-center gap-y-0">
+          <DialogHeader className="mb-4 flex flex-col items-center gap-y-0 xl:mb-9">
             <img
               src="/Logo1.png"
               alt="Logo"
-              className="mx-auto h-20 w-20 xl:h-30.5 xl:w-46 sm:w-30"
+              className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
             />
 
             <DialogTitle
-              className="font-montserrat text-[24px] my-1 xl:my-2 xl:h-13.75 text-center 
-              xl:text-[38px] font-medium
-              leading-13.75 text-[#2D302D]"
+              className="my-1 text-center font-montserrat text-[24px]
+              font-medium leading-[1.2] text-[#2D302D] xl:my-2 xl:text-[38px]"
             >
               {t("passwordRecoveryTitle")}
             </DialogTitle>
           </DialogHeader>
 
           <FieldGroup className="gap-y-2">
-            <Field className="xl:mb-6 flex flex-col gap-y-[8px]">
+            <Field className="flex flex-col gap-y-2 xl:mb-6">
               <Label
                 htmlFor="recovery-email"
-                className=" font-montserrat h-4 xl:h-5.5 xl:text-[16px] font-normal leading-5.5 text-[#1C100E]"
+                className="font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:text-[16px]"
               >
                 {t("emailFormTitle")}
               </Label>
 
               <Input
-                className="h-10 mb-4 xl:mb-[6] xl:h-12 w-full rounded-[30px] 
-                  border border-primary
-                bg-[#F0E8F0] px-3 font-montserrat
-                text-[14px] xl:text-[16px] font-normal leading-5.5 text-[#1C100E]"
+                className="mb-4 h-10 w-full rounded-[30px] border border-primary
+                bg-[#F0E8F0] px-3 font-montserrat text-[14px] font-normal
+                leading-5 text-[#1C100E] xl:mb-1.5 xl:h-12 xl:text-[16px]"
                 id="recovery-email"
                 name="recovery-email"
                 type="email"
                 placeholder={t("emailFormTitle")}
+                autoComplete="email"
                 required
                 value={recoveryEmail}
                 onChange={(e) => {
@@ -113,13 +108,13 @@ export function PasswordRecoveryDialog({
           </FieldGroup>
 
           {error && (
-            <p className="mt-2 text-[8px] xl:text-sm text-red-500">
+            <p className="mt-2 font-montserrat text-[12px] text-red-500 xl:text-sm">
               {error}
             </p>
           )}
 
           {message && (
-            <p className="mt-2 text-[8px] xl:text-sm text-green-700">
+            <p className="mt-2 font-montserrat text-[12px] text-green-700 xl:text-sm">
               {message}
             </p>
           )}
@@ -127,10 +122,9 @@ export function PasswordRecoveryDialog({
           <Button
             type="submit"
             disabled={isLoading}
-            className="h-12 xl:h-14.25 w-full cursor-pointer rounded-[30px] 
-            border-2 border-[#FEF85C] text-center font-montserrat 
-            text-[14px] xl:text-[18px] leading-14.25 text-[#1C100E] 
-            shadow-btn"
+            className="h-12 w-full cursor-pointer rounded-[30px] border-2
+            border-[#FEF85C] text-center font-montserrat text-[14px]
+            leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
             style={{
               background:
                 "linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%)",
@@ -140,11 +134,11 @@ export function PasswordRecoveryDialog({
           </Button>
 
           <p
-            className="my-5 xl:my-12.5 flex h-5.5 justify-between 
-            font-montserrat text-[12px] xl:text-[16px] font-normal leading-5.5
-            text-[#1C100E]"
+            className="my-5 flex min-h-5.5 justify-between gap-4 font-montserrat
+            text-[12px] font-normal leading-[22px] text-[#1C100E]
+            xl:my-12 xl:text-[16px]"
           >
-            {t("rememberPassword")}{" "}
+            <span>{t("rememberPassword")}</span>
             <button
               type="button"
               onClick={onBackToLogin}

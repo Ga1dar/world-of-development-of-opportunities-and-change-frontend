@@ -29,11 +29,11 @@ export async function getSpecialists(): Promise<Specialist[]> {
     },
     {
       id: 3,
-      photo: "/rectangle 2.png",
-      nameUa: "Марія Петрова",
-      nameEn: "Maria Petrova",
-      roleUa: "Логопед",
-      roleEn: "Speech therapist",
+      photo: "/andruschenko.png",
+      nameUa: "Наталія Андрущенко",
+      nameEn: "Nataliia Andrushchenko",
+      roleUa: "Координаторка",
+      roleEn: "Coordinator",
     },
     {
       id: 4,

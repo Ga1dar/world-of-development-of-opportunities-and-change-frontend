@@ -1,23 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getEvents } from "../../api/events.ts";
-
-type EventItem = {
-  id: number;
-  title_ua: string;
-  title_en: string;
-  description_ua: string[];
-  description_en: string[];
-  category_ua: string;
-  category_en: string;
-  image: string;
-};
+import { getEvents, type EventItem } from "../../api/events.ts";
 
 const EVENTS_PER_PAGE = 4;
 
 export function Events() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const lang = i18n.language.startsWith("en") ? "en" : "ua";
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [page, setPage] = useState(1);
@@ -28,11 +17,12 @@ export function Events() {
       .catch(console.error);
   }, []);
 
-  const getField = (
-    event: EventItem,
-    field: "title" | "description" | "category"
-  ) => {
+  const getTextField = (event: EventItem, field: "title" | "category") => {
     return event[`${field}_${lang}` as keyof EventItem] as string;
+  };
+
+  const getDescription = (event: EventItem) => {
+    return event[`description_${lang}` as keyof EventItem] as string[];
   };
 
   const start = (page - 1) * EVENTS_PER_PAGE;
@@ -49,20 +39,20 @@ export function Events() {
           <div key={event.id} className="rounded-[20px] bg-white p-4 shadow">
             <img
               src={event.image}
-              alt={getField(event, "title")}
+              alt={getTextField(event, "title")}
               className="mb-4 w-full rounded-2xl"
             />
 
             <h2 className="text-xl font-semibold">
-              {getField(event, "title")}
+              {getTextField(event, "title")}
             </h2>
 
             <p className="mt-2 text-sm text-gray-600">
-              {getField(event, "description")}
+              {getDescription(event)[0]}
             </p>
 
             <span className="mt-3 inline-block text-xs text-purple-600">
-              {getField(event, "category")}
+              {getTextField(event, "category")}
             </span>
           </div>
         ))}

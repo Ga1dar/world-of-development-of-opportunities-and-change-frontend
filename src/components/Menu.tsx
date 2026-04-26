@@ -11,12 +11,13 @@ const navLinkBase =
   "box-border flex w-full items-center justify-center font-montserrat font-medium text-[sidebar]";
 
 const navLinkMobile =
-  "h-15 text-lg min-[744px]:h-9 min-[744px]:border-b min-[744px]:border-[#D9D9D9] min-[744px]:text-[11px] min-[744px]:leading-9";
+  "h-[43px] text-lg sm:h-9 sm:border-b sm:border-[#D9D9D9] sm:text-[11px] sm:leading-9";
 
-const navLinkDesktop = "xl:h-15 xl:px-4 xl:py-2 xl:text-lg";
+const navLinkDesktop =
+  "min-[1420px]:h-15 min-[1420px]:px-4 min-[1420px]:py-2 min-[1420px]:text-lg";
 
 const navLinkActive =
-  "xl:rounded-[30px] xl:border xl:border-[#83105F] xl:bg-[#83105F33] xl:text-[#83105F]";
+  "min-[1420px]:rounded-[30px] min-[1420px]:border min-[1420px]:border-[#83105F] min-[1420px]:bg-[#83105F33] min-[1420px]:text-[#83105F]";
 
 export function Menu({ isOpen, setIsOpen }: MenuProps) {
   const { t } = useTranslation();
@@ -30,27 +31,26 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
   return (
     <div
       className={`${isOpen ? "flex" : "hidden"}
-        fixed left-0 top-21.25 z-90 h-[calc(100vh-85px)] w-full
-        flex-col items-center justify-start bg-secondary px-4 py-6
+        z-90 w-full flex-col items-center justify-start bg-secondary px-4 pt-10 pb-[52px]
 
-        min-[744px]:absolute min-[744px]:left-auto min-[744px]:right-5
-        min-[744px]:-top-20 min-[744px]:h-auto min-[744px]:w-42
-        min-[744px]:rounded-[14px] min-[744px]:bg-[#F3F2F3]
-        min-[744px]:px-3 min-[744px]:py-3 min-[744px]:shadow-md
+        sm:absolute sm:left-auto sm:right-5
+        sm:-top-20 sm:h-auto sm:w-42
+        sm:rounded-[14px] sm:bg-[#F3F2F3]
+        sm:px-3 sm:py-3 sm:shadow-md
 
-        xl:absolute xl:-top-63 xl:right-auto xl:flex xl:h-30 xl:w-full
-        xl:items-center xl:bg-[#4029401A] xl:px-20 xl:py-6
-        xl:shadow-none xl:rounded-none xl:pointer-events-none`}
+        min-[1420px]:hidden`}
       >
       <nav
         className="flex w-full flex-col items-center justify-center gap-6 text-center
-          min-[744px]:gap-0
-          xl:pointer-events-auto xl:-ml-50 xl:flex-row xl:justify-center xl:gap-x-2 xl:w-220"
+          sm:gap-0
+          min-[1420px]:pointer-events-auto min-[1420px]:-ml-50 min-[1420px]:flex-row min-[1420px]:justify-center min-[1420px]:gap-x-2 min-[1420px]:w-220"
       >
         <NavLink
           to="/"
           onClick={closeMenu}
-          className={({ isActive }) => getNavLinkClass("xl:w-30", isActive)}
+          className={({ isActive }) =>
+            getNavLinkClass("min-[1420px]:w-30", isActive)
+          }
         >
           {t("aboutUs")}
         </NavLink>
@@ -58,7 +58,9 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
         <NavLink
           to="/specialists"
           onClick={closeMenu}
-          className={({ isActive }) => getNavLinkClass("xl:w-54", isActive)}
+          className={({ isActive }) =>
+            getNavLinkClass("min-[1420px]:w-54", isActive)
+          }
         >
           {t("specialistsTitle")}
         </NavLink>
@@ -66,7 +68,9 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
         <NavLink
           to="/events"
           onClick={closeMenu}
-          className={({ isActive }) => getNavLinkClass("xl:w-30", isActive)}
+          className={({ isActive }) =>
+            getNavLinkClass("min-[1420px]:w-30", isActive)
+          }
         >
           {t("events")}
         </NavLink>
@@ -74,7 +78,9 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
         <NavLink
           to="/materials"
           onClick={closeMenu}
-          className={({ isActive }) => getNavLinkClass("xl:w-60", isActive)}
+          className={({ isActive }) =>
+            getNavLinkClass("min-[1420px]:w-60", isActive)
+          }
         >
           {t("materials")}
         </NavLink>
@@ -82,7 +88,9 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
         <NavLink
           to="/contacts"
           onClick={closeMenu}
-          className={({ isActive }) => getNavLinkClass("xl:w-36.25", isActive)}
+          className={({ isActive }) =>
+            getNavLinkClass("min-[1420px]:w-36.25", isActive)
+          }
         >
           {t("contacts")}
         </NavLink>
@@ -91,29 +99,29 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
       <Link
         to="/"
         onClick={closeMenu}
-        className="mb-6 h-15 w-90 cursor-pointer rounded-[30px]
+        className="mt-3 mb-5 flex h-[57px] w-full max-w-[358px] cursor-pointer items-center justify-center rounded-[30px]
         border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8]
-        text-center font-montserrat text-[18px] font-medium leading-14.25
+        text-center font-montserrat text-[18px] font-medium
         text-[sidebar] shadow-btn sm:hidden"
       >
         {t("support")}
       </Link>
 
       <div
-        className="mt-4 w-full xl:hidden
-        min-[744px]:mt-3
-        min-[744px]:flex
-        min-[744px]:justify-center
+        className="mt-4 w-full min-[1420px]:hidden
+        sm:mt-3
+        sm:flex
+        sm:justify-center
 
-        min-[744px]:[&_button]:h-7
-        min-[744px]:[&_button]:w-full
-        min-[744px]:[&_button]:rounded-[30px]
-        min-[744px]:[&_button]:text-[11px]
+        sm:[&_button]:h-7
+        sm:[&_button]:w-full
+        sm:[&_button]:rounded-[30px]
+        sm:[&_button]:text-[11px]
 
-        min-[744px]:[&_a]:h-7
-        min-[744px]:[&_a]:w-full
-        min-[744px]:[&_a]:rounded-[30px]
-        min-[744px]:[&_a]:text-[11px]"
+        sm:[&_a]:h-7
+        sm:[&_a]:w-full
+        sm:[&_a]:rounded-[30px]
+        sm:[&_a]:text-[11px]"
       >
         <LogIn variant="menu" />
       </div>
