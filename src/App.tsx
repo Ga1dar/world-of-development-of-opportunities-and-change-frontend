@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Header } from "./components/Header.tsx";
 import { Menu } from "./components/Menu.tsx";
 import { Home } from "./components/pages/Home.tsx";
-import { Aboutus } from "./components/pages/Aboutus.tsx";
 import { Contacts } from "./components/pages/Contacts.tsx";
 import { Events } from "./components/pages/Events.tsx";
 import { Specialists } from "./components/pages/Specialists.tsx";
@@ -12,6 +11,7 @@ import "./App.css";
 import { Edukationmaterial } from "./components/pages/EducationMaterial.tsx";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
 import { PasswordResetConfirm } from "./components/pages/PasswordResetConfirm.tsx";
+import { Aboutus } from "./components/pages/Aboutus.tsx";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);

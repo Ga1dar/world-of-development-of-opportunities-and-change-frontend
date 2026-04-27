@@ -20,12 +20,13 @@ export function Specialists({ limit, isSlider = false }: Props) {
   return (
     <section className={
     isSlider
-      ? "mt-6 flex w-full gap-4 overflow-x-auto px-0 pb-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:mt-10 xl:grid xl:grid-cols-3 xl:gap-20 xl:overflow-visible min-[1900px]:gap-36"
+      ? "mt-6 flex w-full gap-4 overflow-x-auto px-0 pb-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:mt-10 xl:gap-20 min-[1900px]:gap-36"
       : "mt-6 flex w-full flex-wrap justify-center px-4"
   }>
       {data.map((item) => {
-        const name = i18n.language === "ua" ? item.nameUa : item.nameEn;
-        const role = i18n.language === "ua" ? item.roleUa : item.roleEn;
+        const isUkrainian = i18n.language === "ua" || i18n.language === "uk";
+        const name = isUkrainian ? item.nameUa : item.nameEn;
+        const role = isUkrainian ? item.roleUa : item.roleEn;
 
         return (
           <article
