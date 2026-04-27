@@ -1,0 +1,45 @@
+.about-mobile {
+  display: block;
+}
+
+.about-tablet,
+.about-desktop,
+.about-big {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .about-mobile {
+    display: none;
+  }
+
+  .about-tablet {
+    display: grid;
+  }
+}
+
+@media (min-width: 1420px) {
+  .about-shell {
+    margin-top: 100px;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .about-tablet {
+    display: none;
+  }
+
+  .about-desktop {
+    display: grid;
+  }
+}
+
+@media (min-width: 1900px) {
+  .about-desktop {
+    display: none;
+  }
+
+  .about-big {
+    display: grid;
+  }
+}

@@ -46,7 +46,7 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
           min-[1420px]:pointer-events-auto min-[1420px]:-ml-50 min-[1420px]:flex-row min-[1420px]:justify-center min-[1420px]:gap-x-2 min-[1420px]:w-220"
       >
         <NavLink
-          to="/"
+          to="/about"
           onClick={closeMenu}
           className={({ isActive }) =>
             getNavLinkClass("min-[1420px]:w-30", isActive)

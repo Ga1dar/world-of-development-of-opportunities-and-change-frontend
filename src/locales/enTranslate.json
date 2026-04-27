@@ -22,6 +22,18 @@
   "homeBottomLink": "Event details",
   "specialistsTitle": "Our Specialists",
   "homeSpecialistsLink": "All specialists",
+  "aboutTextFirst": [
+    "The charitable organization Svity is about people who do not pass by.",
+    "About those who believe that even a small act of help can change someone's life."
+  ],
+  "aboutTextRest": [
+    "We came together to support those who need it most right now.",
+    "Every step we take is about care, humanity, and the light we carry into this world together.",
+    "We help when it hurts. We support when it feels like there is no strength left. And we remind people: no one should be left alone.",
+    "Svity is not just charity.",
+    "It is a community of people creating light where it is needed most.",
+    "Together we can do more. Together we are strong."
+  ],
 
   "modeError": {
     "login": "Failed to log in. Please check your email and try again.",

@@ -32,13 +32,18 @@ export function Home() {
   return (
     <>
       <section className="mx-auto flex w-full max-w-[1280px] flex-col px-4 sm:px-10 min-[1420px]:px-0 min-[1900px]:max-w-[1800px]">
-        <article className="mb-10 grid gap-4 sm:grid-cols-2 sm:grid-rows-[auto_auto_auto] sm:gap-x-6 sm:gap-y-4 min-[1420px]:mb-20 min-[1420px]:grid-cols-[631px_628px] min-[1420px]:grid-rows-[auto_auto_auto] min-[1420px]:gap-x-[21px] min-[1420px]:gap-y-0 min-[1900px]:h-[380px] min-[1900px]:grid-cols-[892px_856px] min-[1900px]:gap-x-[52px]">
+        <article
+          className="mb-10 grid gap-4 sm:grid-cols-2 sm:grid-rows-[auto_auto_auto] 
+            sm:gap-x-6 sm:gap-y-4 min-[1420px]:mb-20 min-[1420px]:grid-cols-[631px_628px]
+            min-[1420px]:grid-rows-[auto_auto_auto] min-[1420px]:items-stretch min-[1420px]:gap-x-5.25
+            min-[1420px]:gap-y-0 min-[1900px]:mb-[76px] min-[1900px]:grid-cols-[892px_856px]
+             min-[1900px]:mb-[76px]">
           <h3 className="w-full font-montserrat text-[24px] font-medium leading-[1.25] text-[#1C100E] sm:col-span-2 sm:row-start-1 sm:text-[32px] sm:leading-[45px] min-[1420px]:!col-span-1 min-[1420px]:!row-start-1 min-[1420px]:mb-6 min-[1420px]:mt-[95px] min-[1900px]:max-w-[720px]">
             {t("homeTopTitle")}
           </h3>
 
           <img
-            className="h-[216px] w-full rounded-[20px] object-cover sm:col-start-2 sm:row-start-2 sm:row-end-3 sm:h-[216px] min-[1420px]:!col-start-2 min-[1420px]:!row-start-1 min-[1420px]:!row-end-4 min-[1420px]:mt-[95px] min-[1420px]:h-[287px] min-[1900px]:mt-0 min-[1900px]:!h-[380px]"
+            className="h-[216px] w-full rounded-[20px] object-cover sm:col-start-2 sm:row-start-2 sm:row-end-3 sm:h-[216px] min-[1420px]:!col-start-2 min-[1420px]:!row-start-1 min-[1420px]:!row-end-4 min-[1420px]:mt-[95px] min-[1420px]:!h-full min-[1420px]:self-stretch min-[1900px]:mt-0"
             src="/rectangle 2.png"
             alt="Description"
           />
@@ -59,7 +64,11 @@ export function Home() {
 
         {firstEvent && (
           <>
-            <article className="mb-14 grid gap-4 sm:grid-cols-2 sm:gap-6 min-[1420px]:mb-20 min-[1420px]:grid-cols-[628px_624px] min-[1420px]:gap-x-7 min-[1420px]:gap-y-0 min-[1900px]:h-[580px] min-[1900px]:grid-cols-[892px_856px] min-[1900px]:gap-x-[52px]">
+            <article
+              className="mb-14 grid gap-4 sm:grid-cols-2 sm:gap-6 
+              min-[1420px]:mb-20 min-[1420px]:grid-cols-[628px_624px]
+              min-[1420px]:items-stretch min-[1420px]:gap-x-7 min-[1420px]:gap-y-0
+              min-[1900px]:grid-cols-[892px_856px] min-[1900px]:gap-x-[52px]">
               <h2
                 className="font-montserrat text-2xl font-medium leading-[1.25] text-[#1C100E] sm:col-span-2 sm:text-[32px] sm:leading-[45px] min-[1420px]:!col-span-1 min-[1420px]:!col-start-2 min-[1420px]:!row-start-1 min-[1420px]:mb-6 min-[1420px]:w-full min-[1900px]:max-w-[760px]"
               >
@@ -68,7 +77,7 @@ export function Home() {
               <img
                 src={firstEvent.image}
                 alt="test"
-                className="h-[240px] w-full rounded-[20px] object-cover sm:col-start-1 sm:row-start-2 sm:row-end-3 sm:h-[216px] min-[1420px]:!col-start-1 min-[1420px]:!row-start-1 min-[1420px]:!row-end-7 min-[1420px]:h-[458px] min-[1900px]:!h-[560px]"
+                className="h-[240px] w-full rounded-[20px] object-cover sm:col-start-1 sm:row-start-2 sm:row-end-3 sm:h-[216px] min-[1420px]:!col-start-1 min-[1420px]:!row-start-1 min-[1420px]:!row-end-7 min-[1420px]:!h-full min-[1420px]:self-stretch"
               />
               <div
                 className="flex flex-col gap-4 font-montserrat text-base font-normal leading-[140%] text-[#2D302D] sm:col-start-2 sm:row-start-2 sm:text-lg min-[1420px]:!col-start-2 min-[1420px]:!row-start-2 min-[1900px]:max-w-[760px]">
@@ -107,7 +116,7 @@ export function Home() {
         </h1>
 
         
-          <Specialists isSlider limit={3} />
+          <Specialists isSlider  />
         
 
         <Link
