@@ -124,5 +124,19 @@
   "resetPasswordSuccess": "Password updated successfully. You can now log in.",
   "resetPasswordMissingToken": "The password recovery link is invalid or expired.",
   "resetPasswordError": "Could not update password. Please try again.",
-  "passwordMinLength": "Password must contain at least 8 characters."
+  "passwordMinLength": "Password must contain at least 8 characters.",
+  "specialistsLoading": "Loading specialists...",
+  "specialistsLoadError": "Could not load specialists from the server. Showing available local data.",
+  "specialistProfileNotFound": "Specialist was not found.",
+  "specialistBackToList": "Back to specialists",
+  "specialistConsultation": "Book a consultation",
+  "specialistAbout": "About specialist",
+  "specialistEducation": "Education",
+  "specialistExperience": "Experience",
+  "specialistSpecializations": "Specializations",
+  "specialistContacts": "Contacts",
+  "specialistHigherEducation": "Higher education:",
+  "specialistSpecialty": "Specialty:",
+  "specialistWorkExperience": "Work experience",
+  "specialistConsultationNote": "To book a consultation with a specialist, please register."
 }

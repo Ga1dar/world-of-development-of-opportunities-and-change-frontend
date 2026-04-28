@@ -113,5 +113,19 @@
   "resetPasswordSuccess": "Пароль успішно оновлено. Тепер ви можете увійти.",
   "resetPasswordMissingToken": "Посилання для відновлення некоректне або застаріле.",
   "resetPasswordError": "Не вдалося оновити пароль. Спробуйте ще раз.",
-  "passwordMinLength": "Пароль має містити щонайменше 8 символів."
+  "passwordMinLength": "Пароль має містити щонайменше 8 символів.",
+  "specialistsLoading": "Завантажуємо спеціалістів...",
+  "specialistsLoadError": "Не вдалося завантажити спеціалістів із сервера. Показуємо доступні локальні дані.",
+  "specialistProfileNotFound": "Спеціаліста не знайдено.",
+  "specialistBackToList": "Назад до спеціалістів",
+  "specialistConsultation": "Записатися на консультацію",
+  "specialistAbout": "Про спеціаліста",
+  "specialistEducation": "Освіта",
+  "specialistExperience": "Досвід",
+  "specialistSpecializations": "Спеціалізації",
+  "specialistContacts": "Контакти",
+  "specialistHigherEducation": "Освіта вища:",
+  "specialistSpecialty": "Спеціальність:",
+  "specialistWorkExperience": "Стаж роботи",
+  "specialistConsultationNote": "Для того, щоб записатися на консультацію до спеціаліста, потрібно зареєструватись."
 }

@@ -13,6 +13,7 @@ import { Check, Eye, EyeOff } from "lucide-react"
 import { type FormEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
+import { endpoints } from "../../api/endpoints"
 
 type LogInProps = {
   variant?: "header" | "footer" | "menu"
@@ -65,8 +66,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   const { t } = useTranslation()
 
-  const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   const resetForm = () => {
@@ -117,7 +116,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setError("")
 
     try {
-      const response = await fetch(`${API_URL}/users/register/`, {
+      const response = await fetch(endpoints.register, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -176,7 +175,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/users/login/`, {
+      const response = await fetch(endpoints.login, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -238,7 +237,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     accessToken: string,
     authMode: "login" | "register"
   ) => {
-    const response = await fetch(`${API_URL}/users/google/`, {
+    const response = await fetch(endpoints.googleAuth, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -357,7 +356,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
         ? "mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] bg-[#FFFFFF] px-2 py-4 font-montserrat text-[18px] font-[500] text-black sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px]"
-        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51"
+        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51 min-[1420px]:h-8 min-[1420px]:!w-12 min-[1420px]:text-[12px]"
 
   const modalTitle =
     mode === "login"
@@ -385,7 +384,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         </DialogTrigger>
 
         <DialogContent
-          className="top-1/2 flex max-h-[calc(100vh-32px)] flex-col overflow-y-auto bg-[#F0E8F0] px-5 py-8 md:max-w-[600px] md:rounded-[24px] md:px-[95px] md:py-9"
+          className="top-1/2 flex max-h-[calc(100vh-32px)] flex-col 
+          overflow-y-auto bg-[#F0E8F0] px-5 py-8 md:max-w-150 
+          md:rounded-3xl md:px-23.75 md:py-9"
         >
           {mode === "register" && registerStep === "success" ? (
             <div className="flex flex-col items-center">
@@ -397,14 +398,19 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
               <Check className="mt-2 h-16 w-16 stroke-[#4C3156] stroke-[1.75]" />
 
-              <DialogTitle className="mt-3 max-w-[410px] text-center font-montserrat text-[24px] font-medium leading-[1.2] text-[#2D302D] xl:text-[32px]">
+              <DialogTitle
+                className="mt-3 max-w-102.5 text-center font-montserrat
+                 text-[24px] font-medium leading-[1.2] text-[#2D302D]
+                 xl:text-[32px]">
                 {t("registerSuccessTitle")}
               </DialogTitle>
 
               <Button
                 type="button"
                 onClick={handleSuccessLogin}
-                className="mt-5 h-12 w-full cursor-pointer rounded-[30px] border-2 border-[#FEF85C] text-center font-montserrat text-[14px] leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
+                className="mt-5 h-12 w-full cursor-pointer rounded-[30px] 
+                border-2 border-[#FEF85C] text-center font-montserrat text-[14px]
+                 leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
                 style={{
                   background:
                     "linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%)",
@@ -422,12 +428,16 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                   className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
                 />
 
-                <DialogTitle className="my-1 text-center font-montserrat text-[24px] font-medium leading-[1.2] text-[#2D302D] xl:my-2 xl:text-[32px]">
+                  <DialogTitle
+                    className="my-1 text-center font-montserrat text-[24px] 
+                    font-medium leading-[1.2] text-[#2D302D] xl:my-2 xl:text-[32px]">
                   {modalTitle}
                 </DialogTitle>
 
                 {mode === "register" && registerStep === "password" && (
-                  <p className="mt-3 w-full font-montserrat text-[12px] leading-[1.35] text-[#6C6370] xl:text-[14px]">
+                    <p
+                      className="mt-3 w-full font-montserrat text-[12px] 
+                      leading-[1.35] text-[#6C6370] xl:text-[14px]">
                     {t("registerPasswordHint")}
                   </p>
                 )}
@@ -438,7 +448,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                       type="button"
                       variant="outline"
                       disabled={isLoading}
-                      className="h-10 w-full items-center rounded-[30px] bg-[#1C100E] px-5 text-center font-montserrat text-[12px] leading-10 text-[#F3F2F3] xl:h-12 xl:text-[14px]"
+                        className="h-10 w-full items-center rounded-[30px] bg-[#1C100E] 
+                        px-5 text-center font-montserrat text-[12px] leading-10 
+                        text-[#F3F2F3] xl:h-12 xl:text-[14px]"
                       onClick={handleGoogleRegistration}
                     >
                       <img src="/google.png" alt="Google" className="h-4 w-4" />
@@ -455,7 +467,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-4 h-10 w-full items-center rounded-[30px] bg-[#1C100E] px-5 text-center font-montserrat text-[12px] leading-10 text-[#F3F2F3] xl:h-12 xl:text-[14px]"
+                    className="mt-4 h-10 w-full items-center 
+                      rounded-[30px] bg-[#1C100E] px-5 text-center 
+                      font-montserrat text-[12px] leading-10 text-[#F3F2F3] 
+                      xl:h-12 xl:text-[14px]"
                     onClick={handleGoogleLogin}
                   >
                     <img src="/google.png" alt="Google" className="h-4 w-4" />
@@ -483,7 +498,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                       </Label>
 
                       <Input
-                        className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-3 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                          className="h-10 w-full rounded-[30px] border border-primary
+                           bg-[#F0E8F0] px-3 font-montserrat 
+                          text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
                         id="email"
                         name="email"
                         type="email"
@@ -512,7 +529,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
                     <div className="relative">
                       <Input
-                        className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-10 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                        className="h-10 w-full rounded-[30px] border
+                        border-primary
+                        bg-[#F0E8F0] px-10 font-montserrat text-[14px] 
+                        font-normal leading-5 text-[#1C100E] 
+                        xl:h-12 xl:text-[16px]"
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
@@ -555,7 +576,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
                         <div className="relative">
                           <Input
-                            className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-10 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                            className="h-10 w-full rounded-[30px] 
+                            border border-primary bg-[#F0E8F0] px-10 
+                            font-montserrat text-[14px] font-normal 
+                            leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
                             id="passwordConfirm"
                             name="passwordConfirm"
                             type={showPasswordConfirm ? "text" : "password"}
@@ -646,7 +670,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="mt-4 h-12 w-full cursor-pointer rounded-[30px] border-2 border-[#FEF85C] text-center font-montserrat text-[14px] leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
+                  className="mt-4 h-12 w-full cursor-pointer 
+                  rounded-[30px] border-2 border-[#FEF85C] 
+                  text-center font-montserrat text-[14px]
+                  leading-12 text-[#1C100E] shadow-btn
+                  xl:h-14 xl:text-[18px]"
                   style={{
                     background:
                       "linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%)",
@@ -657,7 +685,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
               )}
 
               {mode === "login" ? (
-                <div className="mt-7 flex min-h-[22px] justify-between gap-4 font-montserrat text-[12px] font-[400] leading-[22px] text-[#1C100E] xl:mt-10 xl:text-[16px]">
+                  <div
+                    className="mt-7 flex min-h-5.5 justify-between gap-4 font-montserrat
+                    text-[12px] font-normal leading-5.5
+                  text-[#1C100E] xl:mt-10 xl:text-[16px]">
                   {showRecoveryLink && loginStep === "password" ? (
                     <>
                       <span>{t("forgotPassword")}</span>
@@ -685,7 +716,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 </div>
               ) : (
                 registerStep !== "role" && (
-                  <p className="mt-7 flex min-h-5.5 justify-between gap-4 font-montserrat text-[12px] font-normal leading-[22px] text-[#1C100E] xl:mt-10 xl:text-[16px]">
+                  <p
+                    className="mt-7 flex min-h-5.5 justify-between gap-4 
+                    font-montserrat text-[12px] font-normal
+                    leading-5.5 text-[#1C100E] xl:mt-10 xl:text-[16px]"
+                  >
                     <span>{t("dialogTextProf")}</span>
                     <button
                       type="button"
