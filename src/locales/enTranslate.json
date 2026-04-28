@@ -1,0 +1,128 @@
+{
+  "homeTopTitle": "A space for development and mental health for children and adults",
+  "homeTopText1": "Svity is a space for support, development, and mental well-being.",
+  "homeTopText2": "We bring together specialists who help children and adults better understand themselves, overcome challenges, and find inner balance.",
+  "homeTopText3": "Our goal is to create an environment where everyone can receive support and restore their inner resources.",
+  "homeMiddleTitle": "Who takes care of those who support others?",
+  "homeMiddleTextContent": [
+    "A teacher’s work is more",
+    "than just a profession. It is a daily experience",
+    "of other people's emotions. Joy, laughter and excitement",
+    "of children, but at the same time — their",
+    "fear, despair, insecurity, irritation and aggression.",
+    "All of this",
+    "passes through the heart of every educator every day"
+  ],
+  "homeMiddleTextContent2": "So who takes care of those who support others?",
+  "homeBottomText": [
+    "Who helps cope with children's emotions, while also dealing with",
+    "their own переживания, fatigue and responsibility?"
+  ],
+  "homeBottomText1": "NGO “SVITY” invites educators to a space of support, learning, and recovery.",
+  "homeBottomLink": "Event details",
+  "specialistsTitle": "Our Specialists",
+  "homeSpecialistsLink": "All specialists",
+  "aboutTextFirst": [
+    "The charitable organization Svity is about people who do not pass by.",
+    "About those who believe that even a small act of help can change someone's life."
+  ],
+  "aboutTextRest": [
+    "We came together to support those who need it most right now.",
+    "Every step we take is about care, humanity, and the light we carry into this world together.",
+    "We help when it hurts. We support when it feels like there is no strength left. And we remind people: no one should be left alone.",
+    "Svity is not just charity.",
+    "It is a community of people creating light where it is needed most.",
+    "Together we can do more. Together we are strong."
+  ],
+
+  "modeError": {
+    "login": "Failed to log in. Please check your email and try again.",
+    "registered": "Failed to register. Please check your email and try again."
+  },
+  "loginSetError": "An unknown error occurred. Please try again.",
+
+  "buttonText": {
+    "footer": "Register",
+    "header": "Login"
+  },
+  "headerTitle": {
+    "login": "Login",
+    "registered": "Register"
+  },
+
+  "buttonApple": "Sign in with Apple",
+  "buttonGoogle": "Sign in with Google",
+
+  "emailFormTitle": "Email",
+  "emailFormTitleName": "Name",
+  "password": "Password",
+  "titlePassword": "Minimum 6 characters, 1 uppercase letter and 1 special character",
+
+  "buttonSubmit": {
+    "sending": "Sending...",
+    "further": "Next",
+    "registered": "Register"
+  },
+
+  "dialogTextNoneProf": "Don't have an account?",
+  "dialogTextProf": "Already have an account?",
+
+  "aboutUs": "About us",
+  "events": "Events",
+  "contacts": "Contacts",
+  "support": "Support",
+
+  "footerLabel": "Stay up to date with the latest news",
+  "footer-email": "Email address...",
+  "footerButton": {
+    "sending": "Sending...",
+    "subscribe": "Subscribe"
+  },
+
+  "inputText": "No spam. Unsubscribe anytime.",
+
+  "contactTitle": "Contacts:",
+  "contactNumber": "Phone: 097 147 63 97",
+  "telegram": "t.me/svity_pokrov",
+  "inst": "inst: svity_pokrov",
+  "facebook": "Facebook: Svity Pokrov Development Space",
+
+  "bottomTitle": "Svity",
+  "bottomText": "A space for development and mental health for children and adults",
+  "developers": "© 2026 Developers",
+  "mdInUkr": "Made in Ukraine",
+  "materials": "Educational materials",
+  "politics": "Privacy Policy",
+  "conditions": "Terms of Use",
+  "or": "or",
+  "enterPassword": "Enter your password",
+  "forgotPassword": "Forgot your password?",
+  "recoverPassword": "Recover password",
+  "backToEmailText": "Not your email?",
+  "backToEmail": "Back",
+  "passwordRecoveryTitle": "Password recovery",
+  "sendRecoveryLink": "Send recovery link",
+  "rememberPassword": "Remembered your password?",
+  "recoveryMessageSent": "If this email exists, a recovery link will be sent.",
+  "recoveryMessageError": "Could not send recovery link. Please try again.",
+  "registerPasswordTitle": "Enter password",
+  "registerPasswordHint": "Your password must contain at least 8 characters, minimum 1 uppercase letter, 1 digit, etc.",
+  "registerSavePassword": "Save password",
+  "repeatPassword": "Repeat password",
+  "registerPasswordMismatch": "Passwords do not match.",
+  "registerRoleTitle": "Choose your role",
+  "roleSpecialist": "Specialist",
+  "roleUser": "User",
+  "registerSuccessTitle": "Registration completed successfully",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "googleClientMissing": "Add VITE_GOOGLE_CLIENT_ID to register with Google.",
+  "googleAuthUnavailable": "Could not open Google registration.",
+  "resetPasswordTitle": "Set a new password",
+  "newPassword": "New password",
+  "confirmResetPassword": "Save password",
+  "resetPasswordSuccess": "Password updated successfully. You can now log in.",
+  "resetPasswordMissingToken": "The password recovery link is invalid or expired.",
+  "resetPasswordError": "Could not update password. Please try again.",
+  "passwordMinLength": "Password must contain at least 8 characters."
+}
