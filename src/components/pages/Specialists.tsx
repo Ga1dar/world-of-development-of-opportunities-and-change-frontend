@@ -111,9 +111,17 @@ export function Specialists({ limit, isSlider = false, variant = "default" }: Pr
 
   if (!isSlider) {
     return (
-      <section className="w-full bg-secondary pb-20 pt-10 font-montserrat text-[#1C100E] sm:pb-24 sm:pt-14 min-[1420px]:pb-32 min-[1420px]:pt-20 min-[1900px]:pb-44">
-        <div className="mx-auto w-full max-w-[1180px] px-5 sm:px-10 min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1740px]">
-          <h1 className="text-center text-[28px] font-medium leading-[1.2] sm:text-[36px] min-[1420px]:text-[48px] min-[1900px]:text-[64px]">
+      <section
+        className="w-full bg-secondary pb-20 pt-10 font-montserrat
+         text-[#1C100E] sm:pb-24 sm:pt-14 min-[1420px]:pb-32
+         min-[1420px]:pt-20 min-[1900px]:pb-44"
+      >
+        <div
+          className="mx-auto w-full max-w-295 px-5 sm:px-10 
+          min-[1420px]:max-w-315 min-[1900px]:max-w-435">
+          <h1
+            className="text-center text-[28px] font-medium leading-[1.2] 
+            sm:text-[36px] min-[1420px]:text-[48px] min-[1900px]:text-[64px]">
             {t("specialistsTitle")}
           </h1>
         </div>

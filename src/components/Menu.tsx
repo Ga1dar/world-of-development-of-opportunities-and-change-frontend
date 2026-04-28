@@ -31,7 +31,7 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
   return (
     <div
       className={`${isOpen ? "flex" : "hidden"}
-        z-90 w-full flex-col items-center justify-start bg-secondary px-4 pt-10 pb-[52px]
+        z-90 w-full flex-col items-center justify-start bg-secondary px-4 pt-10 pb-13
 
         sm:absolute sm:left-auto sm:right-5
         sm:-top-20 sm:h-auto sm:w-42
@@ -99,7 +99,8 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
       <Link
         to="/"
         onClick={closeMenu}
-        className="mt-3 mb-5 flex h-[57px] w-full max-w-[358px] cursor-pointer items-center justify-center rounded-[30px]
+        className="mt-3 mb-5 flex h-14.25 w-full 
+        max-w-89.5 cursor-pointer items-center justify-center rounded-[30px]
         border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8]
         text-center font-montserrat text-[18px] font-medium
         text-[sidebar] shadow-btn sm:hidden"
