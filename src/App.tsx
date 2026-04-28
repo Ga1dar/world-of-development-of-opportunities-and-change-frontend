@@ -6,6 +6,7 @@ import { Home } from "./components/pages/Home.tsx";
 import { Contacts } from "./components/pages/Contacts.tsx";
 import { Events } from "./components/pages/Events.tsx";
 import { Specialists } from "./components/pages/Specialists.tsx";
+import { SpecialistProfil } from "./components/pages/SpecialistProfil.tsx";
 import { Footer } from "./components/Footer.tsx";
 import "./App.css";
 import { Edukationmaterial } from "./components/pages/EducationMaterial.tsx";
@@ -32,6 +33,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<Aboutus />} />
             <Route path="/specialists" element={<Specialists />} />
+            <Route path="/specialists/:id" element={<SpecialistProfil />} />
             <Route path="/events" element={<Events />} />
             <Route path="/materials" element={<Edukationmaterial />} />
             <Route path="/contacts" element={<Contacts />} />

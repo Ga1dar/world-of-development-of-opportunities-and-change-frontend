@@ -6,6 +6,7 @@ import { Label } from "./ui/label";
 import "./Footer.css";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { endpoints } from "../api/endpoints";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -14,8 +15,6 @@ export function Footer() {
   const [error, setError] = useState("");
   const { t } = useTranslation();
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"; // заменить на реальный URL из переменных окружения
-
   const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -23,8 +22,7 @@ export function Footer() {
     setMessage("");
 
     try {
-      const response = await fetch(`${API_URL}/newsletter/subscribe`, {
-        // заменить на реальный эндпоинт
+      const response = await fetch(endpoints.newsletterSubscribe, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

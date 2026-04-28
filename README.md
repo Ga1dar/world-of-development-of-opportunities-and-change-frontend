@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-# Backend (Django + DRF)
-
-## Description
-Backend for a psychological support platform.  
-A basic user system with roles, access control, and moderation is implemented.
-=======
 # World of Development of Opportunities and Change (Frontend)
 
 ## 🚀 Tech Stack
@@ -13,8 +6,7 @@ A basic user system with roles, access control, and moderation is implemented.
 - Vite
 - Redux
 - Tailwind CSS
->>>>>>> origin/develop
-
+- schadcn
 ---
 
 ## API Documentation

@@ -13,6 +13,7 @@ import { Check, Eye, EyeOff } from "lucide-react"
 import { type FormEvent, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
+import { endpoints } from "../../api/endpoints"
 
 type LogInProps = {
   variant?: "header" | "footer" | "menu"
@@ -65,8 +66,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   const { t } = useTranslation()
 
-  const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   const resetForm = () => {
@@ -117,7 +116,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setError("")
 
     try {
-      const response = await fetch(`${API_URL}/users/register/`, {
+      const response = await fetch(endpoints.register, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -176,7 +175,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/users/login/`, {
+      const response = await fetch(endpoints.login, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -238,7 +237,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     accessToken: string,
     authMode: "login" | "register"
   ) => {
-    const response = await fetch(`${API_URL}/users/google/`, {
+    const response = await fetch(endpoints.googleAuth, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -357,7 +356,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
         ? "mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] bg-[#FFFFFF] px-2 py-4 font-montserrat text-[18px] font-[500] text-black sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px]"
-        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51"
+        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51 min-[1420px]:h-8 min-[1420px]:!w-12 min-[1420px]:text-[12px]"
 
   const modalTitle =
     mode === "login"
