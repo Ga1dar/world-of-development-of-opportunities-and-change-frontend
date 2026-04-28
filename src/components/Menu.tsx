@@ -41,7 +41,7 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
         min-[1420px]:hidden`}
       >
       <nav
-        className="flex w-full flex-col items-center justify-center gap-6 text-center
+        className=" text-[18px] flex w-full flex-col items-center justify-center gap-6 text-center
           sm:gap-0
           min-[1420px]:pointer-events-auto min-[1420px]:-ml-50 min-[1420px]:flex-row min-[1420px]:justify-center min-[1420px]:gap-x-2 min-[1420px]:w-220"
       >

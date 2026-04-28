@@ -52,7 +52,7 @@ export function Home() {
             sm:col-start-2 sm:row-start-2 sm:row-end-3 
             sm:h-54 min-[1420px]:col-start-2! 
             min-[1420px]:row-start-1! min-[1420px]:row-end-4! 
-            min-[1420px]:mt-23.75 min-[1420px]:h-95.25! min-[1420px]:self-start min-[1900px]:mt-0"
+            min-[1420px]:mt-23.75 min-[1420px]:h-95.25! min-[1420px]:self-start min-[1900px]:mt-20"
             src="/rectangle 2.png"
             alt="Description"
           />
