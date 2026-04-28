@@ -356,7 +356,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
         ? "mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] bg-[#FFFFFF] px-2 py-4 font-montserrat text-[18px] font-[500] text-black sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px]"
-        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51 min-[1420px]:h-8 min-[1420px]:!w-12 min-[1420px]:text-[12px]"
+        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:!w-14.25 min-[1420px]:text-[18px]"
 
   const modalTitle =
     mode === "login"
