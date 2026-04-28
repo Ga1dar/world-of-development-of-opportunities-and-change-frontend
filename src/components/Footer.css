@@ -136,6 +136,12 @@
          text-[16px] font-[400] leading-[22px]
 }
 
+@media (min-width: 1900px) {
+  .footer-subscribe-row {
+    column-gap: 24px;
+  }
+}
+
 @media (min-width: 768px) {
   .footerGrig {
     @apply  order-6 h-[21px] w-fit

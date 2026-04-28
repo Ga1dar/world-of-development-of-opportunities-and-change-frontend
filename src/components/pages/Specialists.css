@@ -1,0 +1,119 @@
+.specialists-home-slider {
+  gap: 24px;
+  justify-content: flex-start;
+}
+
+.specialists-home-card {
+  width: 120px;
+}
+
+.specialists-home-image {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 8px;
+}
+
+.specialists-home-title {
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+
+.specialists-home-role {
+  font-size: 8px;
+}
+
+@media (min-width: 640px) {
+  .specialists-home-slider {
+    gap: 0;
+    justify-content: space-between;
+    overflow: visible;
+  }
+
+  .specialists-home-card {
+    width: 170px;
+  }
+
+  .specialists-home-image {
+    width: 150px;
+    height: 150px;
+  }
+
+  .specialists-home-title {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .specialists-home-role {
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 744px) {
+  .specialists-home-card {
+    width: 184px;
+  }
+
+  .specialists-home-image {
+    width: 164px;
+    height: 164px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .specialists-home-card {
+    width: 210px;
+  }
+
+  .specialists-home-image {
+    width: 190px;
+    height: 190px;
+  }
+
+  .specialists-home-title {
+    font-size: 18px;
+  }
+
+  .specialists-home-role {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1420px) {
+  .specialists-home-card {
+    width: 280px;
+  }
+
+  .specialists-home-image {
+    width: 280px;
+    height: 280px;
+    margin-bottom: 12px;
+  }
+
+  .specialists-home-title {
+    margin-bottom: 12px;
+    font-size: 24px;
+  }
+
+  .specialists-home-role {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1900px) {
+  .specialists-home-card {
+    width: 360px;
+  }
+
+  .specialists-home-image {
+    width: 360px;
+    height: 360px;
+  }
+
+  .specialists-home-title {
+    font-size: 32px;
+  }
+
+  .specialists-home-role {
+    font-size: 24px;
+  }
+}

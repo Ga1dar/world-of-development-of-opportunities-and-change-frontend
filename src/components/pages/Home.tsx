@@ -43,7 +43,7 @@ export function Home() {
           </h3>
 
           <img
-            className="h-[216px] w-full rounded-[20px] object-cover sm:col-start-2 sm:row-start-2 sm:row-end-3 sm:h-[216px] min-[1420px]:!col-start-2 min-[1420px]:!row-start-1 min-[1420px]:!row-end-4 min-[1420px]:mt-[95px] min-[1420px]:!h-full min-[1420px]:self-stretch min-[1900px]:mt-0"
+            className="h-[216px] w-full rounded-[20px] object-cover sm:col-start-2 sm:row-start-2 sm:row-end-3 sm:h-[216px] min-[1420px]:!col-start-2 min-[1420px]:!row-start-1 min-[1420px]:!row-end-4 min-[1420px]:mt-[95px] min-[1420px]:!h-[381px] min-[1420px]:self-start min-[1900px]:mt-0"
             src="/rectangle 2.png"
             alt="Description"
           />
@@ -77,7 +77,7 @@ export function Home() {
               <img
                 src={firstEvent.image}
                 alt="test"
-                className="h-[240px] w-full rounded-[20px] object-cover sm:col-start-1 sm:row-start-2 sm:row-end-3 sm:h-[216px] min-[1420px]:!col-start-1 min-[1420px]:!row-start-1 min-[1420px]:!row-end-7 min-[1420px]:!h-full min-[1420px]:self-stretch"
+                className="h-[240px] w-full rounded-[20px] object-cover sm:col-start-1 sm:row-start-2 sm:row-end-3 sm:h-[331px] min-[1420px]:!col-start-1 min-[1420px]:!row-start-1 min-[1420px]:!row-end-7 min-[1420px]:!h-[458px] min-[1420px]:self-start"
               />
               <div
                 className="flex flex-col gap-4 font-montserrat text-base font-normal leading-[140%] text-[#2D302D] sm:col-start-2 sm:row-start-2 sm:text-lg min-[1420px]:!col-start-2 min-[1420px]:!row-start-2 min-[1900px]:max-w-[760px]">
@@ -116,7 +116,7 @@ export function Home() {
         </h1>
 
         
-          <Specialists isSlider  />
+          <Specialists isSlider limit={3} variant="home" />
         
 
         <Link

@@ -55,19 +55,19 @@ export function Footer() {
             <Label htmlFor="footer-email" className="flex flex-col items-start font-montserrat text-lg font-medium text-[#F0E8F0] min-[1420px]:text-2xl">
               {t("footerLabel")}
             </Label>
-            <div className="flex flex-col sm:grid sm:grid-cols-[3fr_1fr] sm:gap-x-8">
+            <div className="footer-subscribe-row flex flex-col sm:grid sm:grid-cols-[3fr_1fr] sm:gap-x-8 min-[1900px]:grid-cols-[585px_277px]">
               <Input
                 id="footer-email"
                 type="email"
                 placeholder={t("footer-email")}
-                className="mb-2 h-10 rounded-[30px] bg-[#F0E8F0] p-3 font-montserrat text-[#2D302D] sm:col-start-1 min-[1420px]:h-12 min-[1420px]:w-[410px]"
+                className="mb-2 h-10 rounded-[30px] bg-[#F0E8F0] p-3 font-montserrat text-[#2D302D] sm:col-start-1 min-[1420px]:h-12 min-[1420px]:w-[410px] min-[1900px]:h-[46px] min-[1900px]:w-[585px]"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                  pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
               />
               <div className="font-montserrat font-normal text-[12px] text-[#F0E8F0] mb-4 sm:col-start-1 ">{t("inputText")}</div>
-              <Button className="h-10 rounded-[30px] bg-[#F0E8F0] p-3 font-montserrat text-[#2D302D] sm:col-start-2 sm:row-start-1 min-[1420px]:w-[194px]" disabled={isLoading}>
+              <Button className="h-10 rounded-[30px] bg-[#F0E8F0] p-3 font-montserrat text-[#2D302D] sm:col-start-2 sm:row-start-1 min-[1420px]:w-[194px] min-[1900px]:h-10 min-[1900px]:w-[277px]" disabled={isLoading}>
                 {isLoading
                   ? t("footerButton.sending")
                   : t("footerButton.subscribe")}
