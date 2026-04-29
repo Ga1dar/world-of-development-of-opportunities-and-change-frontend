@@ -10,6 +10,13 @@ export const endpoints = {
     `${API_URL}/profiles/specialist-profiles/${id}/`,
   profiles: `${API_URL}/profiles/`,
   events: `${API_URL}/events/`,
+  eventCategories:
+    import.meta.env.VITE_EVENT_CATEGORIES_ENDPOINT ||
+    `${API_URL}/events/categories/`,
+  eventDetail: (id: string | number) => `${API_URL}/events/${id}/`,
+  eventComments: (id: string | number) => `${API_URL}/events/${id}/comments/`,
+  eventRegistration: (id: string | number) =>
+    `${API_URL}/events/${id}/registrations/`,
   passwordReset: `${API_URL}/users/password-reset/`,
   passwordResetConfirm: `${API_URL}/users/password-reset/confirm/`,
   googleAuth: `${API_URL}/users/google/`,
