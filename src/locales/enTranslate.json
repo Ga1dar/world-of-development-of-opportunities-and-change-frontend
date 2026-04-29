@@ -34,13 +34,11 @@
     "It is a community of people creating light where it is needed most.",
     "Together we can do more. Together we are strong."
   ],
-
   "modeError": {
     "login": "Failed to log in. Please check your email and try again.",
     "registered": "Failed to register. Please check your email and try again."
   },
   "loginSetError": "An unknown error occurred. Please try again.",
-
   "buttonText": {
     "footer": "Register",
     "header": "Login"
@@ -49,44 +47,35 @@
     "login": "Login",
     "registered": "Register"
   },
-
   "buttonApple": "Sign in with Apple",
   "buttonGoogle": "Sign in with Google",
-
   "emailFormTitle": "Email",
   "emailFormTitleName": "Name",
   "password": "Password",
   "titlePassword": "Minimum 6 characters, 1 uppercase letter and 1 special character",
-
   "buttonSubmit": {
     "sending": "Sending...",
     "further": "Next",
     "registered": "Register"
   },
-
   "dialogTextNoneProf": "Don't have an account?",
   "dialogTextProf": "Already have an account?",
-
   "aboutUs": "About us",
   "events": "Events",
   "contacts": "Contacts",
   "support": "Support",
-
   "footerLabel": "Stay up to date with the latest news",
   "footer-email": "Email address...",
   "footerButton": {
     "sending": "Sending...",
     "subscribe": "Subscribe"
   },
-
   "inputText": "No spam. Unsubscribe anytime.",
-
   "contactTitle": "Contacts:",
   "contactNumber": "Phone: 097 147 63 97",
   "telegram": "t.me/svity_pokrov",
   "inst": "inst: svity_pokrov",
   "facebook": "Facebook: Svity Pokrov Development Space",
-
   "bottomTitle": "Svity",
   "bottomText": "A space for development and mental health for children and adults",
   "developers": "© 2026 Developers",
@@ -138,5 +127,28 @@
   "specialistHigherEducation": "Higher education:",
   "specialistSpecialty": "Specialty:",
   "specialistWorkExperience": "Work experience",
-  "specialistConsultationNote": "To book a consultation with a specialist, please register."
+  "specialistConsultationNote": "To book a consultation with a specialist, please register.",
+  "consultationDialog": {
+    "introTitle": "Would you like to book a consultation",
+    "introDescription": "To book a consultation, please register on the website",
+    "yes": "Yes",
+    "calendarTitle": "Choose date and time",
+    "calendarDescription": "Choose a date and time that works for you.",
+    "time": "Time",
+    "afterConfirmation": "After the available slot is confirmed, your booking will appear in your personal account",
+    "book": "Book",
+    "submitting": "Booking...",
+    "successTitle": "Thank you",
+    "successDescription": "After the available slot is confirmed, your booking will appear in your personal account",
+    "myAppointments": "My bookings",
+    "busyTitle": "This time is taken",
+    "busyDescription": "The selected time is no longer available. Please choose another consultation slot.",
+    "chooseAnotherTime": "Choose another time",
+    "errorTitle": "Could not book",
+    "errorDescription": "Something went wrong while booking. Check your connection and try again.",
+    "tryAgain": "Try again",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
+  "contactAddress": "Heroiv Ukrainy St, 13, Pokrov, Dnipropetrovsk Oblast, Ukraine"
 }

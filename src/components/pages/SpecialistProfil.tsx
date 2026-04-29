@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getSpecialist, type Specialist } from "../../api/specialists";
+import { ConsultationDialog } from "./ConsultationDialog";
 
 type TextSectionProps = {
   title: string;
@@ -46,6 +47,7 @@ export function SpecialistProfil() {
   const [specialist, setSpecialist] = useState<Specialist | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isConsultationOpen, setIsConsultationOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -207,6 +209,7 @@ export function SpecialistProfil() {
 
             <button
               type="button"
+              onClick={() => setIsConsultationOpen(true)}
               className="mt-5 inline-flex h-12 w-full max-w-115 items-center 
               justify-center rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b 
               from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] px-8 
@@ -229,6 +232,12 @@ export function SpecialistProfil() {
           </div>
         </div>
       </div>
+
+      <ConsultationDialog
+        open={isConsultationOpen}
+        onOpenChange={setIsConsultationOpen}
+        specialistId={specialist.id}
+      />
     </article>
   );
 }
