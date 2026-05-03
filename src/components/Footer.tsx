@@ -55,14 +55,21 @@ export function Footer() {
                 id="footer-email"
                 type="email"
                 placeholder={t("footer-email")}
-                className="mb-2 h-10 rounded-[30px] bg-[#F0E8F0] p-3 font-montserrat text-[#2D302D] sm:col-start-1 min-[1420px]:h-12 min-[1420px]:w-[410px] min-[1900px]:h-[46px] min-[1900px]:w-[585px]"
+                className="mb-2 h-10 rounded-[30px] bg-[#F0E8F0] p-3 
+                font-montserrat text-[#2D302D] sm:col-start-1 min-[1420px]:h-12 
+                min-[1420px]:w-[410px] min-[1900px]:h-[46px] min-[1900px]:w-[585px]"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                  pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
               />
               <div className="font-montserrat font-normal text-[12px] text-[#F0E8F0] mb-4 sm:col-start-1 ">{t("inputText")}</div>
-              <Button className="h-10 rounded-[30px] bg-[#F0E8F0] p-3 font-montserrat text-[#2D302D] sm:col-start-2 sm:row-start-1 min-[1420px]:w-[194px] min-[1900px]:h-10 min-[1900px]:w-[277px]" disabled={isLoading}>
+              <Button
+                className="h-10 rounded-[30px] bg-[#F0E8F0]
+                p-3 font-montserrat text-[#2D302D] sm:col-start-2 sm:row-start-1
+                min-[1420px]:w-48.5 min-[1900px]:h-10 min-[1900px]:w-69.25"
+                disabled={isLoading}
+              >
                 {isLoading
                   ? t("footerButton.sending")
                   : t("footerButton.subscribe")}
@@ -161,7 +168,10 @@ export function Footer() {
             {t("bottomText")}
           </div>
         </div>
-         <div className="grid grid-cols-2 grid-rows-[24px_24px_24px] justify-between gap-y-2 sm:grid-cols-[auto_auto_auto] min-[1420px]:w-[65%] min-[1420px]:grid-rows-[40px_40px_40px]">
+        <div
+          className="grid grid-cols-2 grid-rows-[24px_24px_24px] 
+          justify-between gap-y-2 sm:grid-cols-[auto_auto_auto]
+          min-[1420px]:w-[65%] min-[1420px]:grid-rows-[40px_40px_40px]">
             <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs row-start-2">
               {t("politics")}
             </Link>
@@ -176,7 +186,9 @@ export function Footer() {
               <img 
               src="/Logo1.png" 
               alt="Logo" 
-              className="hidden h-30 w-30 sm:col-start-3 sm:row-start-1 sm:row-end-4 sm:inline-block min-[1420px]:h-[109px] min-[1420px]:w-[108px]"
+              className="hidden h-30 w-30 sm:col-start-3 
+              sm:row-start-1 sm:row-end-4 sm:inline-block
+              min-[1420px]:h-27.25 min-[1420px]:w-[108px]"
             />
             </Link>
           </div>
