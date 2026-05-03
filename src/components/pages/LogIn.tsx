@@ -31,7 +31,6 @@ type AuthErrorKey =
   | "registerPasswordMismatch"
 
 const PASSWORD_MIN_LENGTH = 8
-const PASSWORD_VALIDATION_ROLE = "__password_validation__"
 const COMMON_PASSWORDS = new Set([
   "password",
   "password1",
@@ -276,47 +275,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     )
   }
 
-  const hasServerError = (
-    data: Record<string, string[] | string> | null,
-    key: string
-  ) => {
-    const error = data?.[key]
-
-    return (
-      (Array.isArray(error) && error.length > 0) ||
-      (typeof error === "string" && error.length > 0)
-    )
-  }
-
-  const hasOnlyRoleError = (data: Record<string, string[] | string> | null) =>
-    hasServerError(data, "role") &&
-    !hasServerError(data, "detail") &&
-    !hasServerError(data, "email") &&
-    !hasServerError(data, "password") &&
-    !hasServerError(data, "non_field_errors")
-
-  const validateRegistrationPasswordOnServer = async () => {
-    const response = await fetch(endpoints.register, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        role: PASSWORD_VALIDATION_ROLE,
-      }),
-    })
-
-    const data = await response.json().catch(() => null)
-
-    if (!response.ok && hasOnlyRoleError(data)) {
-      return
-    }
-
-    throw new Error(getResponseError(data, t("modeError.registered")))
-  }
-
   const getGoogleTokenError = (err: unknown) => {
     if (err instanceof TypeError) {
       return t("googleAuthConnectionError")
@@ -379,17 +337,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
           return
         }
 
-        setIsLoading(true)
-
-        try {
-          await validateRegistrationPasswordOnServer()
-          setRegisterStep("role")
-        } catch (err) {
-          setError(getRequestError(err, t("loginSetError")))
-        } finally {
-          setIsLoading(false)
-        }
-
+        setRegisterStep("role")
         return
       }
 
