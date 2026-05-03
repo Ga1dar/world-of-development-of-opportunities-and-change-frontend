@@ -113,7 +113,7 @@ export function Home() {
                  sm:col-start-1 sm:row-start-2 sm:row-end-3 sm:h-82.75 
                  min-[1420px]:col-start-1! min-[1420px]:row-start-1! 
                  min-[1420px]:row-end-7! min-[1420px]:h-135! min-[1420px]:object-contain
-                 min-[1420px]:self-start min-[1900px]:h-120!  min-[1980px]:object-cover"
+                 min-[1420px]:self-start min-[1900px]:h-120! min-[1980px]:object-cover"
               />
               <div
                 className="flex flex-col gap-4 font-montserrat 

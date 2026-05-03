@@ -146,7 +146,7 @@ export function ConsultationDialog({
     <img
       src="/Logo1.png"
       alt={t("bottomTitle")}
-      className="mx-auto h-auto w-[84px] object-contain sm:w-[96px]"
+      className="mx-auto h-auto w-21 object-contain sm:w-24"
     />
   );
 
@@ -169,14 +169,19 @@ export function ConsultationDialog({
         : t("consultationDialog.tryAgain");
 
     return (
-      <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
+      <div
+        className="flex flex-col items-center px-2 
+        pb-5 pt-3 text-center sm:px-8 sm:pb-8">
         {renderLogo()}
-        <DialogTitle className="mt-6 font-montserrat text-[24px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+        <DialogTitle
+          className="mt-6 font-montserrat text-[24px] 
+          font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
           {title}
         </DialogTitle>
         <DialogDescription
           id="consultation-dialog-description"
-          className="mt-5 max-w-[292px] font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
+          className="mt-5 max-w-73 font-montserrat text-[12px]
+           leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
         >
           {description}
         </DialogDescription>
@@ -198,12 +203,17 @@ export function ConsultationDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         aria-describedby="consultation-dialog-description"
-        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] overflow-x-hidden overflow-y-auto rounded-[12px] border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] shadow-none ring-0 sm:px-8 sm:py-8 min-[1420px]:w-[490px]"
+        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] 
+        overflow-x-hidden overflow-y-auto rounded-xl
+        border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] 
+        shadow-none ring-0 sm:px-8 sm:py-8 min-[1420px]:w-[490px]"
       >
         {step === "intro" && (
           <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
             {renderLogo()}
-            <DialogTitle className="mt-7 max-w-[360px] font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+            <DialogTitle
+              className="mt-7 max-w-90 font-montserrat text-[22px]
+               font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
               {t("consultationDialog.introTitle")}
             </DialogTitle>
             <DialogDescription

@@ -25,14 +25,28 @@ type RegisterStep = "email" | "password" | "role" | "success"
 type UserRole = "specialist" | "user"
 type AuthErrorKey =
   | "passwordMinLength"
-  | "passwordMaxLength"
-  | "passwordUppercaseRequired"
-  | "passwordSpecialRequired"
+  | "passwordTooSimilar"
+  | "passwordTooCommon"
+  | "passwordNumericOnly"
   | "registerPasswordMismatch"
 
 const PASSWORD_MIN_LENGTH = 8
-const PASSWORD_MAX_LENGTH = 128
 const PASSWORD_VALIDATION_ROLE = "__password_validation__"
+const COMMON_PASSWORDS = new Set([
+  "password",
+  "password1",
+  "password123",
+  "qwerty",
+  "qwerty123",
+  "12345678",
+  "123456789",
+  "1234567890",
+  "11111111",
+  "00000000",
+  "admin123",
+  "letmein",
+  "iloveyou",
+])
 
 type GoogleWindow = Window &
   typeof globalThis & {
@@ -131,19 +145,30 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const getAuthErrorKey = (message: string): AuthErrorKey | null => {
     const normalizedMessage = message.toLowerCase()
 
-    if (normalizedMessage.includes("uppercase")) {
-      return "passwordUppercaseRequired"
+    if (
+      normalizedMessage.includes("similar") ||
+      normalizedMessage.includes("схож")
+    ) {
+      return "passwordTooSimilar"
     }
 
-    if (normalizedMessage.includes("special")) {
-      return "passwordSpecialRequired"
+    if (
+      normalizedMessage.includes("common") ||
+      normalizedMessage.includes("прост") ||
+      normalizedMessage.includes("пошир")
+    ) {
+      return "passwordTooCommon"
     }
 
-    if (normalizedMessage.includes("128")) {
-      return "passwordMaxLength"
+    if (
+      normalizedMessage.includes("numeric") ||
+      normalizedMessage.includes("числов") ||
+      normalizedMessage.includes("цифр")
+    ) {
+      return "passwordNumericOnly"
     }
 
-    if (normalizedMessage.includes("8")) {
+    if (normalizedMessage.includes("8") || normalizedMessage.includes("short")) {
       return "passwordMinLength"
     }
 
@@ -154,21 +179,74 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     return null
   }
 
+  const getPasswordSimilarity = (firstValue: string, secondValue: string) => {
+    if (!firstValue || !secondValue) {
+      return 0
+    }
+
+    const rows = firstValue.length + 1
+    const columns = secondValue.length + 1
+    const distances = Array.from({ length: rows }, () =>
+      Array<number>(columns).fill(0)
+    )
+
+    for (let row = 0; row < rows; row += 1) {
+      distances[row][0] = row
+    }
+
+    for (let column = 0; column < columns; column += 1) {
+      distances[0][column] = column
+    }
+
+    for (let row = 1; row < rows; row += 1) {
+      for (let column = 1; column < columns; column += 1) {
+        const cost = firstValue[row - 1] === secondValue[column - 1] ? 0 : 1
+
+        distances[row][column] = Math.min(
+          distances[row - 1][column] + 1,
+          distances[row][column - 1] + 1,
+          distances[row - 1][column - 1] + cost
+        )
+      }
+    }
+
+    return (
+      1 -
+      distances[firstValue.length][secondValue.length] /
+        Math.max(firstValue.length, secondValue.length)
+    )
+  }
+
+  const isPasswordTooSimilarToEmail = () => {
+    const normalizedPassword = password.trim().toLowerCase()
+    const emailLocalPart = email.split("@")[0]?.trim().toLowerCase() || ""
+
+    if (normalizedPassword.length < 4 || emailLocalPart.length < 4) {
+      return false
+    }
+
+    return (
+      normalizedPassword.includes(emailLocalPart) ||
+      emailLocalPart.includes(normalizedPassword) ||
+      getPasswordSimilarity(normalizedPassword, emailLocalPart) >= 0.7
+    )
+  }
+
   const validateRegistrationPassword = () => {
     if (password.length < PASSWORD_MIN_LENGTH) {
       return t("passwordMinLength")
     }
 
-    if (password.length > PASSWORD_MAX_LENGTH) {
-      return t("passwordMaxLength")
+    if (isPasswordTooSimilarToEmail()) {
+      return t("passwordTooSimilar")
     }
 
-    if (!/\p{Lu}/u.test(password)) {
-      return t("passwordUppercaseRequired")
+    if (COMMON_PASSWORDS.has(password.trim().toLowerCase())) {
+      return t("passwordTooCommon")
     }
 
-    if (!/[^\p{L}\p{N}\s]/u.test(password)) {
-      return t("passwordSpecialRequired")
+    if (/^\d+$/.test(password)) {
+      return t("passwordNumericOnly")
     }
 
     if (password !== passwordConfirm) {
