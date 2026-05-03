@@ -165,13 +165,13 @@ export function Footer() {
             <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs row-start-2">
               {t("politics")}
             </Link>
-            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-3">
+            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-2 row-start-3">
               {t("conditions")}
             </Link>
-            <Link to="/" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-2 row-start-2">
+            <Link to="/" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-3">
               {t("developers")}
             </Link>
-            <div className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-2 row-start-3">{t("mdInUkr")}</div>
+            <div className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-2">{t("mdInUkr")}</div>
             <Link to="/" className="hidden sm:block sm:col-start-3 sm:row-start-1 sm:row-end-4 mt-0">
               <img 
               src="/Logo1.png" 
