@@ -159,7 +159,7 @@ export function PasswordResetConfirm() {
         </FieldGroup>
 
         {error && (
-          <p className="mt-3 font-montserrat text-[12px] text-red-500 sm:text-sm">
+          <p className="mt-3 font-montserrat text-[12px] text-red-500 xl:text-sm">
             {error}
           </p>
         )}

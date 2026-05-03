@@ -112,8 +112,8 @@ export function Home() {
                 className="h-60 w-full rounded-[20px] object-cover
                  sm:col-start-1 sm:row-start-2 sm:row-end-3 sm:h-82.75 
                  min-[1420px]:col-start-1! min-[1420px]:row-start-1! 
-                 min-[1420px]:row-end-7! min-[1420px]:h-114.5!
-                  min-[1420px]:self-start"
+                 min-[1420px]:row-end-7! min-[1420px]:h-135!
+                 min-[1420px]:self-start "
               />
               <div
                 className="flex flex-col gap-4 font-montserrat 

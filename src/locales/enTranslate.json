@@ -95,7 +95,7 @@
   "recoveryMessageSent": "If this email exists, a recovery link will be sent.",
   "recoveryMessageError": "Could not send recovery link. Please try again.",
   "registerPasswordTitle": "Enter password",
-  "registerPasswordHint": "Your password must contain at least 8 characters, minimum 1 uppercase letter, 1 digit, etc.",
+  "registerPasswordHint": "Your password must contain 8–128 characters, at least 1 uppercase letter and 1 special character.",
   "registerSavePassword": "Save password",
   "repeatPassword": "Repeat password",
   "registerPasswordMismatch": "Passwords do not match.",
@@ -107,6 +107,10 @@
   "hidePassword": "Hide password",
   "googleClientMissing": "Add VITE_GOOGLE_CLIENT_ID to register with Google.",
   "googleAuthUnavailable": "Could not open Google registration.",
+  "googleAuthFailed": "Could not sign in with Google. Please try again.",
+  "googleRegistrationFailed": "Could not register with Google. Please try again.",
+  "googleAuthConnectionError": "Could not connect to the server. Please try again.",
+  "googleAuthCancelled": "Google sign-in was cancelled.",
   "resetPasswordTitle": "Set a new password",
   "newPassword": "New password",
   "confirmResetPassword": "Save password",
@@ -114,6 +118,10 @@
   "resetPasswordMissingToken": "The password recovery link is invalid or expired.",
   "resetPasswordError": "Could not update password. Please try again.",
   "passwordMinLength": "Password must contain at least 8 characters.",
+  "passwordMaxLength": "Password must contain no more than 128 characters.",
+  "passwordUppercaseRequired": "Password must contain at least 1 uppercase letter.",
+  "passwordSpecialRequired": "Password must contain at least 1 special character.",
+  "authConnectionError": "Could not connect to the server. Please try again.",
   "specialistsLoading": "Loading specialists...",
   "specialistsLoadError": "Could not load specialists from the server. Showing available local data.",
   "specialistProfileNotFound": "Specialist was not found.",
@@ -150,5 +158,8 @@
     "previousMonth": "Previous month",
     "nextMonth": "Next month"
   },
-  "contactAddress": "Heroiv Ukrainy St, 13, Pokrov, Dnipropetrovsk Oblast, Ukraine"
+  "contactAddress": "Heroiv Ukrainy St, 13, Pokrov, Dnipropetrovsk Oblast, Ukraine",
+  "FailedSubscribe": "Failed to subscribe. Please try again.",
+  "Thank": "Thank you for subscribing!",
+  "UnknownError": "An unknown error occurred."
 }

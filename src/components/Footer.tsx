@@ -17,10 +17,8 @@ export function Footer() {
 
   const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
+    setIsLoading(true);    setError("");
     setMessage("");
-
     try {
       const response = await fetch(endpoints.newsletterSubscribe, {
         method: "POST",
@@ -30,23 +28,22 @@ export function Footer() {
         body: JSON.stringify({ email }),
       });
       if (!response.ok) {
-        throw new Error("Невдалося підписатися. Спробуйте ще раз.");
+        throw new Error(t("FailedSubscribe"));
       }
-      setMessage("Дякуємо за підписку!");
+      setMessage(t("Thank"));
       setEmail("");
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Сталася невідома помилка.");
+        setError(t("UnknownError"));
       }
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
-    <footer className="box-border flex w-full flex-col gap-x-6 rounded-t-[30px] bg-primary p-4 text-[#F0E8F0] sm:mx-5 sm:mb-4 sm:w-[calc(100%-40px)] min-[1420px]:px-20 min-[1420px]:py-6">
+    <footer className="box-border flex w-full  flex-col gap-x-6 rounded-t-[30px] bg-primary p-4 text-[#F0E8F0] sm:mb-4 min-[1420px]:px-20 min-[1420px]:py-6">
       <div className="mb-6 flex flex-col min-[1420px]:flex-row min-[1420px]:gap-x-8">
         <Field className="flex flex-col">
           <form onSubmit={handleSubscribe} className="flex flex-col gap-y-4 mb-6">
@@ -72,7 +69,7 @@ export function Footer() {
               </Button>
             </div>
             {message && <p className="font-montserrat font-normal text-[12px] text-center text-green-600">{message}</p>}
-            {error && <p className="font-montserrat font-normal text-[12px] text-center text-red-600">{error}</p>}
+            {error && <p className="mt-3 font-montserrat text-[12px] text-red-500 xl:text-sm">{error}</p>}
           </form>
         </Field>
         <div className="sm:flex sm:w-full gap-x-6 justify-between">
@@ -84,7 +81,7 @@ export function Footer() {
                 href="tel:+380971476397">
                 {t("contactNumber")}
               </a>
-              <div className="flex flex-row gap-x-6">
+              <div className="flex flex-row gap-x-6 mb-6">
                 <a
                   href="https://t.me/svity_pokrov"
                   className="h-7 w-7"
@@ -112,7 +109,7 @@ export function Footer() {
               </div>
             </div>
             <Link to="/">
-              <img src="/Logo1.png" alt="Logo" className="h-21 w-21 sm:hidden" />
+              <img src="/Logo1.png" alt="Logo" className="h-22 w-22 sm:hidden" />
             </Link>
           </div>
           <nav
@@ -120,7 +117,7 @@ export function Footer() {
             sm:grid-cols-[auto_auto_auto] sm:grid-rows-[25px_25px]
             min-[1420px]:grid-cols-[auto_auto] min-[1420px]:grid-rows-[25px_25px]
             font-montserrat font-normal text-xs min-[1420px]:text-sm
-            justify-between gap-y-4 sm:mt-2 sm:w-full min-[1420px]:w-[411px]"
+            justify-between gap-y-4 sm:mt-2 sm:w-full min-[1420px]:w-102.75"
           >
             <Link
               to="/about"
@@ -149,7 +146,7 @@ export function Footer() {
             </Link>
             <Link
               to="/"
-              className="col-start-2 row-start-2 min-[1420px]:col-start-2 min-[1420px]:row-start-3">
+              className="col-start-2 row-start-2 min-[1420px]:col-start-2 min-[1420px]:row-start-2">
               {t("support")}
             </Link>
           </nav>
