@@ -25,7 +25,7 @@ type RawSpecialist = Record<string, unknown>;
 const fallbackSpecialists: Specialist[] = [
   {
     id: 1,
-    photo: "/lashenko 1.png",
+    photo: "/lashenko2.png",
     nameUa: "Ляшенко Альона",
     nameEn: "Alona Liashenko",
     roleUa: "Кризова психологиня, травмопедагогиня, тренерка з травмопедагогіки",
@@ -55,7 +55,7 @@ const fallbackSpecialists: Specialist[] = [
   },
   {
     id: 2,
-    photo: "/romanova 1.png",
+    photo: "/romanova2.jpg",
     nameUa: "Романова Ганна",
     nameEn: "Hanna Romanova",
     roleUa: "Травмопедагогиня",
@@ -77,7 +77,7 @@ const fallbackSpecialists: Specialist[] = [
   },
   {
     id: 3,
-    photo: "/andruschenko.png",
+    photo: "/andruschenko1.jpg",
     nameUa: "Наталія Андрущенко",
     nameEn: "Nataliia Andrushchenko",
     roleUa: "Координаторка",

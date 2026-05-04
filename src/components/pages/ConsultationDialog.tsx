@@ -1,4 +1,10 @@
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -95,6 +101,14 @@ export function ConsultationDialog({
   );
   const [selectedTime, setSelectedTime] = useState(TIMES[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const timeScrollerRef = useRef<HTMLDivElement | null>(null);
+  const timeDragRef = useRef({
+    isDragging: false,
+    hasMoved: false,
+    startScrollLeft: 0,
+    startX: 0,
+  });
+  const suppressTimeClickRef = useRef(false);
 
   const isUkrainian = i18n.language === "ua" || i18n.language === "uk";
   const calendarLocale = isUkrainian ? "uk-UA" : "en-US";
@@ -142,11 +156,72 @@ export function ConsultationDialog({
     }
   };
 
+  const handleTimePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+  const target = event.target as HTMLElement;
+
+  if (target.closest("button")) {
+    return;
+  }
+
+  const scroller = timeScrollerRef.current;
+
+  if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
+
+  timeDragRef.current = {
+    isDragging: true,
+    hasMoved: false,
+    startScrollLeft: scroller.scrollLeft,
+    startX: event.clientX,
+  };
+
+  scroller.setPointerCapture(event.pointerId);
+};
+
+  const handleTimePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const scroller = timeScrollerRef.current;
+    const drag = timeDragRef.current;
+
+    if (!scroller || !drag.isDragging) return;
+
+    const deltaX = event.clientX - drag.startX;
+
+    if (Math.abs(deltaX) > 4) {
+      drag.hasMoved = true;
+    }
+
+    scroller.scrollLeft = drag.startScrollLeft - deltaX;
+  };
+
+  const finishTimeDrag = (event: PointerEvent<HTMLDivElement>) => {
+    const scroller = timeScrollerRef.current;
+    const drag = timeDragRef.current;
+
+    if (!drag.isDragging) return;
+
+    if (drag.hasMoved) {
+      suppressTimeClickRef.current = true;
+    }
+
+    drag.isDragging = false;
+
+    if (scroller?.hasPointerCapture(event.pointerId)) {
+      scroller.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleTimeClickCapture = (event: MouseEvent<HTMLDivElement>) => {
+    if (!suppressTimeClickRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    suppressTimeClickRef.current = false;
+  };
+
   const renderLogo = () => (
     <img
       src="/Logo1.png"
       alt={t("bottomTitle")}
-      className="mx-auto h-auto w-[84px] object-contain sm:w-[96px]"
+      className="mx-auto h-auto w-21 object-contain sm:w-24"
     />
   );
 
@@ -169,21 +244,29 @@ export function ConsultationDialog({
         : t("consultationDialog.tryAgain");
 
     return (
-      <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
+      <div
+        className="flex flex-col items-center px-2 
+        pb-5 pt-3 text-center sm:px-8 sm:pb-8">
         {renderLogo()}
-        <DialogTitle className="mt-6 font-montserrat text-[24px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+        <DialogTitle
+          className="mt-6 font-montserrat text-[24px] 
+          font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
           {title}
         </DialogTitle>
         <DialogDescription
           id="consultation-dialog-description"
-          className="mt-5 max-w-[292px] font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
+          className="mt-5 max-w-73 font-montserrat text-[12px]
+           leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
         >
           {description}
         </DialogDescription>
         <Button
           type="button"
           onClick={() => (isSuccess ? handleOpenChange(false) : setStep("calendar"))}
-          className="mt-6 h-10 w-full max-w-[336px] rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105"
+          className="mt-6 h-10 w-full max-w-84 rounded-[30px] 
+          border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B]
+           to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] 
+           shadow-btn hover:brightness-105"
         >
           {action}
         </Button>
@@ -195,12 +278,17 @@ export function ConsultationDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         aria-describedby="consultation-dialog-description"
-        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] overflow-y-auto rounded-[12px] border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] shadow-none ring-0 sm:px-8 sm:py-8 min-[1420px]:w-[490px]"
+        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] 
+        max-w-[min(calc(100vw-24px),528px)] overflow-x-hidden overflow-y-auto rounded-xl
+        border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] 
+        shadow-none ring-0 sm:px-8 sm:py-8 min-[1900px]:w-[825px] min-[1900px]:max-w-[825px]"
       >
         {step === "intro" && (
           <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
             {renderLogo()}
-            <DialogTitle className="mt-7 max-w-[360px] font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+            <DialogTitle
+              className="mt-7 max-w-90 font-montserrat text-[22px]
+               font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
               {t("consultationDialog.introTitle")}
             </DialogTitle>
             <DialogDescription
@@ -220,19 +308,19 @@ export function ConsultationDialog({
         )}
 
         {step === "calendar" && (
-          <div className="flex flex-col items-center px-1 pb-2 pt-3 text-center sm:px-4 sm:pb-5">
+          <div className="flex w-full min-w-0 flex-col items-center overflow-hidden px-1 pb-2 pt-3 text-center sm:px-4 sm:pb-5">
             {renderLogo()}
-            <DialogTitle className="mt-5 font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+            <DialogTitle className="mt-5 max-w-full font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
               {t("consultationDialog.calendarTitle")}
             </DialogTitle>
             <DialogDescription
               id="consultation-dialog-description"
-              className="mt-4 font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/70 sm:text-[13px]"
+              className="mt-4 max-w-full font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/70 sm:text-[13px]"
             >
               {t("consultationDialog.calendarDescription")}
             </DialogDescription>
 
-            <div className="mt-6 w-full max-w-[340px] rounded-[12px] bg-white px-4 py-4">
+            <div className="mt-6 w-full max-w-full rounded-xl bg-white px-4 py-4 sm:max-w-85">
               <div className="flex items-center justify-between">
                 <p className="font-montserrat text-[14px] font-medium text-[#1C100E]">
                   {getMonthLabel(visibleMonth, calendarLocale)}
@@ -283,7 +371,7 @@ export function ConsultationDialog({
                       disabled={isDisabled}
                       aria-pressed={isSelected}
                       onClick={() => setSelectedDate(value)}
-                      className={`flex aspect-square items-center justify-center rounded-full font-montserrat text-[12px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
+                      className={`flex aspect-square items-center justify-center rounded-full font-montserrat text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
                         isSelected
                           ? "bg-[#402940] text-white"
                           : currentMonth
@@ -301,14 +389,32 @@ export function ConsultationDialog({
             <p className="mt-5 font-montserrat text-[14px] text-[#1C100E]">
               {t("consultationDialog.time")}
             </p>
-            <div className="mt-3 grid w-full max-w-[340px] grid-cols-3 gap-2 sm:grid-cols-6">
+            <div
+              ref={timeScrollerRef}
+              onPointerDown={handleTimePointerDown}
+              onPointerMove={handleTimePointerMove}
+              onPointerUp={finishTimeDrag}
+              onPointerCancel={finishTimeDrag}
+              onClickCapture={handleTimeClickCapture}
+              className="mt-3 flex min-h-14 w-full cursor-grab select-none items-center
+              gap-2 overflow-x-auto overflow-y-hidden pb-2 pl-2 active:cursor-grabbing
+              [scrollbar-color:#402940_#F0E8F0] [scrollbar-width:thin]
+              [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full
+              [&::-webkit-scrollbar-track]:bg-[#F0E8F0]
+              sm:max-w-[340px] min-[1900px]:max-w-[520px] 
+              min-[1900px]:cursor-default min-[1900px]:overflow-x-visible 
+              min-[1900px]:pl-0 min-[1900px]:[scrollbar-width:none]
+              min-[1900px]:[&::-webkit-scrollbar]:hidden">
               {TIMES.map((time) => (
                 <button
                   key={time}
                   type="button"
                   aria-pressed={selectedTime === time}
                   onClick={() => setSelectedTime(time)}
-                  className={`h-8 rounded-full bg-white px-2 font-montserrat text-[12px] text-[#1C100E] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
+                  className={`flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full
+                     select-none bg-white px-0 text-center font-montserrat text-[12px] leading-none text-[#1C100E] 
+                     transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
                     selectedTime === time
                       ? "ring-2 ring-[#402940]"
                       : "hover:bg-[#F0E8F0]"
@@ -319,14 +425,14 @@ export function ConsultationDialog({
               ))}
             </div>
 
-            <p className="mt-4 max-w-[340px] font-montserrat text-[11px] leading-[1.35] text-[#1C100E]/65">
+            <p className="mt-4 max-w-full font-montserrat text-[11px] leading-[1.35] text-[#1C100E]/65 sm:max-w-[340px]">
               {t("consultationDialog.afterConfirmation")}
             </p>
             <Button
               type="button"
               disabled={isSubmitting}
               onClick={handleSubmit}
-              className="mt-5 h-10 w-full max-w-[340px] rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105 disabled:opacity-70"
+              className="mt-5 h-10 w-full max-w-full rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105 disabled:opacity-70 sm:max-w-[340px]"
             >
               {isSubmitting
                 ? t("consultationDialog.submitting")
