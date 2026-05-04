@@ -1,4 +1,10 @@
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -95,6 +101,14 @@ export function ConsultationDialog({
   );
   const [selectedTime, setSelectedTime] = useState(TIMES[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const timeScrollerRef = useRef<HTMLDivElement | null>(null);
+  const timeDragRef = useRef({
+    isDragging: false,
+    hasMoved: false,
+    startScrollLeft: 0,
+    startX: 0,
+  });
+  const suppressTimeClickRef = useRef(false);
 
   const isUkrainian = i18n.language === "ua" || i18n.language === "uk";
   const calendarLocale = isUkrainian ? "uk-UA" : "en-US";
@@ -140,6 +154,67 @@ export function ConsultationDialog({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleTimePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+  const target = event.target as HTMLElement;
+
+  if (target.closest("button")) {
+    return;
+  }
+
+  const scroller = timeScrollerRef.current;
+
+  if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
+
+  timeDragRef.current = {
+    isDragging: true,
+    hasMoved: false,
+    startScrollLeft: scroller.scrollLeft,
+    startX: event.clientX,
+  };
+
+  scroller.setPointerCapture(event.pointerId);
+};
+
+  const handleTimePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const scroller = timeScrollerRef.current;
+    const drag = timeDragRef.current;
+
+    if (!scroller || !drag.isDragging) return;
+
+    const deltaX = event.clientX - drag.startX;
+
+    if (Math.abs(deltaX) > 4) {
+      drag.hasMoved = true;
+    }
+
+    scroller.scrollLeft = drag.startScrollLeft - deltaX;
+  };
+
+  const finishTimeDrag = (event: PointerEvent<HTMLDivElement>) => {
+    const scroller = timeScrollerRef.current;
+    const drag = timeDragRef.current;
+
+    if (!drag.isDragging) return;
+
+    if (drag.hasMoved) {
+      suppressTimeClickRef.current = true;
+    }
+
+    drag.isDragging = false;
+
+    if (scroller?.hasPointerCapture(event.pointerId)) {
+      scroller.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleTimeClickCapture = (event: MouseEvent<HTMLDivElement>) => {
+    if (!suppressTimeClickRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    suppressTimeClickRef.current = false;
   };
 
   const renderLogo = () => (
@@ -204,9 +279,9 @@ export function ConsultationDialog({
       <DialogContent
         aria-describedby="consultation-dialog-description"
         className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] 
-        overflow-x-hidden overflow-y-auto rounded-xl
+        max-w-[min(calc(100vw-24px),528px)] overflow-x-hidden overflow-y-auto rounded-xl
         border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] 
-        shadow-none ring-0 sm:px-8 sm:py-8 min-[1420px]:w-[490px]"
+        shadow-none ring-0 sm:px-8 sm:py-8 min-[1900px]:w-[825px] min-[1900px]:max-w-[825px]"
       >
         {step === "intro" && (
           <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
@@ -315,9 +390,22 @@ export function ConsultationDialog({
               {t("consultationDialog.time")}
             </p>
             <div
-              className="mt-3 flex items-center min-h-10 w-full min-w-0 max-w-full pl-1
-              gap-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none]
-              sm:max-w-[340px] [&::-webkit-scrollbar]:hidden">
+              ref={timeScrollerRef}
+              onPointerDown={handleTimePointerDown}
+              onPointerMove={handleTimePointerMove}
+              onPointerUp={finishTimeDrag}
+              onPointerCancel={finishTimeDrag}
+              onClickCapture={handleTimeClickCapture}
+              className="mt-3 flex min-h-14 w-full cursor-grab select-none items-center
+              gap-2 overflow-x-auto overflow-y-hidden pb-2 pl-2 active:cursor-grabbing
+              [scrollbar-color:#402940_#F0E8F0] [scrollbar-width:thin]
+              [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full
+              [&::-webkit-scrollbar-track]:bg-[#F0E8F0]
+              sm:max-w-[340px] min-[1900px]:max-w-[520px] 
+              min-[1900px]:cursor-default min-[1900px]:overflow-x-visible 
+              min-[1900px]:pl-0 min-[1900px]:[scrollbar-width:none]
+              min-[1900px]:[&::-webkit-scrollbar]:hidden">
               {TIMES.map((time) => (
                 <button
                   key={time}
@@ -325,7 +413,7 @@ export function ConsultationDialog({
                   aria-pressed={selectedTime === time}
                   onClick={() => setSelectedTime(time)}
                   className={`flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full
-                     bg-white px-0 text-center font-montserrat text-[12px] leading-none text-[#1C100E] 
+                     select-none bg-white px-0 text-center font-montserrat text-[12px] leading-none text-[#1C100E] 
                      transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
                     selectedTime === time
                       ? "ring-2 ring-[#402940]"
