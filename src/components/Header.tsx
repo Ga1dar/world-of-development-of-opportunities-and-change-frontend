@@ -20,8 +20,8 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
 
   return (
     <header
-      className={`relative z-80 flex h-21.25 w-full items-center justify-end gap-7
-        bg-[#4029401A] pr-14.5 pl-0 sm:mb-20 sm:h-23.25 sm:gap-5 sm:px-5
+      className={`relative z-80 flex h-21.25 w-full items-end justify-end gap-7
+        bg-[#4029401A] pr-10 pl-0 sm:mb-20 sm:h-23.25 sm:gap-5 sm:px-5
         min-[1420px]:mt-0! min-[1420px]:mb-0! min-[1420px]:h-36.75!
          min-[1420px]:items-start min-[1420px]:gap-6 min-[1420px]:bg-secondary
           min-[1420px]:px-20 min-[1420px]:pt-8.75 min-[1900px]:h-38! min-[1900px]:pt-10 
@@ -68,7 +68,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       </nav>
 
       <div
-        className="absolute top-4 left-44 
+        className=" flex my-auto 
         z-100 sm:static min-[1420px]:order-2
         min-[1420px]:mt-5.75"
       >
@@ -78,7 +78,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       <Link
         to="/"
         onClick={closeMenu}
-        className="relative z-100 hidden h-14.25 w-41 items-center rounded-[30px]
+        className="relative flex my-auto z-100 hidden h-14.25 w-41 items-center rounded-[30px]
         border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8]
         px-4 text-center font-montserrat text-[18px] font-medium text-[sidebar]
         shadow-btn sm:flex sm:items-center sm:justify-center min-[1420px]:order-3 
@@ -88,7 +88,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       </Link>
 
       <div
-        className="absolute top-8.5 left-62.25 
+        className="flex my-auto
         z-100 sm:static min-[1420px]:order-1
          min-[1420px]:mt-10 min-[1420px]:text-[12px]">
         <LanguageSwitcher />
@@ -98,9 +98,9 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="absolute top-7.5 left-76.5 
+        className="flex my-auto top-7.5 left-76.5 
         z-100 flex h-6 w-6 cursor-pointer 
-        items-center justify-center 
+        items-center justify-end 
         sm:static sm:h-8 sm:w-8 min-[1420px]:hidden"
       >
         <img

@@ -146,7 +146,7 @@ export function ConsultationDialog({
     <img
       src="/Logo1.png"
       alt={t("bottomTitle")}
-      className="mx-auto h-auto w-[84px] object-contain sm:w-[96px]"
+      className="mx-auto h-auto w-21 object-contain sm:w-24"
     />
   );
 
@@ -169,21 +169,29 @@ export function ConsultationDialog({
         : t("consultationDialog.tryAgain");
 
     return (
-      <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
+      <div
+        className="flex flex-col items-center px-2 
+        pb-5 pt-3 text-center sm:px-8 sm:pb-8">
         {renderLogo()}
-        <DialogTitle className="mt-6 font-montserrat text-[24px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+        <DialogTitle
+          className="mt-6 font-montserrat text-[24px] 
+          font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
           {title}
         </DialogTitle>
         <DialogDescription
           id="consultation-dialog-description"
-          className="mt-5 max-w-[292px] font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
+          className="mt-5 max-w-73 font-montserrat text-[12px]
+           leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
         >
           {description}
         </DialogDescription>
         <Button
           type="button"
           onClick={() => (isSuccess ? handleOpenChange(false) : setStep("calendar"))}
-          className="mt-6 h-10 w-full max-w-[336px] rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105"
+          className="mt-6 h-10 w-full max-w-84 rounded-[30px] 
+          border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B]
+           to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] 
+           shadow-btn hover:brightness-105"
         >
           {action}
         </Button>
@@ -195,12 +203,17 @@ export function ConsultationDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         aria-describedby="consultation-dialog-description"
-        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] overflow-y-auto rounded-[12px] border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] shadow-none ring-0 sm:px-8 sm:py-8 min-[1420px]:w-[490px]"
+        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] 
+        overflow-x-hidden overflow-y-auto rounded-xl
+        border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] 
+        shadow-none ring-0 sm:px-8 sm:py-8 min-[1420px]:w-[490px]"
       >
         {step === "intro" && (
           <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
             {renderLogo()}
-            <DialogTitle className="mt-7 max-w-[360px] font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+            <DialogTitle
+              className="mt-7 max-w-90 font-montserrat text-[22px]
+               font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
               {t("consultationDialog.introTitle")}
             </DialogTitle>
             <DialogDescription
@@ -220,19 +233,19 @@ export function ConsultationDialog({
         )}
 
         {step === "calendar" && (
-          <div className="flex flex-col items-center px-1 pb-2 pt-3 text-center sm:px-4 sm:pb-5">
+          <div className="flex w-full min-w-0 flex-col items-center overflow-hidden px-1 pb-2 pt-3 text-center sm:px-4 sm:pb-5">
             {renderLogo()}
-            <DialogTitle className="mt-5 font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+            <DialogTitle className="mt-5 max-w-full font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
               {t("consultationDialog.calendarTitle")}
             </DialogTitle>
             <DialogDescription
               id="consultation-dialog-description"
-              className="mt-4 font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/70 sm:text-[13px]"
+              className="mt-4 max-w-full font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/70 sm:text-[13px]"
             >
               {t("consultationDialog.calendarDescription")}
             </DialogDescription>
 
-            <div className="mt-6 w-full max-w-[340px] rounded-[12px] bg-white px-4 py-4">
+            <div className="mt-6 w-full max-w-full rounded-xl bg-white px-4 py-4 sm:max-w-85">
               <div className="flex items-center justify-between">
                 <p className="font-montserrat text-[14px] font-medium text-[#1C100E]">
                   {getMonthLabel(visibleMonth, calendarLocale)}
@@ -283,7 +296,7 @@ export function ConsultationDialog({
                       disabled={isDisabled}
                       aria-pressed={isSelected}
                       onClick={() => setSelectedDate(value)}
-                      className={`flex aspect-square items-center justify-center rounded-full font-montserrat text-[12px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
+                      className={`flex aspect-square items-center justify-center rounded-full font-montserrat text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
                         isSelected
                           ? "bg-[#402940] text-white"
                           : currentMonth
@@ -301,14 +314,19 @@ export function ConsultationDialog({
             <p className="mt-5 font-montserrat text-[14px] text-[#1C100E]">
               {t("consultationDialog.time")}
             </p>
-            <div className="mt-3 grid w-full max-w-[340px] grid-cols-3 gap-2 sm:grid-cols-6">
+            <div
+              className="mt-3 flex items-center min-h-10 w-full min-w-0 max-w-full pl-1
+              gap-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none]
+              sm:max-w-[340px] [&::-webkit-scrollbar]:hidden">
               {TIMES.map((time) => (
                 <button
                   key={time}
                   type="button"
                   aria-pressed={selectedTime === time}
                   onClick={() => setSelectedTime(time)}
-                  className={`h-8 rounded-full bg-white px-2 font-montserrat text-[12px] text-[#1C100E] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
+                  className={`flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full
+                     bg-white px-0 text-center font-montserrat text-[12px] leading-none text-[#1C100E] 
+                     transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
                     selectedTime === time
                       ? "ring-2 ring-[#402940]"
                       : "hover:bg-[#F0E8F0]"
@@ -319,14 +337,14 @@ export function ConsultationDialog({
               ))}
             </div>
 
-            <p className="mt-4 max-w-[340px] font-montserrat text-[11px] leading-[1.35] text-[#1C100E]/65">
+            <p className="mt-4 max-w-full font-montserrat text-[11px] leading-[1.35] text-[#1C100E]/65 sm:max-w-[340px]">
               {t("consultationDialog.afterConfirmation")}
             </p>
             <Button
               type="button"
               disabled={isSubmitting}
               onClick={handleSubmit}
-              className="mt-5 h-10 w-full max-w-[340px] rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105 disabled:opacity-70"
+              className="mt-5 h-10 w-full max-w-full rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105 disabled:opacity-70 sm:max-w-[340px]"
             >
               {isSubmitting
                 ? t("consultationDialog.submitting")

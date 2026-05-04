@@ -23,6 +23,29 @@ type LogInProps = {
 type LoginStep = "email" | "password"
 type RegisterStep = "email" | "password" | "role" | "success"
 type UserRole = "specialist" | "user"
+type AuthErrorKey =
+  | "passwordMinLength"
+  | "passwordTooSimilar"
+  | "passwordTooCommon"
+  | "passwordNumericOnly"
+  | "registerPasswordMismatch"
+
+const PASSWORD_MIN_LENGTH = 8
+const COMMON_PASSWORDS = new Set([
+  "password",
+  "password1",
+  "password123",
+  "qwerty",
+  "qwerty123",
+  "12345678",
+  "123456789",
+  "1234567890",
+  "11111111",
+  "00000000",
+  "admin123",
+  "letmein",
+  "iloveyou",
+])
 
 type GoogleWindow = Window &
   typeof globalThis & {
@@ -101,14 +124,163 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     const roleError = data?.role
     const nonFieldError = data?.non_field_errors
 
-    return (
+    const message =
       (typeof detail === "string" && detail) ||
       (Array.isArray(emailError) && emailError[0]) ||
       (Array.isArray(passwordError) && passwordError[0]) ||
       (Array.isArray(roleError) && roleError[0]) ||
       (Array.isArray(nonFieldError) && nonFieldError[0]) ||
-      fallback
+      ""
+
+    if (!message) {
+      return fallback
+    }
+
+    const errorKey = getAuthErrorKey(message)
+
+    return errorKey ? t(errorKey) : fallback
+  }
+
+  const getAuthErrorKey = (message: string): AuthErrorKey | null => {
+    const normalizedMessage = message.toLowerCase()
+
+    if (
+      normalizedMessage.includes("similar") ||
+      normalizedMessage.includes("схож")
+    ) {
+      return "passwordTooSimilar"
+    }
+
+    if (
+      normalizedMessage.includes("common") ||
+      normalizedMessage.includes("прост") ||
+      normalizedMessage.includes("пошир")
+    ) {
+      return "passwordTooCommon"
+    }
+
+    if (
+      normalizedMessage.includes("numeric") ||
+      normalizedMessage.includes("числов") ||
+      normalizedMessage.includes("цифр")
+    ) {
+      return "passwordNumericOnly"
+    }
+
+    if (normalizedMessage.includes("8") || normalizedMessage.includes("short")) {
+      return "passwordMinLength"
+    }
+
+    if (normalizedMessage.includes("match")) {
+      return "registerPasswordMismatch"
+    }
+
+    return null
+  }
+
+  const getPasswordSimilarity = (firstValue: string, secondValue: string) => {
+    if (!firstValue || !secondValue) {
+      return 0
+    }
+
+    const rows = firstValue.length + 1
+    const columns = secondValue.length + 1
+    const distances = Array.from({ length: rows }, () =>
+      Array<number>(columns).fill(0)
     )
+
+    for (let row = 0; row < rows; row += 1) {
+      distances[row][0] = row
+    }
+
+    for (let column = 0; column < columns; column += 1) {
+      distances[0][column] = column
+    }
+
+    for (let row = 1; row < rows; row += 1) {
+      for (let column = 1; column < columns; column += 1) {
+        const cost = firstValue[row - 1] === secondValue[column - 1] ? 0 : 1
+
+        distances[row][column] = Math.min(
+          distances[row - 1][column] + 1,
+          distances[row][column - 1] + 1,
+          distances[row - 1][column - 1] + cost
+        )
+      }
+    }
+
+    return (
+      1 -
+      distances[firstValue.length][secondValue.length] /
+        Math.max(firstValue.length, secondValue.length)
+    )
+  }
+
+  const isPasswordTooSimilarToEmail = () => {
+    const normalizedPassword = password.trim().toLowerCase()
+    const emailLocalPart = email.split("@")[0]?.trim().toLowerCase() || ""
+
+    if (normalizedPassword.length < 4 || emailLocalPart.length < 4) {
+      return false
+    }
+
+    return (
+      normalizedPassword.includes(emailLocalPart) ||
+      emailLocalPart.includes(normalizedPassword) ||
+      getPasswordSimilarity(normalizedPassword, emailLocalPart) >= 0.7
+    )
+  }
+
+  const validateRegistrationPassword = () => {
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return t("passwordMinLength")
+    }
+
+    if (isPasswordTooSimilarToEmail()) {
+      return t("passwordTooSimilar")
+    }
+
+    if (COMMON_PASSWORDS.has(password.trim().toLowerCase())) {
+      return t("passwordTooCommon")
+    }
+
+    if (/^\d+$/.test(password)) {
+      return t("passwordNumericOnly")
+    }
+
+    if (password !== passwordConfirm) {
+      return t("registerPasswordMismatch")
+    }
+
+    return ""
+  }
+
+  const getRequestError = (err: unknown, fallback: string) => {
+    if (err instanceof TypeError) {
+      return t("authConnectionError")
+    }
+
+    return err instanceof Error ? err.message : fallback
+  }
+
+  const isPasswordServerError = (
+    data: Record<string, string[] | string> | null
+  ) => {
+    const passwordError = data?.password
+    const detail = data?.detail
+
+    return (
+      (Array.isArray(passwordError) && passwordError.length > 0) ||
+      (typeof detail === "string" && getAuthErrorKey(detail) !== null)
+    )
+  }
+
+  const getGoogleTokenError = (err: unknown) => {
+    if (err instanceof TypeError) {
+      return t("googleAuthConnectionError")
+    }
+
+    return err instanceof Error ? err.message : t("googleAuthFailed")
   }
 
   const registerUser = async (selectedRole: UserRole) => {
@@ -131,13 +303,17 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       const data = await response.json().catch(() => null)
 
       if (!response.ok) {
+        if (isPasswordServerError(data)) {
+          setRegisterStep("password")
+        }
+
         throw new Error(getResponseError(data, t("modeError.registered")))
       }
 
       storeTokens(data || {})
       setRegisterStep("success")
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("loginSetError"))
+      setError(getRequestError(err, t("loginSetError")))
     } finally {
       setIsLoading(false)
     }
@@ -154,8 +330,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       }
 
       if (registerStep === "password") {
-        if (password !== passwordConfirm) {
-          setError(t("registerPasswordMismatch"))
+        const passwordError = validateRegistrationPassword()
+
+        if (passwordError) {
+          setError(passwordError)
           return
         }
 
@@ -196,7 +374,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       setMode("login")
     } catch (err) {
       setShowRecoveryLink(true)
-      setError(err instanceof Error ? err.message : t("loginSetError"))
+      setError(getRequestError(err, t("loginSetError")))
     } finally {
       setIsLoading(false)
     }
@@ -247,16 +425,13 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       }),
     })
 
-    const data = await response.json().catch(() => null)
-
     if (!response.ok) {
       throw new Error(
-        getResponseError(
-          data,
-          authMode === "login" ? t("modeError.login") : t("modeError.registered")
-        )
+        t(authMode === "login" ? "googleAuthFailed" : "googleRegistrationFailed")
       )
     }
+
+    const data = await response.json().catch(() => null)
 
     storeTokens(data || {})
 
@@ -294,13 +469,17 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         callback: async (response) => {
           if (response.error) {
             setIsLoading(false)
-            setError(response.error_description || t("googleAuthUnavailable"))
+            setError(
+              response.error === "access_denied"
+                ? t("googleAuthCancelled")
+                : t("googleAuthFailed")
+            )
             return
           }
 
           if (!response.access_token) {
             setIsLoading(false)
-            setError(t("googleAuthUnavailable"))
+            setError(t("googleAuthFailed"))
             return
           }
 
@@ -308,7 +487,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
             setIsLoading(true)
             await submitGoogleToken(response.access_token, authMode)
           } catch (err) {
-            setError(err instanceof Error ? err.message : t("loginSetError"))
+            setError(getGoogleTokenError(err))
           } finally {
             setIsLoading(false)
           }
@@ -393,7 +572,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
               <img
                 src="/Logo1.png"
                 alt="Logo"
-                className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
+                className="mx-auto h-20 w-20 sm:h-30 sm:w-30 xl:h-46 xl:w-46"
               />
 
               <Check className="mt-2 h-16 w-16 stroke-[#4C3156] stroke-[1.75]" />
@@ -425,7 +604,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 <img
                   src="/Logo1.png"
                   alt="Logo"
-                  className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
+                  className="mx-auto h-20 w-20 sm:h-30 sm:w-30 xl:h-46 xl:w-46"
                 />
 
                   <DialogTitle
@@ -539,8 +718,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                         type={showPassword ? "text" : "password"}
                         placeholder={t("password")}
                         required
-                        minLength={8}
-                        maxLength={128}
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value)
@@ -585,8 +762,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                             type={showPasswordConfirm ? "text" : "password"}
                             placeholder={t("repeatPassword")}
                             required
-                            minLength={8}
-                            maxLength={128}
                             value={passwordConfirm}
                             onChange={(e) => {
                               setPasswordConfirm(e.target.value)
@@ -628,7 +803,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                     className="h-12 w-full rounded-[30px] bg-[#1C100E] font-montserrat text-[14px] text-[#F3F2F3] hover:bg-[#1C100E]/90"
                     aria-pressed={role === "specialist"}
                   >
-                    {t("roleSpecialist")}
+                    {isLoading && role === "specialist"
+                      ? t("buttonSubmit.sending")
+                      : t("roleSpecialist")}
                   </Button>
 
                   <Button
@@ -638,7 +815,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                     className="h-12 w-full rounded-[30px] bg-[#1C100E] font-montserrat text-[14px] text-[#F3F2F3] hover:bg-[#1C100E]/90"
                     aria-pressed={role === "user"}
                   >
-                    {t("roleUser")}
+                    {isLoading && role === "user"
+                      ? t("buttonSubmit.sending")
+                      : t("roleUser")}
                   </Button>
                 </div>
               )}

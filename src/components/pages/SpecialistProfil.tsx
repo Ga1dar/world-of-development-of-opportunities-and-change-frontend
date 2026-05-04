@@ -152,12 +152,12 @@ export function SpecialistProfil() {
         )}
 
         <div
-          className="grid gap-8 lg:grid-cols-[1fr_460px] 
-          lg:items-start min-[1420px]:grid-cols-[398px_398px]
+          className="grid gap-8 min-[1023px]:grid-cols-[1fr_460px] 
+          min-[1023px]:items-start min-[1420px]:grid-cols-[398px_398px]
           min-[1420px]:gap-18 min-[1900px]:grid-cols-[571px_585px]
            min-[1900px]:gap-6">
           <div
-            className="order-2 lg:order-1 min-[1420px]:pt-0 min-[1900px]:pt-14.5">
+            className="order-2 min-[1023px]:order-1 min-[1420px]:pt-0 min-[1900px]:pt-14.5">
             <h1
               className="text-center text-[28px] font-medium 
               leading-[1.2] sm:text-[32px] min-[1420px]:text-[24px]
@@ -191,10 +191,32 @@ export function SpecialistProfil() {
                 items={localized.experience}
               />
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsConsultationOpen(true)}
+              className="mt-8 mx-auto flex h-10 w-full items-center 
+              justify-center rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b 
+              from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] px-8 
+              text-center font-montserrat text-[16px] font-medium 
+              text-[#1C100E] shadow-btn transition hover:brightness-105 
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] 
+              min-[744px]:mx-auto min-[744px]:flex min-[744px]:h-12 min-[744px]:w-91.25
+              min-[1023px]:hidden"
+            >
+              {t("specialistConsultation")}
+            </button>
+
+            <p
+              className="mt-5 w-full max-w-115 text-[12px] leading-[1.35] 
+              text-[#1C100E] min-[744px]:mx-auto min-[744px]:max-w-91.25 min-[1023px]:hidden"
+            >
+              {t("specialistConsultationNote")}
+            </p>
           </div>
 
           <div
-            className="order-1 flex flex-col items-center lg:order-2
+            className="order-1 flex flex-col items-center min-[1023px]:order-2
              min-[1420px]:items-start min-[1420px]:pt-0
              min-[1900px]:pt-7"
           >
@@ -210,12 +232,13 @@ export function SpecialistProfil() {
             <button
               type="button"
               onClick={() => setIsConsultationOpen(true)}
-              className="mt-5 inline-flex h-12 w-full max-w-115 items-center 
+              className="mt-5 hidden h-12 w-full max-w-115 items-center 
               justify-center rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b 
               from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] px-8 
               text-center font-montserrat text-[16px] font-medium 
               text-[#1C100E] shadow-btn transition hover:brightness-105 
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] 
+              min-[1023px]:inline-flex
               min-[1420px]:h-10.5 min-[1420px]:w-99.5 min-[1420px]:max-w-none min-[1420px]:text-[12px] 
               min-[1900px]:h-14.25 min-[1900px]:w-146.25 min-[1900px]:text-lg"
             >
@@ -223,7 +246,8 @@ export function SpecialistProfil() {
             </button>
 
             <p
-              className="mt-5 w-full max-w-115 text-[12px] leading-[1.35] text-[#1C100E] 
+              className="mt-5 hidden w-full max-w-115 text-[12px] leading-[1.35] text-[#1C100E] 
+              min-[1023px]:block
               min-[1420px]:w-99.5 min-[1420px]:max-w-none min-[1420px]:text-[10px]
               min-[1900px]:w-146.25 min-[1900px]:text-[12px]"
             >

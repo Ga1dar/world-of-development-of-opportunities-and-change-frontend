@@ -109,9 +109,8 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
       </Link>
 
       <div
-        className="mt-4 w-full min-[1420px]:hidden
+        className="mt-4 flex w-full justify-center min-[1420px]:hidden
         sm:mt-3
-        sm:flex
         sm:justify-center
 
         sm:[&_button]:h-7
