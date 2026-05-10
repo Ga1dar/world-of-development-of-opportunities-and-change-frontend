@@ -12,7 +12,9 @@ export type EventCategory = {
 export type EventComment = {
   id: number;
   author: string;
+  userAvatar?: string;
   text: string;
+  likesCount?: number;
   createdAt?: string;
 };
 
@@ -25,9 +27,12 @@ export type EventItem = {
   description_en: string[];
   category_ua: string;
   category_en: string;
+  categoryId?: number;
   categorySlug: string;
   image: string;
   galleryImages: string[];
+  likesCount?: number;
+  commentsCount?: number;
   createdAt?: string;
   eventDate?: string;
   location?: string;
@@ -36,10 +41,13 @@ export type EventItem = {
 
 export type EventRegistrationPayload = {
   full_name: string;
+  birth_date: string;
+  gender: string;
   email: string;
   phone: string;
   experience: string;
-  comment?: string;
+  eating_meat: boolean;
+  is_agreed: boolean;
 };
 
 export type EventRegistrationResult =
@@ -48,8 +56,11 @@ export type EventRegistrationResult =
   | { status: "error" };
 
 export type CreateCommentPayload = {
-  author: string;
   text: string;
+};
+
+export type ToggleResult = {
+  liked: boolean;
 };
 
 type RawRecord = Record<string, unknown>;
@@ -396,8 +407,17 @@ const normalizeComment = (raw: unknown, index: number): EventComment => {
 
   return {
     id: asNumber(record.id, index + 1),
-    author: asString(record.author ?? record.name ?? record.user_name, "Гість"),
+    author: asString(
+      record.user_full_name ??
+        record.author ??
+        record.name ??
+        record.user_name ??
+        record.user,
+      "Гість",
+    ),
+    userAvatar: resolveImageUrl(record.user_avatar ?? record.avatar, ""),
     text: asString(record.text ?? record.comment ?? record.body),
+    likesCount: asNumber(record.likes_count ?? record.likesCount, 0),
     createdAt: asString(record.created_at ?? record.createdAt ?? record.created),
   };
 };
@@ -425,7 +445,10 @@ const normalizeCategory = (raw: unknown, index: number): EventCategory => {
     slug,
     title_ua: titleUa,
     title_en: titleEn,
-    image: staticCategoryImages[slug] || fallback.image,
+    image: resolveImageUrl(
+      record.image ?? record.photo,
+      staticCategoryImages[slug] || fallback.image,
+    ),
   };
 };
 
@@ -435,6 +458,11 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
   if (!record) return fallback;
 
   const category = record.category;
+  const categoryRecord = asRecord(category);
+  const categoryId = asNumber(
+    record.category_id ?? categoryRecord?.id ?? category,
+    fallback.categoryId || 0,
+  );
   const titleUa =
     asString(record.title_ua) || asString(record.title) || fallback.title_ua;
   const titleEn =
@@ -468,6 +496,7 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
     ),
     category_ua: categoryUa,
     category_en: categoryEn,
+    categoryId: categoryId || undefined,
     categorySlug,
     image: resolveImageUrl(
       record.image ?? record.photo ?? record.picture ?? record.image_url,
@@ -480,6 +509,11 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
         record.photos ??
         record.gallery,
       fallback.galleryImages,
+    ),
+    likesCount: asNumber(record.likes_count ?? record.likesCount, fallback.likesCount || 0),
+    commentsCount: asNumber(
+      record.comments_count ?? record.commentsCount,
+      fallback.commentsCount ?? fallback.comments.length,
     ),
     createdAt: asString(record.created_at ?? record.createdAt ?? record.created),
     eventDate: asString(record.event_date ?? record.eventDate ?? record.date),
@@ -502,6 +536,11 @@ const requestJson = async (url: string, options?: RequestInit) => {
   return { response, data };
 };
 
+const getUrlBase = () =>
+  typeof window === "undefined" ? "http://localhost" : window.location.origin;
+
+const createEndpointUrl = (url: string) => new URL(url, getUrlBase());
+
 const authHeaders = () => {
   const accessToken = localStorage.getItem("accessToken");
   const headers: HeadersInit = {
@@ -513,6 +552,81 @@ const authHeaders = () => {
   }
 
   return headers;
+};
+
+const hasAccessToken = () =>
+  typeof window !== "undefined" && Boolean(localStorage.getItem("accessToken"));
+
+const parseToggleResult = (data: unknown, enabledDetail: string): ToggleResult => {
+  const record = asRecord(data);
+  const explicitValue = record?.liked ?? record?.is_liked;
+
+  if (typeof explicitValue === "boolean") {
+    return { liked: explicitValue };
+  }
+
+  const detail = asString(record?.detail ?? record?.message).toLowerCase();
+  return { liked: detail.includes(enabledDetail) };
+};
+
+const DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const LOCAL_DATE_INPUT_PATTERN = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+const allowedEventExperience = new Set([
+  "parents",
+  "teacher",
+  "psychologist",
+  "trauma_pedagogy",
+  "social_worker",
+  "other",
+]);
+
+const normalizeBirthDate = (value: string) => {
+  const cleanValue = value.trim();
+  if (DATE_INPUT_PATTERN.test(cleanValue)) return cleanValue;
+
+  const localMatch = cleanValue.match(LOCAL_DATE_INPUT_PATTERN);
+  if (localMatch) {
+    const [, day, month, year] = localMatch;
+    return `${year}-${month}-${day}`;
+  }
+
+  return cleanValue;
+};
+
+const normalizeGender = (value: string) => {
+  const cleanValue = value.trim().toLowerCase();
+  const maleValues = new Set([
+    "male",
+    "man",
+    "m",
+    "\u0447\u043e\u043b\u043e\u0432\u0456\u043a",
+    "\u0447\u043e\u043b\u043e\u0432\u0438\u043a",
+    "\u0447\u043e\u043b",
+    "\u043c\u0443\u0436\u0447\u0438\u043d\u0430",
+  ]);
+  const femaleValues = new Set([
+    "female",
+    "woman",
+    "f",
+    "\u0436\u0456\u043d\u043a\u0430",
+    "\u0436\u0438\u043d\u043a\u0430",
+    "\u0436\u0456\u043d",
+    "\u0436\u0435\u043d\u0449\u0438\u043d\u0430",
+  ]);
+  const otherValues = new Set([
+    "other",
+    "\u0456\u043d\u0448\u0435",
+    "\u0456\u043d\u0448\u0438\u0439",
+    "\u0434\u0440\u0443\u0433\u0435",
+    "\u0456\u043d\u0448\u0430",
+    "\u0456\u043d\u0448",
+  ]);
+
+  if (maleValues.has(cleanValue)) return "male";
+  if (femaleValues.has(cleanValue)) return "female";
+  if (otherValues.has(cleanValue)) return "other";
+
+  return "other";
 };
 
 export async function getEventCategories(): Promise<EventCategory[]> {
@@ -535,7 +649,10 @@ export async function getEventCategories(): Promise<EventCategory[]> {
 
 export async function getEvents(): Promise<EventItem[]> {
   try {
-    const { response, data } = await requestJson(endpoints.events);
+    const url = createEndpointUrl(endpoints.events);
+    url.searchParams.set("ordering", "-created_at");
+
+    const { response, data } = await requestJson(url.toString());
 
     if (!response.ok) {
       throw new Error("Failed to fetch events");
@@ -560,8 +677,10 @@ export async function getEventsByCategory(categorySlug: string) {
   );
 
   try {
-    const url = new URL(endpoints.events);
-    url.searchParams.set("category", categorySlug);
+    const categories = await getEventCategories();
+    const category = categories.find((item) => item.slug === categorySlug);
+    const url = createEndpointUrl(endpoints.events);
+    url.searchParams.set("category", String(category?.id ?? categorySlug));
 
     const { response, data } = await requestJson(url.toString());
 
@@ -621,17 +740,20 @@ export async function createEventComment(
   eventId: string | number,
   payload: CreateCommentPayload,
 ) {
-  const author = payload.author.trim().slice(0, 80);
+  if (!hasAccessToken()) {
+    throw new Error("Authentication required");
+  }
+
   const text = payload.text.trim().slice(0, 1000);
 
-  if (!author || text.length < 2) {
+  if (text.length < 2) {
     throw new Error("Invalid comment");
   }
 
   const { response, data } = await requestJson(endpoints.eventComments(eventId), {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ author, text }),
+    body: JSON.stringify({ text }),
   });
 
   if (!response.ok) {
@@ -641,23 +763,74 @@ export async function createEventComment(
   return normalizeComment(data, 0);
 }
 
+export async function toggleEventLike(eventId: string | number) {
+  if (!hasAccessToken()) {
+    throw new Error("Authentication required");
+  }
+
+  const { response, data } = await requestJson(endpoints.eventLike(eventId), {
+    method: "POST",
+    headers: authHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to toggle event like");
+  }
+
+  return parseToggleResult(data, "event liked");
+}
+
+export async function toggleCommentLike(
+  eventId: string | number,
+  commentId: string | number,
+) {
+  if (!hasAccessToken()) {
+    throw new Error("Authentication required");
+  }
+
+  const { response, data } = await requestJson(
+    endpoints.eventCommentLike(eventId, commentId),
+    {
+      method: "POST",
+      headers: authHeaders(),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to toggle comment like");
+  }
+
+  return parseToggleResult(data, "comment liked");
+}
+
 export async function registerForEvent(
   eventId: string | number,
   payload: EventRegistrationPayload,
 ): Promise<EventRegistrationResult> {
+  const accessToken = localStorage.getItem("accessToken");
+  if (!accessToken) {
+    return { status: "error" };
+  }
+
   const cleanPayload: EventRegistrationPayload = {
     full_name: payload.full_name.trim().slice(0, 120),
+    birth_date: normalizeBirthDate(payload.birth_date),
+    gender: normalizeGender(payload.gender),
     email: payload.email.trim().slice(0, 160),
     phone: payload.phone.trim().slice(0, 40),
-    experience: payload.experience.trim().slice(0, 80),
-    comment: payload.comment?.trim().slice(0, 1000) || "",
+    experience: payload.experience.trim(),
+    eating_meat: Boolean(payload.eating_meat),
+    is_agreed: Boolean(payload.is_agreed),
   };
 
   if (
     !cleanPayload.full_name ||
+    !DATE_INPUT_PATTERN.test(cleanPayload.birth_date) ||
+    !cleanPayload.gender ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanPayload.email) ||
     cleanPayload.phone.length < 7 ||
-    !cleanPayload.experience
+    !allowedEventExperience.has(cleanPayload.experience) ||
+    !cleanPayload.is_agreed
   ) {
     return { status: "error" };
   }

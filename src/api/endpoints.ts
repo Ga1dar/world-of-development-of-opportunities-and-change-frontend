@@ -14,9 +14,12 @@ export const endpoints = {
     import.meta.env.VITE_EVENT_CATEGORIES_ENDPOINT ||
     `${API_URL}/events/categories/`,
   eventDetail: (id: string | number) => `${API_URL}/events/${id}/`,
+  eventLike: (id: string | number) => `${API_URL}/events/${id}/like/`,
   eventComments: (id: string | number) => `${API_URL}/events/${id}/comments/`,
+  eventCommentLike: (eventId: string | number, commentId: string | number) =>
+    `${API_URL}/events/${eventId}/comments/${commentId}/like/`,
   eventRegistration: (id: string | number) =>
-    `${API_URL}/events/${id}/registrations/`,
+    `${API_URL}/events/${id}/register/`,
   passwordReset: `${API_URL}/users/password-reset/`,
   passwordResetConfirm: `${API_URL}/users/password-reset/confirm/`,
   googleAuth: `${API_URL}/users/google/`,

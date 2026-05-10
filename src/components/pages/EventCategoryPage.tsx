@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Heart, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { getEventsByCategory, type EventItem } from "../../api/events";
+import {
+  getEventsByCategory,
+  toggleEventLike,
+  type EventItem,
+} from "../../api/events";
 
 const formatEventDate = (value: string | undefined, lang: "ua" | "en") => {
   if (!value) return "";
@@ -23,6 +27,7 @@ export function EventCategoryPage() {
   const { i18n, t } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "ua";
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [likedEventIds, setLikedEventIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     let isMounted = true;
@@ -35,6 +40,35 @@ export function EventCategoryPage() {
       isMounted = false;
     };
   }, [categorySlug]);
+
+  const handleEventLike = async (eventId: number) => {
+    const wasLiked = likedEventIds.has(eventId);
+
+    try {
+      const result = await toggleEventLike(eventId);
+      const delta = result.liked ? (wasLiked ? 0 : 1) : -1;
+
+      setLikedEventIds((current) => {
+        const next = new Set(current);
+        if (result.liked) next.add(eventId);
+        else next.delete(eventId);
+        return next;
+      });
+
+      setEvents((current) =>
+        current.map((event) =>
+          event.id === eventId
+            ? {
+                ...event,
+                likesCount: Math.max((event.likesCount || 0) + delta, 0),
+              }
+            : event,
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const getEventTitle = (event: EventItem) =>
     lang === "en" ? event.title_en : event.title_ua;
@@ -77,9 +111,19 @@ export function EventCategoryPage() {
 
                   <div className="mt-4 flex items-center justify-between text-[11px] text-[#1C100E] min-[744px]:text-[12px]">
                     <div className="flex items-center gap-3">
-                      <span>0</span>
-                      <Heart className="size-4" aria-hidden="true" />
-                      <span>0</span>
+                      <span>{event.likesCount || 0}</span>
+                      <button
+                        type="button"
+                        onClick={() => void handleEventLike(event.id)}
+                        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]"
+                        aria-label="Like event"
+                      >
+                        <Heart
+                          className={`size-4 ${likedEventIds.has(event.id) ? "fill-[#1C100E]" : ""}`}
+                          aria-hidden="true"
+                        />
+                      </button>
+                      <span>{event.commentsCount ?? event.comments.length}</span>
                       <MessageSquare className="size-4" aria-hidden="true" />
                     </div>
                     {event.eventDate && (

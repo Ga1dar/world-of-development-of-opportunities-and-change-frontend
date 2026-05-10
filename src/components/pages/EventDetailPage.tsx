@@ -1,34 +1,204 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Bookmark, Heart, MessageSquare, CircleUserRound } from "lucide-react";
+import { Bookmark, CircleUserRound, Heart, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   createEventComment,
   getEvent,
   getEventComments,
+  toggleCommentLike,
+  toggleEventLike,
   type EventComment,
   type EventItem,
 } from "../../api/events";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { EducatorsEventContent } from "./EducatorsEventContent";
+import { EventRegistrationDialog } from "./EventRegistrationDialog";
+import { GenericEventContent } from "./GenericEventContent";
+import { SupervisionEventContent } from "./SupervisionEventContent";
+import { WorkshopEventContent } from "./WorkshopEventContent";
 
-const MAX_VISIBLE_GALLERY_IMAGES = 6;
+const eventBodyClass =
+  "font-montserrat text-[16px] font-normal leading-[1.4] tracking-normal text-[#2D302D] min-[744px]:text-[18px]";
 
-const uniqueImages = (event: EventItem) => {
-  const images = [event.image, ...event.galleryImages].filter(Boolean);
-  return Array.from(new Set(images)).slice(0, MAX_VISIBLE_GALLERY_IMAGES);
+const educatorsCopy = {
+  ua: {
+    title: "Для освітян підтримка, розвантаження, додаткові знання",
+    paragraphs: [
+      "Хто подбає про тих, хто підтримує інших?",
+      "Робота вчителя — це більше, ніж професія. Це щоденне проживання чужих емоцій.",
+      "Радість, сміх і захоплення дітей, але водночас — їхній страх, розпач, невпевненість, роздратування й агресія.",
+      "Усе це проходить крізь серце кожної освітянки щодня.",
+      "Та хто подбає про тих, хто підтримує інших?",
+      "Хто допоможе впоратися з дитячими емоціями, ще й у поєднанні з власними переживаннями, втомою та відповідальністю?",
+      "ГО «СВІТи» запрошує освітян на простір підтримки, навчання та відновлення.",
+      "Ми пропонуємо:",
+      "Супервізії для вчителів — безпечний простір, де можна розібрати складні ситуації та питання, що турбують",
+      "Тренінг «Дитяча травма» — про те, як підтримати дитину в складний час і не втратити себе",
+      "Воркшоп — практичні інструменти для розвантаження групи й себе, перетворення булінгу на відповідальне лідерство",
+      "Участь безкоштовна.",
+      "Потрібно лише зареєструватися.",
+      "Старт занять — лютий 2026 року",
+      "Місце проведення — м. Покров",
+      "Дати заходів повідомимо після реєстрації",
+      "Ви не маєте залишатися з цим наодинці. Дозвольте собі підтримку.",
+      "Заняття проходять у межах благодійного проєкту «Кризова педагогіка в Покрові» за підтримки Freunde der Erziehungskunst Rudolf Steiners e.V.",
+    ],
+  },
+  en: {
+    title: "Support, relief, and additional knowledge for educators",
+    paragraphs: [
+      "Who takes care of those who support others?",
+      "A teacher's work is more than a profession. It is a daily encounter with other people's emotions.",
+      "Children's joy, laughter, and curiosity, but also their fear, despair, uncertainty, irritation, and aggression.",
+      "All of this passes through the heart of every educator every day.",
+      "So who takes care of those who support others?",
+      "Who helps them cope with children's emotions while also carrying their own experiences, fatigue, and responsibility?",
+      "SVITY NGO invites educators into a space of support, learning, and recovery.",
+      "We offer:",
+      "Supervision for teachers: a safe space to unpack difficult situations and questions that feel heavy.",
+      "Child Trauma training: how to support a child in difficult times without losing yourself.",
+      "Workshop: practical tools for relieving group tension and turning bullying into responsible leadership.",
+      "Participation is free.",
+      "Registration is required.",
+      "Start of classes: February 2026.",
+      "Location: Pokrov.",
+      "Event dates will be shared after registration.",
+      "You do not have to remain alone with this. Allow yourself support.",
+      "The classes are held as part of the charity project Crisis Pedagogy in Pokrov with the support of Freunde der Erziehungskunst Rudolf Steiners e.V.",
+    ],
+  },
 };
+
+void educatorsCopy;
+
+const educatorsPageCopy = {
+  ua: {
+    title: "Для освітян підтримка, розвантаження, додаткові знання",
+    paragraphs: [
+      "Хто подбає про тих, хто підтримує інших?",
+      "Робота вчителя — це більше, ніж професія. Це щоденне проживання чужих емоцій.",
+      "Радість, сміх і захоплення дітей, але водночас — їхній страх, розпач, невпевненість, роздратування й агресія.",
+      "Усе це проходить крізь серце кожної освітянки щодня.",
+      "Та хто подбає про тих, хто підтримує інших?",
+      "Хто допоможе впоратися з дитячими емоціями, ще й у поєднанні з власними переживаннями, втомою та відповідальністю?",
+      "ГО «СВІТи» запрошує освітян на простір підтримки, навчання та відновлення.",
+      "Ми пропонуємо:",
+      "📎Супервізії для вчителів — безпечний простір, де можна розібрати складні ситуації та питання, що турбують",
+      "📎Тренінг «Дитяча травма» — про те, як підтримати дитину в складний час і не втратити себе",
+      "📎Воркшоп — практичні інструменти для розвантаження групи й себе, перетворення булінгу на відповідальне лідерство",
+      "Участь безкоштовна.",
+      "Потрібно лише зареєструватися.",
+      "📅 Старт занять — лютий 2026 року",
+      "📍 Місце проведення — м. Покров",
+      "📌 Дати заходів повідомимо після реєстрації",
+      "Ви не маєте залишатися з цим наодинці. Дозвольте собі підтримку.",
+      "Заняття проходять у межах благодійного проєкту «Кризова педагогіка в Покрові» за підтримки Freunde der Erziehungskunst Rudolf Steiners e.V.",
+    ],
+  },
+  en: {
+    title: "Support, relief, and additional knowledge for educators",
+    paragraphs: [
+      "Who takes care of those who support others?",
+      "A teacher's work is more than a profession. It is a daily encounter with other people's emotions.",
+      "Children's joy, laughter, and curiosity, but also their fear, despair, uncertainty, irritation, and aggression.",
+      "All of this passes through the heart of every educator every day.",
+      "So who takes care of those who support others?",
+      "Who helps them cope with children's emotions while also carrying their own experiences, fatigue, and responsibility?",
+      "SVITY NGO invites educators into a space of support, learning, and recovery.",
+      "We offer:",
+      "📎Supervision for teachers: a safe space to unpack difficult situations and questions that feel heavy.",
+      "📎Child Trauma training: how to support a child in difficult times without losing yourself.",
+      "📎Workshop: practical tools for relieving group tension and turning bullying into responsible leadership.",
+      "Participation is free.",
+      "Registration is required.",
+      "📅 Start of classes: February 2026.",
+      "📍 Location: Pokrov.",
+      "📌 Event dates will be shared after registration.",
+      "You do not have to remain alone with this. Allow yourself support.",
+      "The classes are held as part of the charity project Crisis Pedagogy in Pokrov with the support of Freunde der Erziehungskunst Rudolf Steiners e.V.",
+    ],
+  },
+};
+
+const educatorsImage = "/Rectangle освітянам.png";
+
+const workshopPageCopy = {
+  ua: {
+    title: "Воркшоп з травмапедагогіки для педагогів позашкільної освіти",
+    paragraphs: [
+      "Два дні, які відчулись на одному диханні.",
+      "Команда ГО «СВІТИ» провела воркшоп з травмапедагогіки для педагогів позашкільної освіти — і це було більше, ніж навчання.",
+      "Це були про досвід. Про проживання. Про розуміння себе і дітей поруч.",
+      "Серйозні теми про травму, нервову систему і стрес дуже природно поєднувались із легкістю, сміхом і теплими вправами.",
+      "Учасниці не просто слухали — вони проживали, відчували, впізнавали себе і своїх учнів у кожному прикладі.",
+      "Кожна зупинилась і подивилась глибше:\nяк реагує дитина, коли їй важко\nяк виглядає перевантаження\nяк важливо бути поруч — спокійно, з повагою і підтримкою.",
+      "І, здається, головне, що залишилось після цих двох днів — це відчуття:",
+      "-що підтримка працює",
+      "-що радість — теж інструмент",
+      "-що ми можемо бути для дітей опорою",
+      "І це — дуже важливо!",
+      "Хочете краще розуміти дітей і водночас берегти себе?",
+      "Приєднуйтесь до воркшопів від ГО «СВІТи».",
+      "Ваша стійкість — це ресурс для дітей.",
+      "Подбаємо про себе разом з нами.",
+    ],
+  },
+  en: {
+    title: "Trauma pedagogy workshop for extracurricular educators",
+    paragraphs: [
+      "Two days that felt like one shared breath.",
+      "The SVITY NGO team held a trauma pedagogy workshop for extracurricular educators, and it was more than training.",
+      "It was about experience. About living through it. About understanding yourself and the children beside you.",
+      "Serious topics about trauma, the nervous system, and stress were naturally combined with ease, laughter, and warm exercises.",
+      "Participants did not just listen. They lived the material, felt it, and recognized themselves and their students in every example.",
+      "Serious topics about trauma, the nervous system, and stress were naturally combined with ease, laughter, and warm exercises.",
+      "Participants did not just listen. They lived the material, felt it, and recognized themselves and their students in every example.",
+      "Each participant stopped and looked deeper:\nhow a child reacts when things are hard\nwhat overload looks like\nhow important it is to stay nearby calmly, respectfully, and supportively.",
+      "And it seems the main thing that remained after these two days was the feeling:",
+      "-that support works",
+      "-that joy is also a tool",
+      "-that we can be a source of stability for children",
+      "And that is very important.",
+      "Do you want to understand children better while also protecting yourself?",
+      "Join the workshops from SVITY NGO.",
+      "Your resilience is a resource for children.",
+      "Let us take care of ourselves together.",
+    ],
+  },
+};
+
+function DecorativeSun({ className = "" }: { className?: string }) {
+  return (
+    <img
+      src="/sun.png"
+      alt=""
+      aria-hidden="true"
+      className={`pointer-events-none h-29.5 w-29.5
+      object-contain opacity-90 min-[744px]:h-42
+      min-[744px]:w-42 min-[1420px]:h-52.5
+      min-[1420px]:w-52.5 ${className}`}
+    />
+  );
+}
+
+const getServerEventImages = (event: EventItem) =>
+  Array.from(new Set([event.image, ...event.galleryImages].filter(Boolean))).slice(0, 6);
 
 export function EventDetailPage() {
   const { eventId = "" } = useParams();
   const { i18n, t } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "ua";
+  const copyLang = lang === "en" ? "en" : "ua";
   const [event, setEvent] = useState<EventItem | null>(null);
   const [comments, setComments] = useState<EventComment[]>([]);
-  const [author, setAuthor] = useState("");
   const [commentText, setCommentText] = useState("");
   const [commentError, setCommentError] = useState("");
   const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
+  const [isEventLiked, setIsEventLiked] = useState(false);
+  const [likedCommentIds, setLikedCommentIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     let isMounted = true;
@@ -50,9 +220,8 @@ export function EventDetailPage() {
     submitEvent.preventDefault();
     setCommentError("");
 
-    const cleanAuthor = author.trim();
     const cleanText = commentText.trim();
-    if (!cleanAuthor || cleanText.length < 2) {
+    if (cleanText.length < 2) {
       setCommentError(t("eventComments.validationError"));
       return;
     }
@@ -61,29 +230,70 @@ export function EventDetailPage() {
 
     try {
       const created = await createEventComment(eventId, {
-        author: cleanAuthor,
         text: cleanText,
       });
       setComments((current) => [created, ...current]);
-      setAuthor("");
       setCommentText("");
+      setEvent((current) =>
+        current
+          ? { ...current, commentsCount: (current.commentsCount ?? comments.length) + 1 }
+          : current,
+      );
     } catch {
-      const localComment: EventComment = {
-        id: Date.now(),
-        author: cleanAuthor.slice(0, 80),
-        text: cleanText.slice(0, 1000),
-        createdAt: new Date().toISOString(),
-      };
-      setComments((current) => [localComment, ...current]);
-      setAuthor("");
-      setCommentText("");
       setCommentError(t("eventComments.fallbackNotice"));
     } finally {
       setIsCommentSubmitting(false);
     }
   };
 
-  const images = useMemo(() => (event ? uniqueImages(event) : []), [event]);
+  const handleEventLike = async () => {
+    if (!event) return;
+
+    try {
+      const result = await toggleEventLike(event.id);
+      const delta = result.liked ? (isEventLiked ? 0 : 1) : -1;
+
+      setIsEventLiked(result.liked);
+      setEvent((current) =>
+        current
+          ? { ...current, likesCount: Math.max((current.likesCount || 0) + delta, 0) }
+          : current,
+      );
+    } catch (error) {
+      console.error(error);
+      setCommentError(t("eventComments.fallbackNotice"));
+    }
+  };
+
+  const handleCommentLike = async (commentId: number) => {
+    const wasLiked = likedCommentIds.has(commentId);
+
+    try {
+      const result = await toggleCommentLike(eventId, commentId);
+      const delta = result.liked ? (wasLiked ? 0 : 1) : -1;
+
+      setLikedCommentIds((current) => {
+        const next = new Set(current);
+        if (result.liked) next.add(commentId);
+        else next.delete(commentId);
+        return next;
+      });
+
+      setComments((current) =>
+        current.map((comment) =>
+          comment.id === commentId
+            ? {
+                ...comment,
+                likesCount: Math.max((comment.likesCount || 0) + delta, 0),
+              }
+            : comment,
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+      setCommentError(t("eventComments.fallbackNotice"));
+    }
+  };
 
   if (!event) {
     return (
@@ -93,142 +303,286 @@ export function EventDetailPage() {
     );
   }
 
-  const title = lang === "en" ? event.title_en : event.title_ua;
-  const description = lang === "en" ? event.description_en : event.description_ua;
-  const leadParagraphs = description.slice(0, 4);
-  const sideParagraphs = description.slice(4, 9);
-  const closingParagraphs = description.slice(9);
-  const galleryImages = images.slice(1);
-  const topGalleryImages = galleryImages.slice(0, 2);
-  const bottomGalleryImages = galleryImages.slice(2, 5);
+  const rawTitle = lang === "en" ? event.title_en : event.title_ua;
+  const rawDescription = lang === "en" ? event.description_en : event.description_ua;
+  const isEducatorsEvent =
+    event.categorySlug === "for-educators" || event.slug.includes("educator");
+  const isWorkshopEvent =
+    event.categorySlug === "workshop" || event.slug.includes("workshop");
+  const isSupervisionEvent =
+    event.categorySlug === "supervision" || event.slug.includes("supervision");
+  const displayTitle = isWorkshopEvent
+    ? workshopPageCopy[copyLang].title
+    : isEducatorsEvent
+      ? educatorsPageCopy[copyLang].title
+      : rawTitle;
+  const paragraphs = isWorkshopEvent
+    ? workshopPageCopy[copyLang].paragraphs
+    : isEducatorsEvent
+      ? educatorsPageCopy[copyLang].paragraphs
+      : rawDescription;
+  const likesCount = event.likesCount || 0;
+  const commentsCount = event.commentsCount ?? comments.length;
+  const serverImages = getServerEventImages(event);
+  const serverDescription = rawDescription.join(" ");
 
-  return (
-    <section className="bg-secondary px-5 pb-12 pt-5 font-montserrat text-[#1C100E] min-[390px]:px-7 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-8 min-[1023px]:px-12 min-[1023px]:pt-8 min-[1420px]:px-20 min-[1900px]:pb-20">
-      <article className="mx-auto w-full max-w-[336px] min-[744px]:max-w-[680px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1208px] min-[1900px]:max-w-[1548px]">
-        <div className="grid gap-5 min-[744px]:gap-6 min-[1023px]:grid-cols-[340px_1fr] min-[1023px]:gap-x-7 min-[1420px]:grid-cols-[380px_1fr] min-[1420px]:gap-x-8 min-[1900px]:grid-cols-[440px_1fr] min-[1900px]:gap-x-10">
-          <div className="contents min-[1023px]:block">
-            <h1 className="order-1 text-[18px] font-medium leading-[1.23] min-[744px]:text-[24px] min-[1023px]:hidden">
-              {title}
-            </h1>
+  const renderEventActions = () => (
+    <div className="mt-2 flex items-center gap-2 text-[#1C100E] min-[744px]:mt-3 min-[744px]:gap-3">
+      <span className="text-[12px] min-[744px]:text-[14px]">{likesCount}</span>
+      <button
+        type="button"
+        onClick={() => void handleEventLike()}
+        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]"
+        aria-label="Like event"
+      >
+        <Heart
+          className={`size-4 min-[744px]:size-5 ${isEventLiked ? "fill-[#1C100E]" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+      <span className="text-[12px] min-[744px]:text-[14px]">{commentsCount}</span>
+      <MessageSquare className="size-4 min-[744px]:size-5" aria-hidden="true" />
+      <Bookmark className="size-4 min-[744px]:size-5" aria-hidden="true" />
+    </div>
+  );
 
-            <div className="order-2 flex items-center gap-3 text-[#1C100E] min-[1023px]:hidden">
-              <span className="text-[12px]">0</span>
-              <Heart className="size-4" aria-hidden="true" />
-              <span className="text-[12px]">0</span>
-              <MessageSquare className="size-4" aria-hidden="true" />
-              <Bookmark className="size-4" aria-hidden="true" />
-            </div>
+  const renderRegistrationButton = (className = "") => (
+    <Button
+      type="button"
+      onClick={() => setIsRegistrationOpen(true)}
+      className={`h-9 w-full max-w-[288px] rounded-[30px]
+        border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700]
+        via-[#FFD43B] to-[#FFF0A8] px-5 font-montserrat
+        text-[13px] font-medium text-[#1C100E] shadow-btn
+        hover:brightness-105 focus-visible:ring-[#40213F]
+        min-[744px]:h-10 min-[744px]:max-w-85 min-[744px]:text-[14px] ${className}`}
+    >
+      {t("eventRegistration.open")}
+    </Button>
+  );
 
-            <img
-              src={event.image}
-              alt={title}
-              className="order-3 aspect-[1.36] w-full rounded-[8px] object-cover min-[744px]:aspect-[1.78] min-[1023px]:aspect-[1.36]"
-            />
+  const renderComments = (variant: "default" | "supervision" = "default") => (
+    <section
+      className={`relative mt-7 border-t border-[#40213F]/45 pt-5
+      min-[744px]:mt-8 min-[744px]:pt-6
+      ${variant === "supervision" ? "min-[1420px]:pb-15" : ""}`}
+    >
+      <div
+        className={`absolute right-0 top-16 hidden min-[744px]:block
+        ${variant === "supervision"
+          ? "min-[744px]:right-10 min-[744px]:top-3 min-[1023px]:right-8 min-[1023px]:top-0 min-[1420px]:right-0 min-[1420px]:top-0 min-[1900px]:right-[calc(765px-50vw)] min-[1900px]:top-3"
+          : "min-[744px]:right-8 min-[1023px]:right-16 min-[1420px]:right-24"}`}
+      >
+        <DecorativeSun
+          className={
+            variant === "supervision"
+              ? "min-[744px]:!h-[319px] min-[744px]:!w-[319px] min-[1023px]:!h-[341px] min-[1023px]:!w-[341px] min-[1420px]:!h-[409px] min-[1420px]:!w-[409px]"
+              : ""
+          }
+        />
+      </div>
 
-            <div className="order-6 text-[12px] leading-[1.42] text-[#1C100E]/82 min-[744px]:text-[13px] min-[1023px]:mt-6 min-[1023px]:text-[13px] min-[1420px]:text-[14px]">
-              {(sideParagraphs.length ? sideParagraphs : description.slice(4, 7)).map(
-                (paragraph) => (
-                  <p key={paragraph} className="mt-3 first:mt-0">
-                    {paragraph}
-                  </p>
-                ),
-              )}
-            </div>
-          </div>
+      <div
+        className={`relative z-10 max-w-155 min-[1420px]:max-w-190
+        ${variant === "supervision" ? "min-[1900px]:max-w-[894px]" : ""}`}
+      >
+        <h2 className="font-montserrat text-[18px] font-medium leading-[1.4] text-[#1C100E] min-[744px]:text-[20px]">
+          {t("eventComments.title")} ( {commentsCount} )
+        </h2>
 
-          <div className="order-4 min-[1023px]:order-none">
-            <h1 className="hidden text-[28px] font-medium leading-[1.2] min-[1023px]:block min-[1420px]:text-[31px] min-[1900px]:text-[36px]">
-              {title}
-            </h1>
+        <form onSubmit={handleCommentSubmit} className="mt-4">
+          <label
+            htmlFor="event-comment-text"
+            className="flex items-center gap-2 font-montserrat text-[12px] text-[#2D302D] min-[744px]:gap-3 min-[744px]:text-[14px]"
+          >
+            <CircleUserRound className="size-5 min-[744px]:size-6" aria-hidden="true" />
+            {t("eventComments.reply")}
+          </label>
 
-            <div className="mt-4 hidden items-center gap-3 text-[#1C100E] min-[1023px]:flex">
-              <span className="text-[12px]">0</span>
-              <Heart className="size-4" aria-hidden="true" />
-              <span className="text-[12px]">0</span>
-              <MessageSquare className="size-4" aria-hidden="true" />
-              <Bookmark className="size-4" aria-hidden="true" />
-            </div>
-
-            <div className="mt-4 space-y-3 text-[12px] leading-[1.45] text-[#1C100E]/82 min-[744px]:text-[13px] min-[1420px]:text-[14px]">
-              {leadParagraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
-
-            {topGalleryImages.length > 0 && (
-              <div className="mt-5 grid gap-4 min-[744px]:grid-cols-2 min-[1023px]:mt-6 min-[1023px]:gap-5 min-[1420px]:gap-6">
-                {topGalleryImages.map((image, index) => (
-                  <img
-                    key={`${image}-${index}`}
-                    src={image}
-                    alt=""
-                    className="aspect-[1.55] w-full rounded-[8px] object-cover"
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {closingParagraphs.length > 0 && (
-          <div className="mt-5 max-w-[520px] space-y-3 text-[12px] leading-[1.45] text-[#1C100E]/82 min-[744px]:text-[13px] min-[1023px]:ml-[367px] min-[1420px]:ml-[412px] min-[1420px]:text-[14px] min-[1900px]:ml-[480px]">
-            {closingParagraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-        )}
-
-        {bottomGalleryImages.length > 0 && (
-          <div className="mt-7 grid grid-cols-2 gap-3 min-[744px]:gap-5 min-[1023px]:grid-cols-3 min-[1023px]:gap-6 min-[1420px]:mt-8">
-            {bottomGalleryImages.map((image, index) => (
-              <img
-                key={`${image}-${index}`}
-                src={image}
-                alt=""
-                className="aspect-[1.55] w-full rounded-[8px] object-cover"
+          <div className="mt-3 grid gap-3">
+            <div>
+              <Input
+                id="event-comment-text"
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                maxLength={1000}
+                required
+                placeholder={t("eventComments.placeholderShort")}
+                className={`h-8 rounded-[30px] border-[#40213F] bg-transparent
+                 px-3 font-montserrat text-[12px] text-[#2D302D] focus-visible:ring-[#40213F]
+                 min-[744px]:text-[14px]
+                 ${variant === "supervision" ? "min-[1900px]:h-[46px]" : ""}`}
               />
-            ))}
+              <p className="mt-1.5 font-montserrat text-[10px] leading-[1.3] text-[#2D302D]/70 min-[744px]:text-[12px]">
+                {t("eventComments.authNotice")}
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isCommentSubmitting}
+              className={`ml-auto w-full
+              ${variant === "supervision" ? "h-[57px] min-[744px]:h-9 min-[1900px]:h-[57px]" : "h-8 min-[744px]:h-9"}
+              ${variant === "supervision" ? "max-w-none min-[744px]:max-w-42 min-[1900px]:max-w-[277px]" : "max-w-42"}
+              rounded-[30px] bg-white
+              px-6 font-montserrat text-[12px]
+              font-medium text-[#1C100E] hover:bg-white/85
+              disabled:opacity-70 min-[744px]:text-[14px]`}
+            >
+              {isCommentSubmitting
+                ? t("eventComments.sending")
+                : t("eventComments.send")}
+            </Button>
           </div>
+        </form>
+
+        {commentError && (
+          <p className="mt-3 font-montserrat text-[12px] text-[#83105F]">
+            {commentError}
+          </p>
         )}
 
-        <section className="mt-7 border-t border-[#40213F]/45 pt-6 min-[744px]:mt-8 min-[1023px]:pt-7">
-          <h2 className="text-[14px] font-medium min-[744px]:text-[16px]">
-            {t("eventComments.title")} ( {comments.length} )
+        <div className="mt-5 border-t border-[#40213F]/45 pt-4">
+          {comments.map((comment) => (
+            <article key={comment.id}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  {comment.userAvatar && (
+                    <img
+                      src={comment.userAvatar}
+                      alt=""
+                      className="size-6 rounded-full object-cover"
+                    />
+                  )}
+                  <div>
+                    <h3 className="font-montserrat text-[13px] font-medium text-[#1C100E] min-[744px]:text-[14px]">
+                      {comment.author}
+                    </h3>
+                    {comment.createdAt && (
+                      <time
+                        dateTime={comment.createdAt}
+                        className="font-montserrat text-[10px] text-[#2D302D]/65 min-[744px]:text-[11px]"
+                      >
+                        {comment.createdAt}
+                      </time>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleCommentLike(comment.id)}
+                  className="flex items-center gap-1 rounded-full
+                  font-montserrat text-[11px] text-[#1C100E]
+                  focus-visible:outline-none focus-visible:ring-2
+                  focus-visible:ring-[#40213F]"
+                  aria-label="Like comment"
+                >
+                  <span>{comment.likesCount || 0}</span>
+                  <Heart
+                    className={`size-4 ${likedCommentIds.has(comment.id) ? "fill-[#1C100E]" : ""}`}
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+              <p className="mt-3 font-montserrat text-[12px] leading-[1.45] text-[#2D302D] min-[744px]:text-[14px]">
+                {comment.text}
+              </p>
+            </article>
+          ))}
+          {!comments.length && (
+            <p className="font-montserrat text-[12px] text-[#2D302D]/70 min-[744px]:text-[14px]">
+              {t("eventComments.authNotice")}
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+
+  const renderEducatorsRegistrationButton = (className = "") => (
+    <Button
+      type="button"
+      onClick={() => setIsRegistrationOpen(true)}
+      className={`h-[57px] w-full rounded-[30px]
+        border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700]
+        via-[#FFD43B] to-[#FFF0A8] px-5 font-montserrat
+        text-[16px] font-medium text-[#1C100E] shadow-btn
+        hover:brightness-105 focus-visible:ring-[#40213F]
+        min-[744px]:text-[14px] min-[1900px]:h-16 ${className}`}
+    >
+      {t("eventRegistration.open")}
+    </Button>
+  );
+
+  const renderEducatorsImage = (className: string, showCaption = true) => (
+    <div className={`relative overflow-hidden rounded-lg ${className}`}>
+      <img
+        src={educatorsImage}
+        alt={displayTitle}
+        className="h-full w-full object-cover"
+      />
+      {showCaption && (
+        <div
+          className="absolute inset-x-0 bottom-2 text-center font-montserrat
+          text-[24px] font-semibold leading-[1.05] text-[#5B26FF]
+          min-[744px]:bottom-1 min-[744px]:text-[16px]
+          min-[1023px]:bottom-3 min-[1023px]:text-[24px] min-[1420px]:hidden"
+        >
+          <p>ДЛЯ ОСВІТЯН</p>
+          <p className="text-[13px] min-[744px]:text-[9px] min-[1023px]:text-[14px]">
+            підтримка, розвантаження
+          </p>
+          <p className="text-[13px] min-[744px]:text-[9px] min-[1023px]:text-[14px]">
+            додаткові знання
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderEducatorsText = (items: string[], className = "") => (
+    <div className={`space-y-3 ${eventBodyClass} ${className}`}>
+      {items.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+    </div>
+  );
+
+  const renderEducatorsComments = () => (
+    <section className="relative mt-7 border-t border-[#1C100E]/45 pt-5 min-[744px]:mt-6 min-[1023px]:mt-8">
+      <div
+        className="grid gap-5 min-[1023px]:block
+        min-[1420px]:grid min-[1420px]:grid-cols-[845px_409px] min-[1420px]:gap-x-6
+        min-[1900px]:grid-cols-[1203px_487px] min-[1900px]:gap-x-[126px]"
+      >
+        <div className="relative z-10 min-[1023px]:w-[666px] min-[1420px]:w-[845px] min-[1900px]:w-[1203px]">
+          <h2 className="font-montserrat text-[24px] font-medium leading-[1.4] text-[#1C100E] min-[744px]:text-[20px]">
+            {t("eventComments.title")} ( {commentsCount} )
           </h2>
 
-          <form onSubmit={handleCommentSubmit} className="mt-5 max-w-[620px]">
+          <form onSubmit={handleCommentSubmit} className="mt-8">
             <label
-              htmlFor="event-comment-author"
-              className="flex items-center gap-3 text-[12px] text-[#1C100E]/78"
+              htmlFor="educators-comment-text"
+              className="flex items-center gap-3 font-montserrat text-[14px] text-[#2D302D]"
             >
-              <CircleUserRound className="size-6" aria-hidden="true" />
+              <CircleUserRound className="size-8 min-[744px]:size-6" aria-hidden="true" />
               {t("eventComments.reply")}
             </label>
 
-            <Input
-              id="event-comment-author"
-              value={author}
-              onChange={(event) => setAuthor(event.target.value)}
-              maxLength={80}
-              required
-              placeholder={t("eventComments.author")}
-              className="sr-only"
-            />
-
-            <div className="mt-5 grid gap-3 min-[744px]:grid-cols-[1fr_180px] min-[1023px]:grid-cols-[1fr_210px]">
+            <div className="mt-5 grid gap-3">
               <div>
                 <Input
+                  id="educators-comment-text"
                   value={commentText}
-                  onChange={(event) => {
-                    if (!author.trim()) setAuthor(t("eventComments.guest"));
-                    setCommentText(event.target.value);
-                  }}
+                  onChange={(event) => setCommentText(event.target.value)}
                   maxLength={1000}
                   required
                   placeholder={t("eventComments.placeholderShort")}
-                  className="h-8 rounded-[30px] border-[#40213F] bg-transparent px-4 font-montserrat text-[12px] focus-visible:ring-[#40213F]"
+                  className="h-[50px] rounded-[30px] border-[#40213F] bg-transparent
+                  px-4 font-montserrat text-[14px] text-[#2D302D] focus-visible:ring-[#40213F]
+                  min-[744px]:h-[50px]"
                 />
-                <p className="mt-2 text-[10px] leading-[1.3] text-[#1C100E]/65">
+                <p className="mt-2 font-montserrat text-[12px] leading-[1.35] text-[#2D302D]/70">
                   {t("eventComments.authNotice")}
                 </p>
               </div>
@@ -236,7 +590,10 @@ export function EventDetailPage() {
               <Button
                 type="submit"
                 disabled={isCommentSubmitting}
-                className="h-9 rounded-[30px] bg-white px-8 font-montserrat text-[12px] font-medium text-[#1C100E] hover:bg-white/85 disabled:opacity-70"
+                className="ml-auto h-[57px] w-full max-w-[320px] rounded-[30px] bg-white
+                px-6 font-montserrat text-[16px] font-medium text-[#1C100E]
+                hover:bg-white/85 disabled:opacity-70 min-[744px]:h-[57px] min-[744px]:max-w-[320px]
+                min-[744px]:text-[14px] min-[1023px]:max-w-[206px]"
               >
                 {isCommentSubmitting
                   ? t("eventComments.sending")
@@ -246,21 +603,138 @@ export function EventDetailPage() {
           </form>
 
           {commentError && (
-            <p className="mt-3 text-[12px] text-[#83105F]">{commentError}</p>
+            <p className="mt-3 font-montserrat text-[12px] text-[#83105F]">
+              {commentError}
+            </p>
           )}
 
-          <div className="mt-5 grid gap-3">
+          <div className="mt-7 border-t border-[#40213F]/45 pt-4">
             {comments.map((comment) => (
-              <article key={comment.id} className="max-w-[620px] rounded-[8px] bg-[#FFF7FF] p-4">
-                <h3 className="text-[13px] font-medium">{comment.author}</h3>
-                <p className="mt-2 text-[12px] leading-[1.45] text-[#1C100E]/80">
+              <article key={comment.id}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    {comment.userAvatar && (
+                      <img
+                        src={comment.userAvatar}
+                        alt=""
+                        className="size-6 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      <h3 className="font-montserrat text-[16px] font-normal text-[#2D302D] min-[744px]:text-[14px]">
+                        {comment.author}
+                      </h3>
+                      {comment.createdAt && (
+                        <time
+                          dateTime={comment.createdAt}
+                          className="font-montserrat text-[12px] text-[#2D302D]/65 min-[744px]:text-[11px]"
+                        >
+                          {comment.createdAt}
+                        </time>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleCommentLike(comment.id)}
+                    className="flex items-center gap-1 rounded-full
+                    font-montserrat text-[11px] text-[#1C100E]
+                    focus-visible:outline-none focus-visible:ring-2
+                    focus-visible:ring-[#40213F]"
+                    aria-label="Like comment"
+                  >
+                    <span>{comment.likesCount || 0}</span>
+                    <Heart
+                      className={`size-5 ${likedCommentIds.has(comment.id) ? "fill-[#1C100E]" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+                <p className="mt-4 font-montserrat text-[14px] leading-[1.45] text-[#2D302D] min-[744px]:text-[12px]">
                   {comment.text}
                 </p>
               </article>
             ))}
+            {!comments.length && (
+              <p className="font-montserrat text-[12px] text-[#2D302D]/70 min-[744px]:text-[14px]">
+                {t("eventComments.authNotice")}
+              </p>
+            )}
           </div>
-        </section>
-      </article>
+        </div>
+
+        <img
+          src="/sun.png"
+          alt=""
+          aria-hidden="true"
+          className="z-0 hidden object-contain opacity-90 min-[1023px]:absolute
+          min-[1023px]:right-0 min-[1023px]:top-0 min-[1023px]:block
+          min-[1023px]:h-[341px] min-[1023px]:w-[342px]
+          min-[1420px]:static min-[1420px]:h-[409px] min-[1420px]:w-[409px]
+          min-[1900px]:h-[487px] min-[1900px]:w-[487px]"
+        />
+      </div>
     </section>
+  );
+
+  if (isEducatorsEvent) {
+    return (
+      <>
+        <EducatorsEventContent
+          displayTitle={displayTitle}
+          paragraphs={paragraphs}
+          renderEventActions={renderEventActions}
+          renderEducatorsImage={renderEducatorsImage}
+          renderEducatorsText={renderEducatorsText}
+          renderEducatorsRegistrationButton={renderEducatorsRegistrationButton}
+          renderEducatorsComments={renderEducatorsComments}
+        />
+        <EventRegistrationDialog
+          eventId={event.id}
+          open={isRegistrationOpen}
+          onOpenChange={setIsRegistrationOpen}
+        />
+      </>
+    );
+  }
+
+  if (isSupervisionEvent) {
+    return (
+      <SupervisionEventContent
+        lang={copyLang}
+        renderEventActions={renderEventActions}
+        renderComments={() => renderComments("supervision")}
+      />
+    );
+  }
+
+  if (isWorkshopEvent) {
+    return (
+      <WorkshopEventContent
+        copyLang={copyLang}
+        displayTitle={displayTitle}
+        paragraphs={paragraphs}
+        renderEventActions={renderEventActions}
+        renderComments={renderComments}
+      />
+    );
+  }
+
+  return (
+    <>
+      <GenericEventContent
+        title={displayTitle}
+        description={serverDescription}
+        images={serverImages}
+        renderEventActions={renderEventActions}
+        renderComments={renderComments}
+        renderRegistrationButton={renderRegistrationButton}
+      />
+      <EventRegistrationDialog
+        eventId={event.id}
+        open={isRegistrationOpen}
+        onOpenChange={setIsRegistrationOpen}
+      />
+    </>
   );
 }

@@ -296,6 +296,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         body: JSON.stringify({
           email,
           password,
+          confirm_password: passwordConfirm,
           role: selectedRole,
         }),
       })

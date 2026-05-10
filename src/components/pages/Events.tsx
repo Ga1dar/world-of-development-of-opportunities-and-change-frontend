@@ -1,11 +1,28 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { fallbackCategories, type EventCategory } from "../../api/events";
+import {
+  fallbackCategories,
+  getEventCategories,
+  type EventCategory,
+} from "../../api/events";
 
 export function Events() {
   const { i18n, t } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "ua";
-  const categories = fallbackCategories;
+  const [categories, setCategories] = useState<EventCategory[]>(fallbackCategories);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getEventCategories().then((items) => {
+      if (isMounted) setCategories(items);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const getTitle = (category: EventCategory) =>
     lang === "en" ? category.title_en : category.title_ua;

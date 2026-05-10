@@ -1,0 +1,95 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api/v1
+        - VITE_GOOGLE_CLIENT_ID=499272098782-dq51h9qelj22g5gd2r7haontpvic67oj.apps.googleusercontent.com
+    container_name: wdoc-frontend-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - wdoc-network
+  backend:
+    image: whatislavx/wdoc-backend-test:latest
+    container_name: wdoc-backend-dev
+    environment:
+      SECRET_KEY: local_secret_key_change_me
+      FRONTEND_URL: http://localhost:8080
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PORT: 587
+      EMAIL_HOST_USER: world.dev.opps.change@gmail.com
+      EMAIL_HOST_PASSWORD: djot hdgt ggrh uwcp
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: wdoc
+      POSTGRES_USER: wdoc
+      POSTGRES_PASSWORD: wdoc
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    restart: always
+    networks:
+      - wdoc-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: wdoc-db
+    restart: always
+    environment:
+      POSTGRES_DB: wdoc
+      POSTGRES_USER: wdoc
+      POSTGRES_PASSWORD: wdoc
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wdoc-network
+
+  redis:
+    image: redis:alpine
+    container_name: wdoc-redis-dev
+    restart: always
+    networks:
+      - wdoc-network
+
+  celery:
+    image: whatislavx/wdoc-backend-test:latest
+    container_name: celery_dev
+    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
+    environment:
+      SECRET_KEY: local_secret_key_change_me
+      FRONTEND_URL: http://localhost:8080
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PORT: 587
+      EMAIL_HOST_USER: world.dev.opps.change@gmail.com
+      EMAIL_HOST_PASSWORD: djot hdgt ggrh uwcp
+      ALLOWED_HOSTS: "*"
+      POSTGRES_DB: wdoc
+      POSTGRES_USER: wdoc
+      POSTGRES_PASSWORD: wdoc
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+    restart: always
+    networks:
+      - wdoc-network
+
+networks:
+  wdoc-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
