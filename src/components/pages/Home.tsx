@@ -28,6 +28,9 @@ export function Home() {
   const paragraphs = firstEvent ? getDescription(firstEvent) : [];
   const firstThree = paragraphs.slice(0, 2);
   const rest = paragraphs.slice(2);
+  const firstEventUrl = firstEvent
+    ? `/events/${firstEvent.categorySlug}/${firstEvent.id}`
+    : "/events";
 
   return (
     <>
@@ -140,7 +143,7 @@ export function Home() {
                 </p>
               ))}
                <Link
-                to="/events"
+                to={firstEventUrl}
                 className="mt-4 flex h-14.25 w-full items-center
                   justify-center rounded-[30px] border-2 border-yellow
                   bg-[linear-gradient(180deg,#FFC401_0%,#FFC021_45%,#FEFA8B_100%)]

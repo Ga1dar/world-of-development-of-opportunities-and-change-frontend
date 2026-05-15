@@ -159,7 +159,44 @@
     "nextMonth": "Next month"
   },
   "contactAddress": "Heroiv Ukrainy St, 13, Pokrov, Dnipropetrovsk Oblast, Ukraine",
+  "eventsBackToCategories": "Back to categories",
+  "eventsBackToCategory": "Back to category events",
+  "eventsLoading": "Loading event...",
+  "eventRegistration": {
+    "open": "Register for event",
+    "title": "Event registration",
+    "description": "Fill in the form and we will contact you about participation.",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "experience": "Your experience",
+    "comment": "Comment or question",
+    "submit": "Register",
+    "submitting": "Sending...",
+    "successTitle": "Thank you for registering",
+    "successDescription": "We received your registration. After confirmation, we will send participation details.",
+    "errorTitle": "Could not register",
+    "errorDescription": "Check the entered data and try again.",
+    "networkTitle": "Server is not responding",
+    "networkDescription": "We could not reach the server right now. Please try again later.",
+    "tryAgain": "Try again",
+    "done": "Done"
+  },
+  "eventComments": {
+    "title": "Comments",
+    "author": "Your name",
+    "placeholder": "Write a comment",
+    "send": "Send",
+    "sending": "Sending...",
+    "validationError": "Fill in your name and comment.",
+    "fallbackNotice": "The server did not respond, so the comment is shown locally for visual testing.",
+    "reply": "Write a reply",
+    "placeholderShort": "Text...",
+    "authNotice": "To write a comment, you need to register",
+    "guest": "Guest"    
+  },
   "FailedSubscribe": "Failed to subscribe. Please try again.",
   "Thank": "Thank you for subscribing!",
   "UnknownError": "An unknown error occurred."
+
 }
