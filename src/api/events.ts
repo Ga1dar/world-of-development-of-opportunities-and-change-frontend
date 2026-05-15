@@ -1,5 +1,6 @@
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
+import { getAccessToken } from "./auth";
 
 export type EventCategory = {
   id: number;
@@ -48,6 +49,18 @@ export type EventRegistrationPayload = {
   experience: string;
   eating_meat: boolean;
   is_agreed: boolean;
+};
+
+export type CreateEventCategoryPayload = {
+  name: string;
+  image: File;
+};
+
+export type CreateEventPayload = {
+  title: string;
+  description: string;
+  category: number;
+  images: File[];
 };
 
 export type EventRegistrationResult =
@@ -645,6 +658,81 @@ export async function getEventCategories(): Promise<EventCategory[]> {
     console.error(error);
     return fallbackCategories;
   }
+}
+
+export async function createEventCategory(payload: CreateEventCategoryPayload) {
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const formData = new FormData();
+  formData.append("name", payload.name.trim());
+  formData.append("image", payload.image);
+
+  const response = await fetch(endpoints.eventCategories, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const record = asRecord(data);
+    const message =
+      asString(record?.detail) ||
+      asString(record?.name) ||
+      asString(record?.image) ||
+      "Failed to create event category";
+
+    throw new Error(message);
+  }
+
+  return normalizeCategory(data, 0);
+}
+
+export async function createEvent(payload: CreateEventPayload) {
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const formData = new FormData();
+  formData.append("title", payload.title.trim());
+  formData.append("description", payload.description.trim());
+  formData.append("category", String(payload.category));
+  payload.images.forEach((image) => {
+    formData.append("images", image);
+  });
+
+  const response = await fetch(endpoints.events, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const record = asRecord(data);
+    const fieldMessage = record
+      ? Object.values(record)
+          .flatMap((value) => (Array.isArray(value) ? value : [value]))
+          .map((value) => asString(value))
+          .find(Boolean)
+      : "";
+    const message =
+      asString(record?.detail) || fieldMessage || "Failed to create event";
+
+    throw new Error(message);
+  }
+
+  return normalizeEvent(data, 0);
 }
 
 export async function getEvents(): Promise<EventItem[]> {

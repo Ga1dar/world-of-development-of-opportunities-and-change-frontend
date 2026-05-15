@@ -6,6 +6,8 @@ import { Home } from "./components/pages/Home.tsx";
 import { Contacts } from "./components/pages/Contacts.tsx";
 import { Events } from "./components/pages/Events.tsx";
 import { EventCategoryPage } from "./components/pages/EventCategoryPage.tsx";
+import { EventCategoryCreatePage } from "./components/pages/EventCategoryCreatePage.tsx";
+import { EventCreatePage } from "./components/pages/EventCreatePage.tsx";
 import { EventDetailPage } from "./components/pages/EventDetailPage.tsx";
 import { Specialists } from "./components/pages/Specialists.tsx";
 import { SpecialistProfil } from "./components/pages/SpecialistProfil.tsx";
@@ -37,8 +39,10 @@ function App() {
             <Route path="/specialists" element={<Specialists />} />
             <Route path="/specialists/:id" element={<SpecialistProfil />} />
             <Route path="/events" element={<Events />} />
-            <Route path="/events/:categorySlug" element={<EventCategoryPage />} />
+            <Route path="/events/categories/new" element={<EventCategoryCreatePage />} />
+            <Route path="/events/:categorySlug/new" element={<EventCreatePage />} />
             <Route path="/events/:categorySlug/:eventId" element={<EventDetailPage />} />
+            <Route path="/events/:categorySlug" element={<EventCategoryPage />} />
             <Route path="/materials" element={<Edukationmaterial />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route

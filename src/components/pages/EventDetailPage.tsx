@@ -555,7 +555,7 @@ export function EventDetailPage() {
         min-[1420px]:grid min-[1420px]:grid-cols-[845px_409px] min-[1420px]:gap-x-6
         min-[1900px]:grid-cols-[1203px_487px] min-[1900px]:gap-x-[126px]"
       >
-        <div className="relative z-10 min-[1023px]:w-[666px] min-[1420px]:w-[845px] min-[1900px]:w-[1203px]">
+        <div className="relative z-10 min-[1023px]:w-166.5 min-[1420px]:w-[845px] min-[1900px]:w-[1203px]">
           <h2 className="font-montserrat text-[24px] font-medium leading-[1.4] text-[#1C100E] min-[744px]:text-[20px]">
             {t("eventComments.title")} ( {commentsCount} )
           </h2>

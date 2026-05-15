@@ -10,10 +10,11 @@ import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Check, Eye, EyeOff } from "lucide-react"
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
 import { endpoints } from "../../api/endpoints"
+import { getAccessToken, notifyAuthChanged, storeCurrentUser } from "../../api/auth"
 
 type LogInProps = {
   variant?: "header" | "footer" | "menu"
@@ -86,6 +87,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showRecoveryLink, setShowRecoveryLink] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => Boolean(getAccessToken())
+  )
 
   const { t } = useTranslation()
 
@@ -112,7 +116,27 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     if (data.refresh) {
       localStorage.setItem("refreshToken", data.refresh)
     }
+
+    if (data.access || data.refresh) {
+      setIsAuthenticated(Boolean(data.access || getAccessToken()))
+      notifyAuthChanged()
+    }
   }
+
+  useEffect(() => {
+    const updateAuthState = () => {
+      setIsAuthenticated(Boolean(getAccessToken()))
+    }
+
+    updateAuthState()
+    window.addEventListener("auth-changed", updateAuthState)
+    window.addEventListener("storage", updateAuthState)
+
+    return () => {
+      window.removeEventListener("auth-changed", updateAuthState)
+      window.removeEventListener("storage", updateAuthState)
+    }
+  }, [])
 
   const getResponseError = (
     data: Record<string, string[] | string> | null,
@@ -308,10 +332,37 @@ export function LogIn({ variant = "header", text }: LogInProps) {
           setRegisterStep("password")
         }
 
-        throw new Error(getResponseError(data, t("modeError.registered")))
+        throw new Error(
+          getResponseError(
+            data,
+            response.status === 400
+              ? "Цей email вже може бути зареєстрований або дані заповнені некоректно."
+              : t("modeError.registered")
+          )
+        )
       }
 
       storeTokens(data || {})
+
+      if (!data?.access) {
+        const loginResponse = await fetch(endpoints.login, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        })
+
+        const loginData = await loginResponse.json().catch(() => null)
+
+        if (loginResponse.ok) {
+          storeTokens(loginData || {})
+        }
+      }
+
+      storeCurrentUser({ email, role: selectedRole })
+      notifyAuthChanged()
+
       setRegisterStep("success")
     } catch (err) {
       setError(getRequestError(err, t("loginSetError")))
@@ -370,6 +421,21 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
       storeTokens(data || {})
 
+      try {
+        const meResponse = await fetch(endpoints.me, {
+          headers: {
+            Authorization: `Bearer ${data?.access || getAccessToken()}`,
+          },
+        })
+
+        if (meResponse.ok) {
+          storeCurrentUser(await meResponse.json())
+          notifyAuthChanged()
+        }
+      } catch {
+        notifyAuthChanged()
+      }
+
       resetForm()
       setOpen(false)
       setMode("login")
@@ -382,6 +448,8 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   }
 
   const handleOpen = () => {
+    if (isAuthenticated) return
+
     resetForm()
 
     if (variant === "footer") {
@@ -525,7 +593,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   const buttonText =
     text ||
-    (variant === "footer"
+    (isAuthenticated
+      ? "Профіль"
+      : variant === "footer"
       ? t("buttonText.footer")
       : variant === "menu"
         ? t("buttonText.header")
@@ -536,7 +606,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
         ? "mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] bg-[#FFFFFF] px-2 py-4 font-montserrat text-[18px] font-[500] text-black sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px]"
-        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:!w-14.25 min-[1420px]:text-[18px]"
+        : `my-auto h-[57px] rounded-[30px] bg-[#FFFFFF] px-3 font-montserrat font-[500] text-black sm:w-auto min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:text-[18px] ${
+            isAuthenticated
+              ? "w-24 text-[15px] min-[1420px]:!w-24"
+              : "w-[57px] text-[18px] sm:w-18.25 min-[1420px]:!w-14.25"
+          }`
 
   const modalTitle =
     mode === "login"
@@ -556,7 +630,12 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={isAuthenticated ? false : open}
+        onOpenChange={(nextOpen) => {
+          if (!isAuthenticated) setOpen(nextOpen)
+        }}
+      >
         <DialogTrigger asChild>
           <Button className={triggerClassName} onClick={handleOpen}>
             {buttonText}

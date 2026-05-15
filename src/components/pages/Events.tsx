@@ -6,11 +6,13 @@ import {
   getEventCategories,
   type EventCategory,
 } from "../../api/events";
+import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
 
 export function Events() {
   const { i18n, t } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "ua";
   const [categories, setCategories] = useState<EventCategory[]>(fallbackCategories);
+  const canCreateEvents = useCanCreateEvents();
 
   useEffect(() => {
     let isMounted = true;
@@ -50,6 +52,15 @@ export function Events() {
             </Link>
           ))}
         </div>
+
+        {canCreateEvents && (
+          <Link
+            to="/events/categories/new"
+            className="mt-5 flex h-10 w-full max-w-[326px] items-center justify-center rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] text-center text-[12px] font-medium text-[#1C100E] shadow-btn transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:ml-auto min-[744px]:mt-7 min-[744px]:max-w-[277px] min-[1023px]:mt-9 min-[1420px]:mt-10 min-[1900px]:max-w-[277px]"
+          >
+            Додати категорію
+          </Link>
+        )}
       </div>
     </section>
   );

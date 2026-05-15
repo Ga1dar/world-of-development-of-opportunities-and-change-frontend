@@ -7,6 +7,7 @@ import {
   toggleEventLike,
   type EventItem,
 } from "../../api/events";
+import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
 
 const formatEventDate = (value: string | undefined, lang: "ua" | "en") => {
   if (!value) return "";
@@ -28,6 +29,7 @@ export function EventCategoryPage() {
   const lang = i18n.language.startsWith("en") ? "en" : "ua";
   const [events, setEvents] = useState<EventItem[]>([]);
   const [likedEventIds, setLikedEventIds] = useState<Set<number>>(new Set());
+  const canCreateEvents = useCanCreateEvents();
 
   useEffect(() => {
     let isMounted = true;
@@ -76,9 +78,9 @@ export function EventCategoryPage() {
     lang === "en" ? event.description_en : event.description_ua;
 
   return (
-    <section className="bg-secondary px-5 pb-12 pt-5 font-montserrat text-[#1C100E] min-[390px]:px-7 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-7 min-[1023px]:px-12 min-[1023px]:pb-15 min-[1023px]:pt-8 min-[1420px]:px-20 min-[1420px]:pb-18 min-[1420px]:pt-6 min-[1900px]:pb-24 min-[1900px]:pt-6">
+    <section className="-mt-14 bg-secondary px-5 pb-12 pt-10 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-7 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-[60px] min-[1023px]:px-[84px] min-[1023px]:pb-15 min-[1023px]:pt-[100px] min-[1420px]:mt-0! min-[1420px]:px-[98px] min-[1420px]:pb-18 min-[1420px]:pt-[100px] min-[1900px]:px-[134px] min-[1900px]:pb-24 min-[1900px]:pt-[134px]">
       <div className="w-full">
-        <div className="grid grid-cols-1 gap-y-12 min-[744px]:gap-y-14 min-[1023px]:grid-cols-[326px_1fr] min-[1420px]:grid-cols-[360px_1fr] min-[1900px]:grid-cols-[360px_1fr]">
+        <div className="grid grid-cols-1 gap-y-12 min-[744px]:gap-y-14 min-[1023px]:grid-cols-[436px_1fr] min-[1420px]:grid-cols-[628px_1fr] min-[1900px]:grid-cols-[585px_1fr]">
           <div className="flex flex-col gap-12 min-[744px]:gap-14">
             {events.map((event) => {
               const title = getEventTitle(event);
@@ -88,9 +90,9 @@ export function EventCategoryPage() {
               return (
                 <article
                   key={event.id}
-                  className="w-full max-w-[326px] min-[390px]:max-w-none min-[744px]:max-w-[326px] min-[1023px]:max-w-[326px] min-[1420px]:max-w-[330px] min-[1900px]:max-w-[330px]"
+                  className="w-full max-w-[326px] min-[390px]:max-w-none min-[744px]:max-w-[664px] min-[1023px]:max-w-[436px] min-[1420px]:max-w-[628px] min-[1900px]:max-w-[585px]"
                 >
-                  <h1 className="mx-auto max-w-[310px] text-center text-[15px] font-medium leading-[1.2] min-[744px]:text-[18px] min-[1023px]:text-[16px] min-[1420px]:text-[17px] min-[1900px]:text-[18px]">
+                  <h1 className="mx-auto max-w-[310px] text-center text-[15px] font-medium leading-[1.2] min-[744px]:max-w-[520px] min-[744px]:text-[18px] min-[1023px]:max-w-[380px] min-[1023px]:text-[16px] min-[1420px]:max-w-[560px] min-[1420px]:text-[17px] min-[1900px]:max-w-[520px] min-[1900px]:text-[18px]">
                     {title}
                   </h1>
 
@@ -135,7 +137,7 @@ export function EventCategoryPage() {
 
                   <Link
                     to={detailUrl}
-                    className="mx-auto mt-4 flex h-10 w-full max-w-[210px] items-center justify-center rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] text-center text-[13px] font-medium text-[#1C100E] shadow-btn transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:mt-5 min-[744px]:max-w-[224px]"
+                    className="mt-4 flex h-10 w-full items-center justify-center rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] text-center text-[13px] font-medium text-[#1C100E] shadow-btn transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:ml-auto min-[744px]:mt-5 min-[744px]:h-[57px] min-[744px]:max-w-[276px]"
                   >
                     {t("homeBottomLink")}
                   </Link>
@@ -143,6 +145,17 @@ export function EventCategoryPage() {
               );
             })}
           </div>
+
+          {canCreateEvents && (
+            <div className="min-[1023px]:flex min-[1023px]:items-end min-[1023px]:justify-end min-[1023px]:pb-[74px] min-[1420px]:pb-[66px] min-[1900px]:pb-[80px]">
+              <Link
+                to={`/events/${categorySlug}/new`}
+                className="mt-5 flex h-10 w-full max-w-[326px] items-center justify-center rounded-[30px] bg-white text-center text-[13px] font-medium text-[#1C100E] transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:mt-6 min-[744px]:max-w-[276px] min-[1023px]:mt-0"
+              >
+                Додати подію
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </section>
