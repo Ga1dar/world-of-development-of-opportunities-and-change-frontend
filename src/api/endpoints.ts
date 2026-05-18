@@ -14,8 +14,11 @@ export const endpoints = {
   passwordResetConfirm: `${API_URL}/users/password-reset/confirm/`,
   googleAuth: `${API_URL}/users/google/`,
   newsletterSubscribe: `${API_URL}/newsletter/subscribe`,
+  consultationSlots: (specialistId: string | number) =>
+    `${API_URL}/scheduling/slots/?specialist=${specialistId}`,
+  consultationAppointments: `${API_URL}/scheduling/appointments/`,
   consultationBooking:
     import.meta.env.VITE_CONSULTATION_BOOKING_ENDPOINT ||
-    `${API_URL}/consultations/`,
+    `${API_URL}/scheduling/appointments/`,
 
 };

@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -16,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   bookConsultation,
+  getConsultationSlots,
+  type ConsultationSlot,
   type ConsultationBookingResult,
 } from "../../api/consultations";
 
@@ -26,8 +29,6 @@ type ConsultationDialogProps = {
 };
 
 type DialogStep = "intro" | "calendar" | ConsultationBookingResult["status"];
-
-const TIMES = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"];
 
 const toDateInputValue = (date: Date) => {
   const year = date.getFullYear();
@@ -99,7 +100,10 @@ export function ConsultationDialog({
   const [visibleMonth, setVisibleMonth] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
   );
-  const [selectedTime, setSelectedTime] = useState(TIMES[0]);
+  const [selectedTime, setSelectedTime] = useState("");
+  const [slots, setSlots] = useState<ConsultationSlot[]>([]);
+  const [isSlotsLoading, setIsSlotsLoading] = useState(false);
+  const [slotsLoadFailed, setSlotsLoadFailed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const timeScrollerRef = useRef<HTMLDivElement | null>(null);
   const timeDragRef = useRef({
@@ -115,12 +119,75 @@ export function ConsultationDialog({
   const weekDays = useMemo(() => getWeekDays(calendarLocale), [calendarLocale]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
   const minDate = toDateInputValue(today);
+  const availableDates = useMemo(
+    () => new Set(slots.map((slot) => slot.date)),
+    [slots],
+  );
+  const selectedDaySlots = useMemo(
+    () => slots.filter((slot) => slot.date === selectedDate),
+    [selectedDate, slots],
+  );
+  const selectedSlot = useMemo(
+    () => selectedDaySlots.find((slot) => slot.time === selectedTime) || null,
+    [selectedDaySlots, selectedTime],
+  );
+
+  useEffect(() => {
+    if (!open || !Number.isInteger(specialistId) || specialistId <= 0) return;
+
+    const controller = new AbortController();
+    setIsSlotsLoading(true);
+    setSlotsLoadFailed(false);
+
+    getConsultationSlots(specialistId, controller.signal)
+      .then((items) => {
+        setSlots(items);
+
+        const firstSlot = items[0];
+        if (firstSlot) {
+          const firstDate = new Date(firstSlot.date);
+          setSelectedDate(firstSlot.date);
+          setSelectedTime(firstSlot.time);
+          setVisibleMonth(
+            new Date(firstDate.getFullYear(), firstDate.getMonth(), 1),
+          );
+        } else {
+          setSelectedTime("");
+        }
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setSlotsLoadFailed(true);
+        setSlots([]);
+        setSelectedTime("");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsSlotsLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [open, specialistId]);
+
+  useEffect(() => {
+    if (!selectedDaySlots.length) {
+      setSelectedTime("");
+      return;
+    }
+
+    if (!selectedDaySlots.some((slot) => slot.time === selectedTime)) {
+      setSelectedTime(selectedDaySlots[0].time);
+    }
+  }, [selectedDate, selectedDaySlots, selectedTime]);
 
   const reset = () => {
     setStep("intro");
     setSelectedDate(toDateInputValue(today));
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedTime(TIMES[0]);
+    setSelectedTime("");
+    setSlots([]);
+    setSlotsLoadFailed(false);
     setIsSubmitting(false);
   };
 
@@ -141,13 +208,16 @@ export function ConsultationDialog({
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
+    if (!selectedSlot) {
+      setStep("busy");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const result = await bookConsultation({
-        specialist: specialistId,
-        date: selectedDate,
-        time: selectedTime,
+        slot: selectedSlot.id,
       });
 
       setStep(result.status);
@@ -362,7 +432,8 @@ export function ConsultationDialog({
                 {monthDays.map(({ date, currentMonth }) => {
                   const value = toDateInputValue(date);
                   const isSelected = value === selectedDate;
-                  const isDisabled = value < minDate;
+                  const hasSlot = availableDates.has(value);
+                  const isDisabled = value < minDate || !hasSlot || isSlotsLoading;
 
                   return (
                     <button
@@ -376,7 +447,9 @@ export function ConsultationDialog({
                           ? "bg-[#402940] text-white"
                           : currentMonth
                             ? "text-[#1C100E] hover:bg-[#F0E8F0]"
-                            : "text-[#1C100E]/25"
+                            : hasSlot
+                              ? "text-[#1C100E]/25"
+                              : "text-[#1C100E]/15"
                       } ${isDisabled ? "cursor-not-allowed opacity-30 hover:bg-transparent" : ""}`}
                     >
                       {date.getDate()}
@@ -389,6 +462,21 @@ export function ConsultationDialog({
             <p className="mt-5 font-montserrat text-[14px] text-[#1C100E]">
               {t("consultationDialog.time")}
             </p>
+            {isSlotsLoading && (
+              <p className="mt-3 font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/65">
+                {t("consultationDialog.loadingSlots")}
+              </p>
+            )}
+            {!isSlotsLoading && slotsLoadFailed && (
+              <p className="mt-3 font-montserrat text-[12px] leading-[1.35] text-[#83105F]">
+                {t("consultationDialog.slotsLoadFailed")}
+              </p>
+            )}
+            {!isSlotsLoading && !slotsLoadFailed && !selectedDaySlots.length && (
+              <p className="mt-3 font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/65">
+                {t("consultationDialog.noSlots")}
+              </p>
+            )}
             <div
               ref={timeScrollerRef}
               onPointerDown={handleTimePointerDown}
@@ -406,21 +494,21 @@ export function ConsultationDialog({
               min-[1900px]:cursor-default min-[1900px]:overflow-x-visible 
               min-[1900px]:pl-0 min-[1900px]:[scrollbar-width:none]
               min-[1900px]:[&::-webkit-scrollbar]:hidden">
-              {TIMES.map((time) => (
+              {selectedDaySlots.map((slot) => (
                 <button
-                  key={time}
+                  key={slot.id}
                   type="button"
-                  aria-pressed={selectedTime === time}
-                  onClick={() => setSelectedTime(time)}
+                  aria-pressed={selectedTime === slot.time}
+                  onClick={() => setSelectedTime(slot.time)}
                   className={`flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full
                      select-none bg-white px-0 text-center font-montserrat text-[12px] leading-none text-[#1C100E] 
                      transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
-                    selectedTime === time
+                    selectedTime === slot.time
                       ? "ring-2 ring-[#402940]"
                       : "hover:bg-[#F0E8F0]"
                   }`}
                 >
-                  {time}
+                  {slot.time}
                 </button>
               ))}
             </div>
@@ -430,7 +518,7 @@ export function ConsultationDialog({
             </p>
             <Button
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedSlot}
               onClick={handleSubmit}
               className="mt-5 h-10 w-full max-w-full rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105 disabled:opacity-70 sm:max-w-[340px]"
             >
