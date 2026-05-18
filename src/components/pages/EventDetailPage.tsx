@@ -6,6 +6,7 @@ import {
   createEventComment,
   getEvent,
   getEventComments,
+  getLocallyLikedEventIds,
   toggleCommentLike,
   toggleEventLike,
   type EventComment,
@@ -208,6 +209,9 @@ export function EventDetailPage() {
         if (!isMounted) return;
         setEvent(eventItem);
         setComments(commentItems);
+        setIsEventLiked(
+          Boolean(eventItem?.isLiked || (eventItem && getLocallyLikedEventIds().has(eventItem.id))),
+        );
       },
     );
 
@@ -256,7 +260,11 @@ export function EventDetailPage() {
       setIsEventLiked(result.liked);
       setEvent((current) =>
         current
-          ? { ...current, likesCount: Math.max((current.likesCount || 0) + delta, 0) }
+          ? {
+              ...current,
+              likesCount: Math.max((current.likesCount || 0) + delta, 0),
+              isLiked: result.liked,
+            }
           : current,
       );
     } catch (error) {

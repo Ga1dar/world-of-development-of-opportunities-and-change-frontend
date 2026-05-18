@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Check, Eye, EyeOff } from "lucide-react"
 import { type FormEvent, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router-dom"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
 import { endpoints } from "../../api/endpoints"
 import { getAccessToken, notifyAuthChanged, storeCurrentUser } from "../../api/auth"
@@ -91,7 +92,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     () => Boolean(getAccessToken())
   )
 
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -594,7 +595,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const buttonText =
     text ||
     (isAuthenticated
-      ? "Профіль"
+      ? i18n.language.toLowerCase().startsWith("en")
+        ? "Profile"
+        : "Профіль"
       : variant === "footer"
       ? t("buttonText.footer")
       : variant === "menu"
@@ -627,6 +630,14 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       : mode === "login" || registerStep !== "password"
         ? t("buttonSubmit.further")
         : t("registerSavePassword")
+
+  if (isAuthenticated) {
+    return (
+      <Link to="/profile" className={`inline-flex items-center justify-center ${triggerClassName}`}>
+        {buttonText}
+      </Link>
+    )
+  }
 
   return (
     <>

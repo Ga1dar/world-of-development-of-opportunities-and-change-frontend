@@ -17,6 +17,7 @@ import { Edukationmaterial } from "./components/pages/EducationMaterial.tsx";
 import { ScrollToTop } from "./components/ScrollToTop.tsx";
 import { PasswordResetConfirm } from "./components/pages/PasswordResetConfirm.tsx";
 import { Aboutus } from "./components/pages/Aboutus.tsx";
+import { UserCabinetPage } from "./components/pages/UserCabinetPage.tsx";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,6 +46,7 @@ function App() {
             <Route path="/events/:categorySlug" element={<EventCategoryPage />} />
             <Route path="/materials" element={<Edukationmaterial />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/profile" element={<UserCabinetPage />} />
             <Route
               path="/password-reset/confirm"
               element={<PasswordResetConfirm />}

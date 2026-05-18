@@ -3,11 +3,13 @@ import { API_URL } from './client.ts';
 
 export const endpoints = {
   login: `${API_URL}/users/login/`,
+  logout: `${API_URL}/users/logout/`,
   register: `${API_URL}/users/register/`,
   me: `${API_URL}/users/list/me/`,
   specialists: `${API_URL}/profiles/specialist-profiles/`,
   specialistProfile: (id: string | number) =>
     `${API_URL}/profiles/specialist-profiles/${id}/`,
+  userProfiles: `${API_URL}/profiles/user-profiles/`,
   profiles: `${API_URL}/profiles/`,
   events: `${API_URL}/events/`,
   eventCategories:
@@ -27,6 +29,9 @@ export const endpoints = {
   consultationSlots: (specialistId: string | number) =>
     `${API_URL}/scheduling/slots/?specialist=${specialistId}`,
   consultationAppointments: `${API_URL}/scheduling/appointments/`,
+  consultationCompletedAppointments: `${API_URL}/scheduling/appointments/completed/`,
+  consultationAppointment: (id: string | number) =>
+    `${API_URL}/scheduling/appointments/${id}/`,
   consultationBooking:
     import.meta.env.VITE_CONSULTATION_BOOKING_ENDPOINT ||
     `${API_URL}/scheduling/appointments/`,

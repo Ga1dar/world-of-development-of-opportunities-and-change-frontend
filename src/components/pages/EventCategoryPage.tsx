@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Heart, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  getLocallyLikedEventIds,
   getEventsByCategory,
   toggleEventLike,
   type EventItem,
@@ -35,7 +36,17 @@ export function EventCategoryPage() {
     let isMounted = true;
 
     getEventsByCategory(categorySlug).then((eventItems) => {
-      if (isMounted) setEvents(eventItems);
+      if (!isMounted) return;
+
+      const localLikedIds = getLocallyLikedEventIds();
+      setEvents(eventItems);
+      setLikedEventIds(
+        new Set(
+          eventItems
+            .filter((event) => event.isLiked || localLikedIds.has(event.id))
+            .map((event) => event.id),
+        ),
+      );
     });
 
     return () => {
@@ -63,6 +74,7 @@ export function EventCategoryPage() {
             ? {
                 ...event,
                 likesCount: Math.max((event.likesCount || 0) + delta, 0),
+                isLiked: result.liked,
               }
             : event,
         ),

@@ -1,6 +1,6 @@
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
-import { getAccessToken } from "./auth";
+import { getAccessToken, getStoredCurrentUser } from "./auth";
 
 export type EventCategory = {
   id: number;
@@ -33,6 +33,7 @@ export type EventItem = {
   image: string;
   galleryImages: string[];
   likesCount?: number;
+  isLiked?: boolean;
   commentsCount?: number;
   createdAt?: string;
   eventDate?: string;
@@ -305,6 +306,8 @@ const fallbackEvents: EventItem[] = [
   },
 ];
 
+const LIKED_EVENT_IDS_STORAGE_KEY = "svityLikedEventIds";
+
 const asRecord = (value: unknown): RawRecord | null =>
   value && typeof value === "object" ? (value as RawRecord) : null;
 
@@ -415,6 +418,89 @@ const extractList = (data: unknown, keys: string[]) => {
   return [];
 };
 
+const readStoredLikedEventIds = () => {
+  if (typeof window === "undefined") return new Set<number>();
+
+  try {
+    const values = JSON.parse(localStorage.getItem(LIKED_EVENT_IDS_STORAGE_KEY) || "[]");
+    return new Set(
+      Array.isArray(values)
+        ? values.map((value) => Number(value)).filter((value) => Number.isFinite(value))
+        : [],
+    );
+  } catch {
+    return new Set<number>();
+  }
+};
+
+const saveStoredLikedEventIds = (ids: Set<number>) => {
+  if (typeof window === "undefined") return;
+
+  localStorage.setItem(
+    LIKED_EVENT_IDS_STORAGE_KEY,
+    JSON.stringify(Array.from(ids).sort((a, b) => a - b)),
+  );
+};
+
+const syncStoredEventLike = (eventId: string | number, liked: boolean) => {
+  const numericId = Number(eventId);
+  if (!Number.isFinite(numericId)) return;
+
+  const ids = readStoredLikedEventIds();
+  if (liked) ids.add(numericId);
+  else ids.delete(numericId);
+  saveStoredLikedEventIds(ids);
+};
+
+export const getLocallyLikedEventIds = () => readStoredLikedEventIds();
+
+const isSameCurrentUser = (candidate: unknown) => {
+  const currentUser = getStoredCurrentUser();
+  if (!currentUser) return false;
+
+  const currentId = asString(currentUser.id);
+  const currentEmail = asString(currentUser.email).toLowerCase();
+  const candidateRecord = asRecord(candidate);
+
+  if (!candidateRecord) {
+    const candidateId = asString(candidate);
+    return Boolean(currentId && candidateId === currentId);
+  }
+
+  const userRecord = asRecord(candidateRecord.user);
+  const candidateId =
+    asString(candidateRecord.id) ||
+    asString(candidateRecord.user_id) ||
+    asString(candidateRecord.userId) ||
+    asString(userRecord?.id);
+  const candidateEmail =
+    asString(candidateRecord.email).toLowerCase() ||
+    asString(userRecord?.email).toLowerCase();
+
+  return Boolean(
+    (currentId && candidateId === currentId) ||
+      (currentEmail && candidateEmail === currentEmail),
+  );
+};
+
+const hasCurrentUserLike = (record: RawRecord, eventId: number) => {
+  const explicitLike =
+    record.is_liked ??
+    record.isLiked ??
+    record.liked ??
+    record.liked_by_user ??
+    record.likedByUser ??
+    record.current_user_liked ??
+    record.currentUserLiked;
+
+  if (typeof explicitLike === "boolean") return explicitLike;
+
+  const likes = record.likes ?? record.event_likes ?? record.eventLikes;
+  if (Array.isArray(likes) && likes.some(isSameCurrentUser)) return true;
+
+  return readStoredLikedEventIds().has(eventId);
+};
+
 const normalizeComment = (raw: unknown, index: number): EventComment => {
   const record = asRecord(raw) || {};
 
@@ -453,8 +539,10 @@ const normalizeCategory = (raw: unknown, index: number): EventCategory => {
     asString(record.slug) ||
     slugify(asString(record.code) || titleEn || titleUa, fallback.slug);
 
+  const id = asNumber(record.id, fallback.id || index + 1);
+
   return {
-    id: asNumber(record.id, fallback.id || index + 1),
+    id,
     slug,
     title_ua: titleUa,
     title_en: titleEn,
@@ -493,9 +581,10 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
     asString(record.category_slug) ||
     readNestedString(category, ["slug", "code"]) ||
     slugify(categoryEn || categoryUa, fallback.categorySlug);
+  const id = asNumber(record.id, fallback.id || index + 1);
 
   return {
-    id: asNumber(record.id, fallback.id || index + 1),
+    id,
     slug: asString(record.slug) || slugify(titleEn || titleUa, fallback.slug),
     title_ua: titleUa,
     title_en: titleEn,
@@ -524,6 +613,7 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
       fallback.galleryImages,
     ),
     likesCount: asNumber(record.likes_count ?? record.likesCount, fallback.likesCount || 0),
+    isLiked: hasCurrentUserLike(record, id),
     commentsCount: asNumber(
       record.comments_count ?? record.commentsCount,
       fallback.commentsCount ?? fallback.comments.length,
@@ -740,7 +830,10 @@ export async function getEvents(): Promise<EventItem[]> {
     const url = createEndpointUrl(endpoints.events);
     url.searchParams.set("ordering", "-created_at");
 
-    const { response, data } = await requestJson(url.toString());
+    const { response, data } = await requestJson(
+      url.toString(),
+      hasAccessToken() ? { headers: authHeaders() } : undefined,
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch events");
@@ -865,7 +958,18 @@ export async function toggleEventLike(eventId: string | number) {
     throw new Error("Failed to toggle event like");
   }
 
-  return parseToggleResult(data, "event liked");
+  const result = parseToggleResult(data, "event liked");
+  syncStoredEventLike(eventId, result.liked);
+  return result;
+}
+
+export async function getFavoriteEvents(): Promise<EventItem[]> {
+  if (!hasAccessToken()) return [];
+
+  const events = await getEvents();
+  const localLikedIds = readStoredLikedEventIds();
+
+  return events.filter((event) => event.isLiked || localLikedIds.has(event.id));
 }
 
 export async function toggleCommentLike(

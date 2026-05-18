@@ -86,6 +86,38 @@ export const notifyAuthChanged = () => {
   }
 };
 
+const clearLocalSession = () => {
+  if (typeof window === "undefined") return;
+
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("svityLikedEventIds");
+};
+
+export async function logoutCurrentUser() {
+  if (typeof window === "undefined") return;
+
+  const accessToken = getAccessToken();
+  const refresh = localStorage.getItem("refreshToken") || "";
+
+  try {
+    if (refresh) {
+      await fetch(endpoints.logout, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ refresh }),
+      });
+    }
+  } finally {
+    clearLocalSession();
+    notifyAuthChanged();
+  }
+}
+
 export const canCreateEventsFromStoredToken = () =>
   canCreateEventsFromRecord(getStoredCurrentUser()) ||
   canCreateEventsFromRecord(decodeJwtPayload(getAccessToken()));
