@@ -65,8 +65,8 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   const { t } = useTranslation()
 
-  const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"
+  //const API_URL =
+  //  import.meta.env.VITE_API_URL || "http://localhost/api/v1"
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   const resetForm = () => {
@@ -125,6 +125,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         body: JSON.stringify({
           email,
           password,
+          confirm_password: passwordConfirm,
           role: selectedRole,
         }),
       })
@@ -466,7 +467,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
               <FieldGroup className="gap-y-2">
                 {(mode === "register" && registerStep === "email") ||
-                (mode === "login" && loginStep === "email") ? (
+                  (mode === "login" && loginStep === "email") ? (
                   <>
                     {mode === "login" && (
                       <div className="text-center font-montserrat text-[12px] leading-5 text-[#1C100E] xl:text-[14px]">
@@ -501,7 +502,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 ) : null}
 
                 {(mode === "login" && loginStep === "password") ||
-                (mode === "register" && registerStep === "password") ? (
+                  (mode === "register" && registerStep === "password") ? (
                   <Field className="flex flex-col gap-y-2">
                     <Label
                       htmlFor="password"
