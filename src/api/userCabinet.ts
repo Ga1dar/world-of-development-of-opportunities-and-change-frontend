@@ -104,6 +104,33 @@ const readString = (record: RawRecord | null, keys: string[]) => {
   return "";
 };
 
+const readReferenceId = (value: unknown): string => {
+  const directValue = asString(value);
+  if (directValue) return directValue;
+
+  const record = asRecord(value);
+  if (!record) return "";
+
+  return (
+    readString(record, ["id", "pk", "uuid"]) ||
+    readReferenceId(record.profile) ||
+    readReferenceId(record.specialist_profile) ||
+    readReferenceId(record.specialistProfile)
+  );
+};
+
+const readSpecialistProfileId = (currentUser: RawRecord | null) => {
+  if (!currentUser) return "";
+
+  return (
+    readReferenceId(currentUser.specialist_profile) ||
+    readReferenceId(currentUser.specialistProfile) ||
+    readReferenceId(currentUser.specialist) ||
+    readReferenceId(currentUser.specialist_id) ||
+    readReferenceId(currentUser.specialistProfileId)
+  );
+};
+
 const getApiOrigin = () => {
   try {
     return API_URL ? new URL(API_URL).origin : "";
@@ -145,6 +172,7 @@ const fetchJson = async (url: string, signal?: AbortSignal) => {
 
 const hasSpecialistProfile = (currentUser: RawRecord | null) => {
   if (currentUser?.is_verified === true || currentUser?.isVerified === true) return true;
+  if (readSpecialistProfileId(currentUser)) return true;
 
   const profile =
     currentUser?.specialist_profile ??
@@ -189,6 +217,8 @@ const normalizeProfile = (
   const userFromProfile = asRecord(sourceProfile?.user);
   const source = sourceProfile || currentUser || {};
   const sourceUser = userFromProfile || asRecord(source.user) || currentUser;
+  const specialistProfileId =
+    profileKind === "specialist" ? readString(sourceProfile, ["id"]) || readSpecialistProfileId(currentUser) : "";
 
   const firstName =
     readString(source, ["first_name", "firstName"]) ||
@@ -230,7 +260,11 @@ const normalizeProfile = (
     "";
 
   return {
-    id: readString(source, ["id"]) || readString(sourceUser, ["id"]) || "me",
+    id:
+      specialistProfileId ||
+      readString(source, ["id"]) ||
+      readString(sourceUser, ["id"]) ||
+      "me",
     firstName,
     lastName,
     fullName: directName || [firstName, lastName].filter(Boolean).join(" ") || email || "Profile",
@@ -311,12 +345,7 @@ const matchesCurrentUser = (profile: RawRecord, currentUser: RawRecord | null) =
   const currentId = readString(currentUser, ["id"]);
   const currentEmail = readString(currentUser, ["email"]);
   const profileUser = asRecord(profile.user);
-  const currentSpecialist = asRecord(
-    currentUser.specialist_profile ?? currentUser.specialistProfile,
-  );
-  const currentSpecialistId =
-    readString(currentSpecialist, ["id"]) ||
-    readString(currentUser, ["specialist_profile", "specialistProfile", "specialist_id", "specialistProfileId"]);
+  const currentSpecialistId = readSpecialistProfileId(currentUser);
 
   return (
     !currentId ||
@@ -447,10 +476,22 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     const directSpecialist = asRecord(
       currentUser?.specialist_profile ?? currentUser?.specialistProfile,
     );
+    const directSpecialistId = readSpecialistProfileId(currentUser);
 
     if (directSpecialist) {
       specialistProfile = directSpecialist;
-    } else {
+    } else if (directSpecialistId) {
+      try {
+        specialistProfile = asRecord(
+          await fetchJson(endpoints.specialistProfile(directSpecialistId), signal),
+        );
+      } catch {
+        const profiles = extractList(await fetchJson(endpoints.specialists, signal));
+        specialistProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
+      }
+    }
+
+    if (!specialistProfile && !directSpecialistId) {
       const profiles = extractList(await fetchJson(endpoints.specialists, signal));
       specialistProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
     }
@@ -487,28 +528,46 @@ export async function updateSpecialistProfile(
     throw new Error("Authentication required");
   }
 
-  const body = new FormData();
-  body.append("first_name", input.firstName);
-  body.append("last_name", input.lastName);
-  body.append("phone", input.phone);
-  body.append("city", input.city);
-  body.append("specialization", input.specialization);
-  body.append("education", input.education);
-  body.append("work_experience", input.experience);
-  body.append("about", input.about);
+  const createBody = (avatarField = "avatar") => {
+    const body = new FormData();
+    body.append("first_name", input.firstName);
+    body.append("last_name", input.lastName);
+    body.append("phone", input.phone);
+    body.append("city", input.city);
+    body.append("specialization", input.specialization);
+    body.append("education", input.education);
+    body.append("work_experience", input.experience);
+    body.append("about", input.about);
 
-  if (input.avatar) {
-    body.append("avatar", input.avatar);
+    if (input.avatar) {
+      body.append(avatarField, input.avatar);
+    }
+
+    return body;
+  };
+
+  const sendUpdate = (avatarField = "avatar") =>
+    fetch(endpoints.specialistProfile(profileId), {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: createBody(avatarField),
+    });
+
+  let response = await sendUpdate();
+
+  if (!response.ok && input.avatar && response.status === 400) {
+    for (const avatarField of ["photo", "image", "picture"]) {
+      response = await sendUpdate(avatarField);
+      if (response.ok) break;
+    }
   }
 
-  const response = await fetch(endpoints.specialistProfile(profileId), {
-    method: "PATCH",
-    headers: authHeaders(),
-    body,
-  });
-
   if (!response.ok) {
-    throw new Error(`Profile update failed: ${response.status}`);
+    const details = await response
+      .json()
+      .then((data) => JSON.stringify(data))
+      .catch(() => "");
+    throw new Error(`Profile update failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 
   return response.json().catch(() => null);

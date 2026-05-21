@@ -83,6 +83,11 @@ const asNumber = (value: unknown, fallback = 0) => {
 const asBoolean = (value: unknown) =>
   value === true || value === "true" || value === 1 || value === "1";
 
+const asOptionalBoolean = (value: unknown, fallback: boolean) => {
+  if (value === undefined || value === null || value === "") return fallback;
+  return asBoolean(value);
+};
+
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
 const extractList = (data: unknown): RawRecord[] => {
@@ -315,25 +320,42 @@ export async function getEducationArticle(
   }
 }
 
-export async function toggleEducationArticleLike(slug: string) {
+export async function toggleEducationArticleLike(
+  slug: string,
+  fallbackLiked = true,
+  fallbackLikesCount = 0,
+) {
   const data = await postJson(endpoints.educationArticleLike(slug));
   const record = asRecord(data);
 
   return {
-    likesCount: record ? asNumber(record.likes_count ?? record.likesCount, 0) : 0,
-    isLiked: record ? asBoolean(record.liked ?? record.is_liked ?? record.isLiked) : true,
+    likesCount: record
+      ? asNumber(record.likes_count ?? record.likesCount, fallbackLikesCount)
+      : fallbackLikesCount,
+    isLiked: record
+      ? asOptionalBoolean(record.liked ?? record.is_liked ?? record.isLiked, fallbackLiked)
+      : fallbackLiked,
   };
 }
 
-export async function toggleEducationArticleFavorite(slug: string) {
+export async function toggleEducationArticleFavorite(
+  slug: string,
+  fallbackFavorite = true,
+  fallbackFavoritesCount = 0,
+) {
   const data = await postJson(endpoints.educationArticleFavorite(slug));
   const record = asRecord(data);
 
   return {
-    favoritesCount: record ? asNumber(record.favorites_count ?? record.favoritesCount, 0) : 0,
+    favoritesCount: record
+      ? asNumber(record.favorites_count ?? record.favoritesCount, fallbackFavoritesCount)
+      : fallbackFavoritesCount,
     isFavorite: record
-      ? asBoolean(record.favorite ?? record.is_favorite ?? record.isFavorite)
-      : true,
+      ? asOptionalBoolean(
+          record.favorite ?? record.is_favorite ?? record.isFavorite,
+          fallbackFavorite,
+        )
+      : fallbackFavorite,
   };
 }
 
@@ -470,25 +492,42 @@ export async function getEducationVideo(
   }
 }
 
-export async function toggleEducationVideoLike(slug: string) {
+export async function toggleEducationVideoLike(
+  slug: string,
+  fallbackLiked = true,
+  fallbackLikesCount = 0,
+) {
   const data = await postJson(endpoints.educationVideoLike(slug));
   const record = asRecord(data);
 
   return {
-    likesCount: record ? asNumber(record.likes_count ?? record.likesCount, 0) : 0,
-    isLiked: record ? asBoolean(record.liked ?? record.is_liked ?? record.isLiked) : true,
+    likesCount: record
+      ? asNumber(record.likes_count ?? record.likesCount, fallbackLikesCount)
+      : fallbackLikesCount,
+    isLiked: record
+      ? asOptionalBoolean(record.liked ?? record.is_liked ?? record.isLiked, fallbackLiked)
+      : fallbackLiked,
   };
 }
 
-export async function toggleEducationVideoFavorite(slug: string) {
+export async function toggleEducationVideoFavorite(
+  slug: string,
+  fallbackFavorite = true,
+  fallbackFavoritesCount = 0,
+) {
   const data = await postJson(endpoints.educationVideoFavorite(slug));
   const record = asRecord(data);
 
   return {
-    favoritesCount: record ? asNumber(record.favorites_count ?? record.favoritesCount, 0) : 0,
+    favoritesCount: record
+      ? asNumber(record.favorites_count ?? record.favoritesCount, fallbackFavoritesCount)
+      : fallbackFavoritesCount,
     isFavorite: record
-      ? asBoolean(record.favorite ?? record.is_favorite ?? record.isFavorite)
-      : true,
+      ? asOptionalBoolean(
+          record.favorite ?? record.is_favorite ?? record.isFavorite,
+          fallbackFavorite,
+        )
+      : fallbackFavorite,
   };
 }
 

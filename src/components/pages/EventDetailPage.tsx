@@ -12,6 +12,10 @@ import {
   type EventComment,
   type EventItem,
 } from "../../api/events";
+import {
+  eventToFavoriteContentItem,
+  syncFavoriteContentItem,
+} from "../../api/userFavorites";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { EducatorsEventContent } from "./EducatorsEventContent";
@@ -252,21 +256,36 @@ export function EventDetailPage() {
 
   const handleEventLike = async () => {
     if (!event) return;
+    const targetEvent = event;
+    const wasLiked = isEventLiked;
+    const nextLiked = !isEventLiked;
 
-    try {
-      const result = await toggleEventLike(event.id);
-      const delta = result.liked ? (isEventLiked ? 0 : 1) : -1;
+    const applyLikeState = (liked: boolean) => {
+      const delta = liked ? (wasLiked ? 0 : 1) : wasLiked ? -1 : 0;
+      const nextLikesCount = Math.max((targetEvent.likesCount || 0) + delta, 0);
+      const nextEvent = { ...targetEvent, likesCount: nextLikesCount, isLiked: liked };
 
-      setIsEventLiked(result.liked);
+      setIsEventLiked(liked);
       setEvent((current) =>
         current
           ? {
               ...current,
-              likesCount: Math.max((current.likesCount || 0) + delta, 0),
-              isLiked: result.liked,
+              likesCount: nextLikesCount,
+              isLiked: liked,
             }
           : current,
       );
+      syncFavoriteContentItem(
+        eventToFavoriteContentItem(nextEvent, lang),
+        liked,
+      );
+    };
+
+    applyLikeState(nextLiked);
+
+    try {
+      const result = await toggleEventLike(targetEvent.id, nextLiked);
+      if (result.liked !== nextLiked) applyLikeState(result.liked);
     } catch (error) {
       console.error(error);
       setCommentError(t("eventComments.fallbackNotice"));

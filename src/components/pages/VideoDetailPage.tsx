@@ -12,6 +12,10 @@ import {
   type EducationArticleComment,
   type EducationVideo,
 } from "../../api/educationMaterials";
+import {
+  syncFavoriteContentItem,
+  videoToFavoriteContentItem,
+} from "../../api/userFavorites";
 import { getFallbackVideo } from "../../api/videoFallbacks";
 
 const pageMaxWidth =
@@ -212,41 +216,87 @@ export function VideoDetailPage() {
 
   const handleLike = async () => {
     const nextLiked = !video.isLiked;
-    setVideo((current) => ({
-      ...current,
+    const nextLikesCount = Math.max(0, video.likesCount + (nextLiked ? 1 : -1));
+    const optimisticVideo = {
+      ...video,
       isLiked: nextLiked,
-      likesCount: Math.max(0, current.likesCount + (nextLiked ? 1 : -1)),
-    }));
+      likesCount: nextLikesCount,
+    };
 
-    if (video.id.startsWith("fallback")) return;
+    setVideo(optimisticVideo);
+
+    if (video.id.startsWith("fallback")) {
+      syncFavoriteContentItem(
+        videoToFavoriteContentItem(optimisticVideo),
+        optimisticVideo.isLiked || optimisticVideo.isFavorite,
+      );
+      return;
+    }
 
     try {
-      const result = await toggleEducationVideoLike(video.slug);
-      setVideo((current) => ({
-        ...current,
+      const result = await toggleEducationVideoLike(video.slug, nextLiked, nextLikesCount);
+      const updatedVideo = {
+        ...video,
         isLiked: result.isLiked,
         likesCount: result.likesCount,
-      }));
+      };
+
+      setVideo(updatedVideo);
+      syncFavoriteContentItem(
+        videoToFavoriteContentItem(updatedVideo),
+        updatedVideo.isLiked || updatedVideo.isFavorite,
+      );
     } catch {
       setVideo(video);
+      syncFavoriteContentItem(
+        videoToFavoriteContentItem(video),
+        video.isLiked || video.isFavorite,
+      );
     }
   };
 
   const handleFavorite = async () => {
     const nextFavorite = !video.isFavorite;
-    setVideo((current) => ({ ...current, isFavorite: nextFavorite }));
+    const nextFavoritesCount = Math.max(0, video.favoritesCount + (nextFavorite ? 1 : -1));
+    const optimisticVideo = {
+      ...video,
+      isFavorite: nextFavorite,
+      favoritesCount: nextFavoritesCount,
+    };
 
-    if (video.id.startsWith("fallback")) return;
+    setVideo(optimisticVideo);
+
+    if (video.id.startsWith("fallback")) {
+      syncFavoriteContentItem(
+        videoToFavoriteContentItem(optimisticVideo),
+        optimisticVideo.isLiked || optimisticVideo.isFavorite,
+      );
+      return;
+    }
 
     try {
-      const result = await toggleEducationVideoFavorite(video.slug);
-      setVideo((current) => ({
-        ...current,
+      const result = await toggleEducationVideoFavorite(
+        video.slug,
+        nextFavorite,
+        nextFavoritesCount,
+      );
+      const updatedVideo = {
+        ...video,
         isFavorite: result.isFavorite,
         favoritesCount: result.favoritesCount,
-      }));
+      };
+
+      setVideo(updatedVideo);
+      syncFavoriteContentItem(
+        videoToFavoriteContentItem(updatedVideo),
+        updatedVideo.isLiked || updatedVideo.isFavorite,
+      );
     } catch {
       setVideo(video);
+      syncFavoriteContentItem(
+        videoToFavoriteContentItem(video),
+        video.isLiked || video.isFavorite,
+      );
     }
   };
 

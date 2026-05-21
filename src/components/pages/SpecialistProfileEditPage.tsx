@@ -2,6 +2,7 @@ import { Camera, Upload } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { notifyAuthChanged } from "../../api/auth";
 import {
   getUserCabinetData,
   updateSpecialistProfile,
@@ -234,10 +235,13 @@ export function SpecialistProfileEditPage() {
         avatar: avatarFile,
       });
       await uploadSpecialistDocuments(documents);
+      notifyAuthChanged();
       setNotice(labels.success);
       navigate("/profile");
-    } catch {
-      setError(labels.saveError);
+    } catch (error) {
+      console.error(error);
+      const details = error instanceof Error && error.message ? ` (${error.message})` : "";
+      setError(`${labels.saveError}${details}`);
     } finally {
       setIsSaving(false);
     }

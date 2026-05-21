@@ -13,6 +13,10 @@ import {
   type EducationArticleComment,
   type EducationArticleSection,
 } from "../../api/educationMaterials";
+import {
+  articleToFavoriteContentItem,
+  syncFavoriteContentItem,
+} from "../../api/userFavorites";
 import { getFallbackArticle } from "../../api/articleFallbacks";
 
 const pageMaxWidth =
@@ -247,41 +251,91 @@ export function ArticleDetailPage() {
 
   const handleLike = async () => {
     const nextLiked = !article.isLiked;
-    setArticle((current) => ({
-      ...current,
+    const nextLikesCount = Math.max(0, article.likesCount + (nextLiked ? 1 : -1));
+    const optimisticArticle = {
+      ...article,
       isLiked: nextLiked,
-      likesCount: Math.max(0, current.likesCount + (nextLiked ? 1 : -1)),
-    }));
+      likesCount: nextLikesCount,
+    };
 
-    if (article.id.startsWith("fallback")) return;
+    setArticle(optimisticArticle);
+
+    if (article.id.startsWith("fallback")) {
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem(optimisticArticle),
+        optimisticArticle.isLiked || optimisticArticle.isFavorite,
+      );
+      return;
+    }
 
     try {
-      const result = await toggleEducationArticleLike(article.slug);
-      setArticle((current) => ({
-        ...current,
+      const result = await toggleEducationArticleLike(
+        article.slug,
+        nextLiked,
+        nextLikesCount,
+      );
+      const updatedArticle = {
+        ...article,
         isLiked: result.isLiked,
         likesCount: result.likesCount,
-      }));
+      };
+
+      setArticle(updatedArticle);
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem(updatedArticle),
+        updatedArticle.isLiked || updatedArticle.isFavorite,
+      );
     } catch {
       setArticle(article);
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem(article),
+        article.isLiked || article.isFavorite,
+      );
     }
   };
 
   const handleFavorite = async () => {
     const nextFavorite = !article.isFavorite;
-    setArticle((current) => ({ ...current, isFavorite: nextFavorite }));
+    const nextFavoritesCount = Math.max(0, article.favoritesCount + (nextFavorite ? 1 : -1));
+    const optimisticArticle = {
+      ...article,
+      isFavorite: nextFavorite,
+      favoritesCount: nextFavoritesCount,
+    };
 
-    if (article.id.startsWith("fallback")) return;
+    setArticle(optimisticArticle);
+
+    if (article.id.startsWith("fallback")) {
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem(optimisticArticle),
+        optimisticArticle.isLiked || optimisticArticle.isFavorite,
+      );
+      return;
+    }
 
     try {
-      const result = await toggleEducationArticleFavorite(article.slug);
-      setArticle((current) => ({
-        ...current,
+      const result = await toggleEducationArticleFavorite(
+        article.slug,
+        nextFavorite,
+        nextFavoritesCount,
+      );
+      const updatedArticle = {
+        ...article,
         isFavorite: result.isFavorite,
         favoritesCount: result.favoritesCount,
-      }));
+      };
+
+      setArticle(updatedArticle);
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem(updatedArticle),
+        updatedArticle.isLiked || updatedArticle.isFavorite,
+      );
     } catch {
       setArticle(article);
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem(article),
+        article.isLiked || article.isFavorite,
+      );
     }
   };
 

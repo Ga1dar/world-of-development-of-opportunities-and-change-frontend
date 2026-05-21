@@ -8,6 +8,10 @@ import {
   toggleEducationArticleLike,
   type EducationArticle,
 } from "../../api/educationMaterials";
+import {
+  articleToFavoriteContentItem,
+  syncFavoriteContentItem,
+} from "../../api/userFavorites";
 import { getFallbackArticles } from "../../api/articleFallbacks";
 import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
 
@@ -51,15 +55,31 @@ function ArticleListCard({
   const [favoritesCount, setFavoritesCount] = useState(article.favoritesCount);
 
   const handleLike = async () => {
-    setIsLiked((current) => !current);
-    setLikesCount((current) => Math.max(0, current + (isLiked ? -1 : 1)));
+    const nextLiked = !isLiked;
+    const nextLikesCount = Math.max(0, likesCount + (nextLiked ? 1 : -1));
+    setIsLiked(nextLiked);
+    setLikesCount(nextLikesCount);
 
     if (article.id.startsWith("fallback")) return;
 
     try {
-      const result = await toggleEducationArticleLike(article.slug);
+      const result = await toggleEducationArticleLike(
+        article.slug,
+        nextLiked,
+        nextLikesCount,
+      );
       setIsLiked(result.isLiked);
       setLikesCount(result.likesCount);
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem({
+          ...article,
+          isLiked: result.isLiked,
+          isFavorite,
+          likesCount: result.likesCount,
+          favoritesCount,
+        }),
+        result.isLiked || isFavorite,
+      );
     } catch {
       setIsLiked(article.isLiked);
       setLikesCount(article.likesCount);
@@ -67,15 +87,31 @@ function ArticleListCard({
   };
 
   const handleFavorite = async () => {
-    setIsFavorite((current) => !current);
-    setFavoritesCount((current) => Math.max(0, current + (isFavorite ? -1 : 1)));
+    const nextFavorite = !isFavorite;
+    const nextFavoritesCount = Math.max(0, favoritesCount + (nextFavorite ? 1 : -1));
+    setIsFavorite(nextFavorite);
+    setFavoritesCount(nextFavoritesCount);
 
     if (article.id.startsWith("fallback")) return;
 
     try {
-      const result = await toggleEducationArticleFavorite(article.slug);
+      const result = await toggleEducationArticleFavorite(
+        article.slug,
+        nextFavorite,
+        nextFavoritesCount,
+      );
       setIsFavorite(result.isFavorite);
       setFavoritesCount(result.favoritesCount);
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem({
+          ...article,
+          isLiked,
+          isFavorite: result.isFavorite,
+          likesCount,
+          favoritesCount: result.favoritesCount,
+        }),
+        isLiked || result.isFavorite,
+      );
     } catch {
       setIsFavorite(article.isFavorite);
       setFavoritesCount(article.favoritesCount);

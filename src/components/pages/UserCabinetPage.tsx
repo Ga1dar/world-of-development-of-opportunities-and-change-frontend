@@ -9,8 +9,18 @@ import {
   type CabinetDocument,
   type CabinetProfile,
 } from "../../api/userCabinet";
-import { getFavoriteEvents, type EventItem } from "../../api/events";
+import { getEducationArticles, getEducationVideos } from "../../api/educationMaterials";
+import { getFavoriteEvents } from "../../api/events";
 import { logoutCurrentUser } from "../../api/auth";
+import {
+  FAVORITES_CHANGED_EVENT,
+  articleToFavoriteContentItem,
+  eventToFavoriteContentItem,
+  mergeFavoriteContentItems,
+  readFavoriteContentItems,
+  type FavoriteContentItem,
+  videoToFavoriteContentItem,
+} from "../../api/userFavorites";
 import {
   cancelConsultationAppointment,
   CONSULTATION_TIME_OPTIONS,
@@ -999,38 +1009,42 @@ function CancelAppointmentDialog({
   );
 }
 
-function FavoriteEventCard({
-  event,
+function FavoriteContentCard({
+  item,
   language,
 }: {
-  event: EventItem;
+  item: FavoriteContentItem;
   language: "ua" | "en";
 }) {
-  const title = language === "en" ? event.title_en : event.title_ua;
-  const description =
-    (language === "en" ? event.description_en : event.description_ua)[0] || "";
-  const detailUrl = `/events/${event.categorySlug}/${event.id}`;
+  const kindLabel =
+    language === "en"
+      ? { event: "Event", article: "Article", video: "Video" }[item.kind]
+      : { event: "Подія", article: "Стаття", video: "Відео" }[item.kind];
 
   return (
     <Link
-      to={detailUrl}
+      to={item.href}
       className="relative z-10 block w-full rounded-[18px] bg-white px-5 py-6 text-left font-montserrat text-[#1C100E] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]
       min-[744px]:max-w-[370px] min-[1023px]:max-w-[390px] min-[1420px]:max-w-[410px] min-[1900px]:max-w-[430px]"
     >
+      <span className="mb-3 inline-flex rounded-full bg-[#E7C5DA] px-3 py-1 text-[11px] font-medium text-[#83105F]">
+        {kindLabel}
+      </span>
+
       <h3 className="text-[17px] font-medium leading-[1.18] min-[744px]:text-[18px]">
-        {title}
+        {item.title}
       </h3>
 
       <div className="mt-5 flex items-center gap-3 text-[12px] text-[#1C100E]">
-        <span>{event.likesCount || 0}</span>
+        <span>{item.likesCount || 0}</span>
         <Heart className="size-4 fill-[#83105F] stroke-[#83105F]" aria-hidden="true" />
-        <span>{event.commentsCount ?? event.comments.length}</span>
+        <span>{item.commentsCount || 0}</span>
         <MessageSquare className="size-4" aria-hidden="true" />
         <Bookmark className="size-4 fill-[#83105F] stroke-[#83105F]" aria-hidden="true" />
       </div>
 
       <p className="mt-5 line-clamp-2 text-[12px] leading-[1.35] text-[#1C100E]/60 min-[744px]:text-[13px]">
-        {description}
+        {item.description}
       </p>
     </Link>
   );
@@ -1038,11 +1052,11 @@ function FavoriteEventCard({
 
 function FavoritesView({
   labels,
-  favoriteEvents,
+  favoriteItems,
   language,
 }: {
   labels: typeof copy.ua;
-  favoriteEvents: EventItem[];
+  favoriteItems: FavoriteContentItem[];
   language: "ua" | "en";
 }) {
   return (
@@ -1054,12 +1068,12 @@ function FavoritesView({
         className="pointer-events-none absolute left-1/2 top-7 z-0 hidden w-[230px] -translate-x-1/2 opacity-80 min-[744px]:block min-[1023px]:w-[280px] min-[1420px]:top-10"
       />
 
-      {favoriteEvents.length ? (
+      {favoriteItems.length ? (
         <div className="relative z-10 grid gap-4 min-[744px]:justify-start min-[1420px]:gap-6">
-          {favoriteEvents.map((event) => (
-            <FavoriteEventCard
-              key={event.id}
-              event={event}
+          {favoriteItems.map((item) => (
+            <FavoriteContentCard
+              key={item.key}
+              item={item}
               language={language}
             />
           ))}
@@ -1265,7 +1279,7 @@ export function UserCabinetPage() {
   const [appointments, setAppointments] = useState<CabinetAppointment[]>([]);
   const [completedAppointments, setCompletedAppointments] = useState<CabinetAppointment[]>([]);
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
-  const [favoriteEvents, setFavoriteEvents] = useState<EventItem[]>([]);
+  const [favoriteItems, setFavoriteItems] = useState<FavoriteContentItem[]>([]);
   const [activeTab, setActiveTab] = useState<CabinetTab>("appointments");
   const [selectedAppointment, setSelectedAppointment] = useState<CabinetAppointment | null>(null);
   const [previewDocument, setPreviewDocument] = useState<CabinetDocument | null>(null);
@@ -1278,6 +1292,27 @@ export function UserCabinetPage() {
   const [logoutError, setLogoutError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const language = isEnglishLanguage(i18n.language) ? "en" : "ua";
+
+  const loadFavoriteItems = async () => {
+    const [events, articles, videos] = await Promise.all([
+      getFavoriteEvents().catch(() => []),
+      getEducationArticles(language).catch(() => []),
+      getEducationVideos(language).catch(() => []),
+    ]);
+
+    const serverItems = [
+      ...events.map((event) => eventToFavoriteContentItem(event, language)),
+      ...articles
+        .filter((article) => article.isLiked || article.isFavorite)
+        .map(articleToFavoriteContentItem),
+      ...videos
+        .filter((video) => video.isLiked || video.isFavorite)
+        .map(videoToFavoriteContentItem),
+    ];
+
+    return mergeFavoriteContentItems(readFavoriteContentItems(), serverItems);
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1289,13 +1324,13 @@ export function UserCabinetPage() {
       try {
         const [data, favorites] = await Promise.all([
           getUserCabinetData(controller.signal),
-          getFavoriteEvents().catch(() => []),
+          loadFavoriteItems(),
         ]);
         setProfile(data.profile);
         setAppointments(data.appointments);
         setCompletedAppointments(data.completedAppointments);
         setDocuments(data.documents);
-        setFavoriteEvents(favorites);
+        setFavoriteItems(favorites);
       } catch {
         setError(labels.loadError);
       } finally {
@@ -1306,7 +1341,26 @@ export function UserCabinetPage() {
     void loadCabinet();
 
     return () => controller.abort();
-  }, [labels.loadError]);
+  }, [labels.loadError, language]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const refreshFavorites = () => {
+      void loadFavoriteItems().then((items) => {
+        if (isMounted) setFavoriteItems(items);
+      });
+    };
+
+    window.addEventListener(FAVORITES_CHANGED_EVENT, refreshFavorites);
+    window.addEventListener("storage", refreshFavorites);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener(FAVORITES_CHANGED_EVENT, refreshFavorites);
+      window.removeEventListener("storage", refreshFavorites);
+    };
+  }, [language]);
 
   if (isLoading) {
     return (
@@ -1445,8 +1499,8 @@ export function UserCabinetPage() {
       ) : activeTab === "favorites" ? (
         <FavoritesView
           labels={labels}
-          favoriteEvents={favoriteEvents}
-          language={isEnglishLanguage(i18n.language) ? "en" : "ua"}
+          favoriteItems={favoriteItems}
+          language={language}
         />
       ) : isSpecialist ? (
         <SpecialistPlaceholderView text={labels.about} />

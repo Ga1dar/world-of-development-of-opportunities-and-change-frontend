@@ -49,6 +49,7 @@
   },
   "buttonApple": "Sign in with Apple",
   "buttonGoogle": "Sign in with Google",
+  "buttonGoogleRegister": "Register with Google",
   "emailFormTitle": "Email",
   "emailFormTitleName": "Name",
   "password": "Password",

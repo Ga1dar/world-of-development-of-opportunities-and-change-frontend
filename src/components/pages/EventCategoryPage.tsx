@@ -8,6 +8,10 @@ import {
   toggleEventLike,
   type EventItem,
 } from "../../api/events";
+import {
+  eventToFavoriteContentItem,
+  syncFavoriteContentItem,
+} from "../../api/userFavorites";
 import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
 
 const formatEventDate = (value: string | undefined, lang: "ua" | "en") => {
@@ -56,14 +60,18 @@ export function EventCategoryPage() {
 
   const handleEventLike = async (eventId: number) => {
     const wasLiked = likedEventIds.has(eventId);
+    const nextLiked = !wasLiked;
+    const targetEvent = events.find((event) => event.id === eventId);
+    if (!targetEvent) return;
 
-    try {
-      const result = await toggleEventLike(eventId);
-      const delta = result.liked ? (wasLiked ? 0 : 1) : -1;
+    const applyLikeState = (liked: boolean) => {
+      const delta = liked ? (wasLiked ? 0 : 1) : wasLiked ? -1 : 0;
+      const nextLikesCount = Math.max((targetEvent.likesCount || 0) + delta, 0);
+      const nextEvent = { ...targetEvent, likesCount: nextLikesCount, isLiked: liked };
 
       setLikedEventIds((current) => {
         const next = new Set(current);
-        if (result.liked) next.add(eventId);
+        if (liked) next.add(eventId);
         else next.delete(eventId);
         return next;
       });
@@ -73,12 +81,21 @@ export function EventCategoryPage() {
           event.id === eventId
             ? {
                 ...event,
-                likesCount: Math.max((event.likesCount || 0) + delta, 0),
-                isLiked: result.liked,
+                likesCount: nextLikesCount,
+                isLiked: liked,
               }
             : event,
         ),
       );
+
+      syncFavoriteContentItem(eventToFavoriteContentItem(nextEvent, lang), liked);
+    };
+
+    applyLikeState(nextLiked);
+
+    try {
+      const result = await toggleEventLike(eventId, nextLiked);
+      if (result.liked !== nextLiked) applyLikeState(result.liked);
     } catch (error) {
       console.error(error);
     }

@@ -4,8 +4,14 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   getEducationVideos,
+  toggleEducationVideoFavorite,
+  toggleEducationVideoLike,
   type EducationVideo,
 } from "../../api/educationMaterials";
+import {
+  syncFavoriteContentItem,
+  videoToFavoriteContentItem,
+} from "../../api/userFavorites";
 import { createFallbackVideos } from "../../api/videoFallbacks";
 import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
 
@@ -32,30 +38,136 @@ const yellowButton =
 
 const formatVideoHref = (video: EducationVideo) => `/materials/videos/${video.slug}`;
 
-function VideoStats({ video }: { video: EducationVideo }) {
+function VideoStats({
+  video,
+  onLike,
+  onFavorite,
+}: {
+  video: EducationVideo;
+  onLike: () => void;
+  onFavorite: () => void;
+}) {
   return (
     <div className="flex items-center gap-2 font-montserrat text-[11px] leading-none text-[#1C100E] min-[1023px]:text-[12px]">
       <span>{video.likesCount}</span>
-      <Heart className="size-3.5 stroke-[1.8]" aria-hidden="true" />
+      <button type="button" onClick={onLike} aria-label="like video">
+        <Heart
+          className={`size-3.5 stroke-[1.8] ${video.isLiked ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
       <span>{video.commentsCount}</span>
       <MessageSquare className="size-3.5 stroke-[1.8]" aria-hidden="true" />
-      <Bookmark className="size-3.5 stroke-[1.8]" aria-hidden="true" />
+      <button type="button" onClick={onFavorite} aria-label="save video">
+        <Bookmark
+          className={`size-3.5 stroke-[1.8] ${video.isFavorite ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
       <span className="sr-only">{video.favoritesCount}</span>
     </div>
   );
 }
 
 function VideoCard({ video }: { video: EducationVideo }) {
+  const [currentVideo, setCurrentVideo] = useState(video);
+
+  useEffect(() => {
+    setCurrentVideo(video);
+  }, [video]);
+
+  const syncVideo = (item: EducationVideo) => {
+    syncFavoriteContentItem(
+      videoToFavoriteContentItem(item),
+      item.isLiked || item.isFavorite,
+    );
+  };
+
+  const handleLike = async () => {
+    const nextLiked = !currentVideo.isLiked;
+    const nextLikesCount = Math.max(0, currentVideo.likesCount + (nextLiked ? 1 : -1));
+    const optimisticVideo = {
+      ...currentVideo,
+      isLiked: nextLiked,
+      likesCount: nextLikesCount,
+    };
+
+    setCurrentVideo(optimisticVideo);
+
+    if (currentVideo.id.startsWith("fallback")) {
+      syncVideo(optimisticVideo);
+      return;
+    }
+
+    try {
+      const result = await toggleEducationVideoLike(
+        currentVideo.slug,
+        nextLiked,
+        nextLikesCount,
+      );
+      const updatedVideo = {
+        ...currentVideo,
+        isLiked: result.isLiked,
+        likesCount: result.likesCount,
+      };
+
+      setCurrentVideo(updatedVideo);
+      syncVideo(updatedVideo);
+    } catch {
+      setCurrentVideo(currentVideo);
+      syncVideo(currentVideo);
+    }
+  };
+
+  const handleFavorite = async () => {
+    const nextFavorite = !currentVideo.isFavorite;
+    const nextFavoritesCount = Math.max(
+      0,
+      currentVideo.favoritesCount + (nextFavorite ? 1 : -1),
+    );
+    const optimisticVideo = {
+      ...currentVideo,
+      isFavorite: nextFavorite,
+      favoritesCount: nextFavoritesCount,
+    };
+
+    setCurrentVideo(optimisticVideo);
+
+    if (currentVideo.id.startsWith("fallback")) {
+      syncVideo(optimisticVideo);
+      return;
+    }
+
+    try {
+      const result = await toggleEducationVideoFavorite(
+        currentVideo.slug,
+        nextFavorite,
+        nextFavoritesCount,
+      );
+      const updatedVideo = {
+        ...currentVideo,
+        isFavorite: result.isFavorite,
+        favoritesCount: result.favoritesCount,
+      };
+
+      setCurrentVideo(updatedVideo);
+      syncVideo(updatedVideo);
+    } catch {
+      setCurrentVideo(currentVideo);
+      syncVideo(currentVideo);
+    }
+  };
+
   return (
     <article className="rounded-[18px] bg-[#F8F8F8] p-2.5 font-montserrat text-[#1C100E] min-[744px]:p-3 min-[1023px]:rounded-[18px]">
       <Link
-        to={formatVideoHref(video)}
+        to={formatVideoHref(currentVideo)}
         className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]"
       >
-        {video.coverImage ? (
+        {currentVideo.coverImage ? (
           <img
-            src={video.coverImage}
-            alt={video.title}
+            src={currentVideo.coverImage}
+            alt={currentVideo.title}
             className="h-[153px] w-full rounded-[14px] object-cover min-[744px]:h-[178px] min-[1023px]:h-[206px] min-[1420px]:h-[188px] min-[1900px]:h-[210px]"
           />
         ) : (
@@ -66,18 +178,22 @@ function VideoCard({ video }: { video: EducationVideo }) {
       <div className="mt-2 grid grid-cols-[1fr_40px] items-end gap-2">
         <div>
           <Link
-            to={formatVideoHref(video)}
+            to={formatVideoHref(currentVideo)}
             className="line-clamp-1 text-[13px] font-medium leading-[1.2] hover:text-[#9A176B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[1023px]:text-[14px]"
           >
-            {video.title}
+            {currentVideo.title}
           </Link>
-          <VideoStats video={video} />
+          <VideoStats
+            video={currentVideo}
+            onLike={handleLike}
+            onFavorite={handleFavorite}
+          />
         </div>
 
         <Link
-          to={formatVideoHref(video)}
+          to={formatVideoHref(currentVideo)}
           className="flex size-10 items-center justify-center rounded-full bg-[#402940] text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:size-11"
-          aria-label={video.title}
+          aria-label={currentVideo.title}
         >
           <ChevronRight className="size-5" aria-hidden="true" />
         </Link>

@@ -660,16 +660,40 @@ const authHeaders = () => {
 const hasAccessToken = () =>
   typeof window !== "undefined" && Boolean(localStorage.getItem("accessToken"));
 
-const parseToggleResult = (data: unknown, enabledDetail: string): ToggleResult => {
+const parseToggleResult = (
+  data: unknown,
+  enabledDetail: string,
+  fallbackLiked = true,
+): ToggleResult => {
   const record = asRecord(data);
-  const explicitValue = record?.liked ?? record?.is_liked;
+  const explicitValue =
+    record?.liked ??
+    record?.is_liked ??
+    record?.isLiked ??
+    record?.current_user_liked ??
+    record?.currentUserLiked;
 
   if (typeof explicitValue === "boolean") {
     return { liked: explicitValue };
   }
 
   const detail = asString(record?.detail ?? record?.message).toLowerCase();
-  return { liked: detail.includes(enabledDetail) };
+  if (!detail) return { liked: fallbackLiked };
+
+  if (
+    detail.includes("unliked") ||
+    detail.includes("removed") ||
+    detail.includes("deleted") ||
+    detail.includes("disliked")
+  ) {
+    return { liked: false };
+  }
+
+  if (detail.includes(enabledDetail) || detail.includes("liked")) {
+    return { liked: true };
+  }
+
+  return { liked: fallbackLiked };
 };
 
 const DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -863,7 +887,10 @@ export async function getEventsByCategory(categorySlug: string) {
     const url = createEndpointUrl(endpoints.events);
     url.searchParams.set("category", String(category?.id ?? categorySlug));
 
-    const { response, data } = await requestJson(url.toString());
+    const { response, data } = await requestJson(
+      url.toString(),
+      hasAccessToken() ? { headers: authHeaders() } : undefined,
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch category events");
@@ -884,7 +911,10 @@ export async function getEventsByCategory(categorySlug: string) {
 
 export async function getEvent(id: string | number): Promise<EventItem | null> {
   try {
-    const { response, data } = await requestJson(endpoints.eventDetail(id));
+    const { response, data } = await requestJson(
+      endpoints.eventDetail(id),
+      hasAccessToken() ? { headers: authHeaders() } : undefined,
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch event");
@@ -944,23 +974,29 @@ export async function createEventComment(
   return normalizeComment(data, 0);
 }
 
-export async function toggleEventLike(eventId: string | number) {
+export async function toggleEventLike(eventId: string | number, fallbackLiked = true) {
   if (!hasAccessToken()) {
     throw new Error("Authentication required");
   }
 
-  const { response, data } = await requestJson(endpoints.eventLike(eventId), {
-    method: "POST",
-    headers: authHeaders(),
-  });
+  try {
+    const { response, data } = await requestJson(endpoints.eventLike(eventId), {
+      method: "POST",
+      headers: authHeaders(),
+    });
 
-  if (!response.ok) {
-    throw new Error("Failed to toggle event like");
+    if (!response.ok) {
+      syncStoredEventLike(eventId, fallbackLiked);
+      return { liked: fallbackLiked };
+    }
+
+    const result = parseToggleResult(data, "event liked", fallbackLiked);
+    syncStoredEventLike(eventId, result.liked);
+    return result;
+  } catch {
+    syncStoredEventLike(eventId, fallbackLiked);
+    return { liked: fallbackLiked };
   }
-
-  const result = parseToggleResult(data, "event liked");
-  syncStoredEventLike(eventId, result.liked);
-  return result;
 }
 
 export async function getFavoriteEvents(): Promise<EventItem[]> {
