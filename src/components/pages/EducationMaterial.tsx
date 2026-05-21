@@ -1,7 +1,331 @@
-export function Edukationmaterial() {
+import { Bookmark, ChevronRight, Heart, MessageSquare } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import {
+  getLatestEducationArticles,
+  getLatestEducationVideos,
+  type EducationArticle,
+  type EducationVideo,
+} from "../../api/educationMaterials";
+
+const pageMaxWidth =
+  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-0 min-[1900px]:max-w-[1980px]";
+
+const yellowButton =
+  "rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat font-medium text-[#1C100E] shadow-btn";
+
+const copy = {
+  ua: {
+    articles: "Статті",
+    videos: "Відео матеріали",
+    allArticles: "Усі Статті",
+    allVideos: "Усі відео",
+    loading: "Завантажуємо освітні матеріали...",
+    emptyArticles: "Статті з'являться тут.",
+    emptyVideos: "Відео матеріали з'являться тут.",
+    videoFallback: "Назва відео",
+  },
+  en: {
+    articles: "Articles",
+    videos: "Video materials",
+    allArticles: "All articles",
+    allVideos: "All videos",
+    loading: "Loading educational materials...",
+    emptyArticles: "Articles will appear here.",
+    emptyVideos: "Video materials will appear here.",
+    videoFallback: "Video title",
+  },
+};
+
+type DisplayArticle = EducationArticle & { placeholder?: boolean };
+type DisplayVideo = EducationVideo & { placeholder?: boolean };
+
+const fallbackArticles: Record<"ua" | "en", DisplayArticle[]> = {
+  ua: [
+    {
+      id: "fallback-article-1",
+      slug: "articles",
+      title: "«Світло у темряві»",
+      description: "Як троє жінок створили простір, що лікує душі",
+      content: "",
+      sections: [],
+      coverImage: "",
+      publishedAt: "2025-09-18",
+      likesCount: 0,
+      commentsCount: 0,
+      favoritesCount: 0,
+      isLiked: false,
+      isFavorite: false,
+      placeholder: true,
+    },
+    {
+      id: "fallback-article-2",
+      slug: "articles",
+      title: "Травмапедагогіка",
+      description: "Коли гра і підтримка стають рівними повітрям",
+      content: "",
+      sections: [],
+      coverImage: "",
+      publishedAt: "2025-09-18",
+      likesCount: 0,
+      commentsCount: 0,
+      favoritesCount: 0,
+      isLiked: false,
+      isFavorite: false,
+      placeholder: true,
+    },
+  ],
+  en: [
+    {
+      id: "fallback-article-1",
+      slug: "articles",
+      title: "Light in the dark",
+      description: "How support spaces help people recover and breathe again",
+      content: "",
+      sections: [],
+      coverImage: "",
+      publishedAt: "2025-09-18",
+      likesCount: 0,
+      commentsCount: 0,
+      favoritesCount: 0,
+      isLiked: false,
+      isFavorite: false,
+      placeholder: true,
+    },
+    {
+      id: "fallback-article-2",
+      slug: "articles",
+      title: "Trauma pedagogy",
+      description: "When play and support become as necessary as air",
+      content: "",
+      sections: [],
+      coverImage: "",
+      publishedAt: "2025-09-18",
+      likesCount: 0,
+      commentsCount: 0,
+      favoritesCount: 0,
+      isLiked: false,
+      isFavorite: false,
+      placeholder: true,
+    },
+  ],
+};
+
+const createFallbackVideos = (language: "ua" | "en"): DisplayVideo[] =>
+  Array.from({ length: 3 }, (_, index) => ({
+    id: `fallback-video-${index + 1}`,
+    slug: "videos",
+    title: copy[language].videoFallback,
+    description: "",
+    videoUrl: "",
+    coverImage: "",
+    publishedAt: "",
+    likesCount: 0,
+    commentsCount: 0,
+    favoritesCount: 0,
+    isLiked: false,
+    isFavorite: false,
+    placeholder: true,
+  }));
+
+const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en");
+
+const formatDate = (value: string, language: "ua" | "en") => {
+  if (!value) return "";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  const formatted = parsed.toLocaleDateString(language === "ua" ? "uk-UA" : "en-GB");
+  return language === "ua" ? `${formatted}р` : formatted;
+};
+
+function MaterialStats({
+  likes,
+  comments,
+  favorites,
+}: {
+  likes: number;
+  comments: number;
+  favorites: number;
+}) {
   return (
-    <div className="bg-secondary h-screen">
-      <h1>Edukationmaterial</h1>
+    <div className="flex items-center gap-2 font-montserrat text-[11px] leading-none text-[#1C100E] min-[744px]:gap-3 min-[1023px]:text-[12px]">
+      <span>{likes}</span>
+      <Heart className="size-3.5 stroke-[1.8]" aria-hidden="true" />
+      <span>{comments}</span>
+      <MessageSquare className="size-3.5 stroke-[1.8]" aria-hidden="true" />
+      <Bookmark className="size-3.5 stroke-[1.8]" aria-hidden="true" />
+      <span className="sr-only">{favorites}</span>
     </div>
-  )
+  );
+}
+
+function ArticleCard({
+  article,
+  language,
+}: {
+  article: DisplayArticle;
+  language: "ua" | "en";
+}) {
+  return (
+    <Link
+      to={article.placeholder ? "/materials/articles" : `/materials/articles/${article.slug}`}
+      className="block rounded-[16px] bg-[#F8F8F8] px-4 py-3 font-montserrat text-[#1C100E] transition hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:px-5 min-[1023px]:min-h-[132px] min-[1420px]:min-h-[92px] min-[1900px]:min-h-[102px]"
+    >
+      <h3 className="line-clamp-1 text-[13px] font-medium leading-[1.18] min-[744px]:text-[14px] min-[1900px]:text-[16px]">
+        {article.title}
+      </h3>
+      <p className="mt-1 line-clamp-2 text-[11px] leading-[1.22] text-[#1C100E]/78 min-[744px]:text-[12px] min-[1900px]:text-[13px]">
+        {article.description}
+      </p>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <time className="font-montserrat text-[10px] text-[#1C100E]/75 min-[1023px]:text-[11px]">
+          {formatDate(article.publishedAt, language)}
+        </time>
+        <MaterialStats
+          likes={article.likesCount}
+          comments={article.commentsCount}
+          favorites={article.favoritesCount}
+        />
+      </div>
+    </Link>
+  );
+}
+
+function VideoCard({
+  video,
+  labels,
+}: {
+  video: DisplayVideo;
+  labels: typeof copy.ua;
+}) {
+  return (
+    <article className="rounded-[16px] bg-[#F8F8F8] p-2.5 font-montserrat text-[#1C100E] min-[744px]:p-3 min-[1023px]:rounded-[18px]">
+      {video.coverImage ? (
+        <img
+          src={video.coverImage}
+          alt={video.title}
+          className="h-[116px] w-full rounded-[14px] object-cover min-[744px]:h-[238px] min-[1023px]:h-[232px] min-[1420px]:h-[174px] min-[1900px]:h-[206px]"
+        />
+      ) : (
+        <div className="h-[116px] w-full rounded-[14px] bg-[#D9D9D9] min-[744px]:h-[238px] min-[1023px]:h-[232px] min-[1420px]:h-[174px] min-[1900px]:h-[206px]" />
+      )}
+
+      <div className="mt-2 grid grid-cols-[1fr_42px] items-end gap-2">
+        <div>
+          <h3 className="line-clamp-1 text-[12px] font-medium leading-[1.2] min-[744px]:text-[13px] min-[1900px]:text-[15px]">
+            {video.title || labels.videoFallback}
+          </h3>
+          <MaterialStats
+            likes={video.likesCount}
+            comments={video.commentsCount}
+            favorites={video.favoritesCount}
+          />
+        </div>
+        <Link
+          to={video.placeholder ? "/materials/videos" : `/materials/videos/${video.slug}`}
+          className="flex size-10 items-center justify-center rounded-full bg-[#402940] text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:size-11"
+          aria-label={video.title}
+        >
+          <ChevronRight className="size-5" aria-hidden="true" />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+export function Edukationmaterial() {
+  const { i18n } = useTranslation();
+  const language = useMemo<"ua" | "en">(
+    () => (isEnglishLanguage(i18n.language) ? "en" : "ua"),
+    [i18n.language],
+  );
+  const labels = language === "ua" ? copy.ua : copy.en;
+  const [articles, setArticles] = useState<EducationArticle[]>([]);
+  const [videos, setVideos] = useState<EducationVideo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const visibleArticles: DisplayArticle[] = !isLoading && articles.length === 0
+    ? fallbackArticles[language]
+    : articles;
+  const visibleVideos: DisplayVideo[] = !isLoading && videos.length === 0
+    ? createFallbackVideos(language)
+    : videos;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadMaterials = async () => {
+      setIsLoading(true);
+
+      try {
+        const [latestArticles, latestVideos] = await Promise.all([
+          getLatestEducationArticles(language, 2, controller.signal),
+          getLatestEducationVideos(language, 3, controller.signal),
+        ]);
+
+        setArticles(latestArticles);
+        setVideos(latestVideos);
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadMaterials();
+
+    return () => controller.abort();
+  }, [language]);
+
+  return (
+    <section className={`${pageMaxWidth} bg-secondary pb-14 font-montserrat text-[#1C100E] min-[744px]:pb-16 min-[1023px]:pt-6 min-[1420px]:pt-20 min-[1900px]:pt-24`}>
+      <div className="mx-auto w-full min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1180px]">
+        <h1 className="text-center text-[20px] font-medium leading-[1.2] min-[744px]:text-[22px] min-[1023px]:text-[30px] min-[1900px]:text-[34px]">
+          {labels.articles}
+        </h1>
+
+        {isLoading ? (
+          <p className="mt-6 text-center text-[13px] text-[#1C100E]/65">
+            {labels.loading}
+          </p>
+        ) : null}
+
+        <div className="mt-5 grid gap-4 min-[744px]:mt-7 min-[1023px]:grid-cols-2 min-[1023px]:gap-6 min-[1420px]:mt-8 min-[1900px]:gap-10">
+          {visibleArticles.map((article) => (
+            <ArticleCard key={article.id} article={article} language={language} />
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-end min-[744px]:mt-5 min-[1023px]:mt-6">
+          <Link
+            to="/materials/articles"
+            className={`${yellowButton} flex h-10 w-full max-w-[278px] items-center justify-center text-[13px] min-[744px]:max-w-[280px] min-[1023px]:h-12 min-[1023px]:max-w-[278px] min-[1420px]:max-w-[310px] min-[1900px]:max-w-[345px] min-[1900px]:text-[15px]`}
+          >
+            {labels.allArticles}
+          </Link>
+        </div>
+
+        <h2 className="mt-8 text-center text-[22px] font-medium leading-[1.2] min-[744px]:mt-10 min-[1023px]:text-[30px] min-[1900px]:text-[34px]">
+          {labels.videos}
+        </h2>
+
+        <div className="mt-4 grid gap-4 min-[744px]:mt-5 min-[1023px]:grid-cols-3 min-[1023px]:gap-6 min-[1420px]:mt-6 min-[1900px]:gap-10">
+          {visibleVideos.map((video) => (
+            <VideoCard key={video.id} video={video} labels={labels} />
+          ))}
+        </div>
+
+        <div className="mt-4 flex justify-end min-[744px]:mt-5 min-[1023px]:mt-6">
+          <Link
+            to="/materials/videos"
+            className={`${yellowButton} flex h-10 w-full max-w-[278px] items-center justify-center text-[13px] min-[744px]:max-w-[280px] min-[1023px]:h-12 min-[1023px]:max-w-[278px] min-[1420px]:max-w-[310px] min-[1900px]:max-w-[345px] min-[1900px]:text-[15px]`}
+          >
+            {labels.allVideos}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
 }

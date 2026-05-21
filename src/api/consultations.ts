@@ -16,10 +16,25 @@ export type ConsultationBookingResult =
   | { status: "busy" }
   | { status: "error" };
 
+export type ConsultationMutationResult = ConsultationBookingResult;
+
 type RawRecord = Record<string, unknown>;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^\d{2}:\d{2}$/;
+
+export const CONSULTATION_TIME_OPTIONS = Array.from({ length: 11 }, (_, index) => {
+  const totalMinutes = 9 * 60 + index * 30;
+  const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+  const minutes = String(totalMinutes % 60).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+});
+
+const CONSULTATION_TIME_SET = new Set(CONSULTATION_TIME_OPTIONS);
+
+export const isConsultationBusinessTime = (time: string) =>
+  CONSULTATION_TIME_SET.has(time.slice(0, 5));
 
 const asRecord = (value: unknown): RawRecord | null =>
   value && typeof value === "object" ? (value as RawRecord) : null;
@@ -154,6 +169,7 @@ export async function getConsultationSlots(
     return extractList(data)
       .map(normalizeSlot)
       .filter((slot): slot is ConsultationSlot => Boolean(slot))
+      .filter((slot) => isConsultationBusinessTime(slot.time))
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
@@ -203,6 +219,61 @@ export async function bookConsultation(
       throw error;
     }
 
+    return { status: "error" };
+  }
+}
+
+export async function cancelConsultationAppointment(
+  appointmentId: string | number,
+): Promise<ConsultationMutationResult> {
+  try {
+    const response = await fetch(endpoints.consultationAppointmentCancel(appointmentId), {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+    });
+
+    return response.ok ? { status: "success" } : { status: "error" };
+  } catch {
+    return { status: "error" };
+  }
+}
+
+export async function rescheduleConsultationAppointment(
+  appointmentId: string | number,
+  slotId: number,
+): Promise<ConsultationMutationResult> {
+  if (!Number.isInteger(slotId) || slotId <= 0) {
+    return { status: "error" };
+  }
+
+  try {
+    const response = await fetch(
+      endpoints.consultationAppointmentReschedule(appointmentId),
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ slot: slotId }),
+      },
+    );
+
+    if (response.ok) {
+      return { status: "success" };
+    }
+
+    if (isConflictStatus(response.status)) {
+      return { status: "busy" };
+    }
+
+    if (response.status === 400) {
+      const data = (await response.json().catch(() => null)) as unknown;
+
+      if (hasBusyMarker(data)) {
+        return { status: "busy" };
+      }
+    }
+
+    return { status: "error" };
+  } catch {
     return { status: "error" };
   }
 }

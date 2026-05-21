@@ -6,12 +6,33 @@ type RawRecord = Record<string, unknown>;
 
 export type CabinetProfile = {
   id: string;
+  firstName?: string;
+  lastName?: string;
   fullName: string;
   email: string;
   role: "user" | "specialist" | "admin" | string;
+  profileKind: "user" | "specialist" | "admin";
   avatar: string;
+  profession?: string;
+  phone?: string;
+  city?: string;
+  education?: string;
+  experience?: string;
   workHours?: string;
   about?: string;
+  isVerified?: boolean;
+};
+
+export type SpecialistProfileUpdateInput = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  city: string;
+  specialization: string;
+  education: string;
+  experience: string;
+  about: string;
+  avatar?: File | null;
 };
 
 export type CabinetAppointment = {
@@ -20,18 +41,29 @@ export type CabinetAppointment = {
   specialistName: string;
   specialistAvatar: string;
   specialistRole: string;
+  clientName: string;
+  clientEmail: string;
   date: string;
   time: string;
+  startsAt: string;
   bookAgainUrl?: string;
+};
+
+export type CabinetDocument = {
+  id: string;
+  title: string;
+  fileUrl: string;
 };
 
 export type CabinetData = {
   profile: CabinetProfile | null;
   appointments: CabinetAppointment[];
   completedAppointments: CabinetAppointment[];
+  documents: CabinetDocument[];
 };
 
 const FALLBACK_AVATAR = "/user.jpg";
+const SPECIALIST_FALLBACK_AVATAR = "/lashenko2.png";
 
 const asRecord = (value: unknown): RawRecord | null =>
   value && typeof value === "object" ? (value as RawRecord) : null;
@@ -48,7 +80,8 @@ const extractList = (data: unknown): RawRecord[] => {
   const record = asRecord(data);
   if (!record) return [];
 
-  const items = record.results ?? record.data ?? record.profiles ?? record.appointments;
+  const items =
+    record.results ?? record.data ?? record.profiles ?? record.appointments ?? record.documents;
   return Array.isArray(items) ? items.filter((item) => asRecord(item)) : [];
 };
 
@@ -110,9 +143,51 @@ const fetchJson = async (url: string, signal?: AbortSignal) => {
   return response.json().catch(() => null);
 };
 
-const normalizeProfile = (currentUser: RawRecord | null, userProfile: RawRecord | null): CabinetProfile => {
-  const userFromProfile = asRecord(userProfile?.user);
-  const source = userProfile || currentUser || {};
+const hasSpecialistProfile = (currentUser: RawRecord | null) => {
+  if (currentUser?.is_verified === true || currentUser?.isVerified === true) return true;
+
+  const profile =
+    currentUser?.specialist_profile ??
+    currentUser?.specialistProfile ??
+    currentUser?.specialist ??
+    currentUser?.specialist_id ??
+    currentUser?.specialistProfileId;
+
+  if (profile === null || profile === undefined || profile === false) return false;
+  if (typeof profile === "number") return profile > 0;
+  if (typeof profile === "string") return profile.trim().length > 0;
+  return typeof profile === "object";
+};
+
+const getProfileKind = (
+  currentUser: RawRecord | null,
+  specialistProfile: RawRecord | null,
+): CabinetProfile["profileKind"] => {
+  if (
+    currentUser?.is_staff === true ||
+    currentUser?.is_superuser === true ||
+    currentUser?.staff === true
+  ) {
+    return "admin";
+  }
+
+  const role = readString(currentUser, ["role"]).toLowerCase();
+  if (specialistProfile || hasSpecialistProfile(currentUser) || role.includes("specialist")) {
+    return "specialist";
+  }
+
+  return "user";
+};
+
+const normalizeProfile = (
+  currentUser: RawRecord | null,
+  userProfile: RawRecord | null,
+  specialistProfile: RawRecord | null,
+): CabinetProfile => {
+  const profileKind = getProfileKind(currentUser, specialistProfile);
+  const sourceProfile = profileKind === "specialist" ? specialistProfile : userProfile;
+  const userFromProfile = asRecord(sourceProfile?.user);
+  const source = sourceProfile || currentUser || {};
   const sourceUser = userFromProfile || asRecord(source.user) || currentUser;
 
   const firstName =
@@ -132,13 +207,36 @@ const normalizeProfile = (currentUser: RawRecord | null, userProfile: RawRecord 
     readString(currentUser, ["role"]) ||
     readString(sourceUser, ["role"]) ||
     readString(source, ["role"]) ||
-    "user";
+    profileKind;
+  const profession =
+    readString(source, [
+      "specialization",
+      "specialisation",
+      "specialization_ua",
+      "specialisation_ua",
+      "profession",
+      "position",
+      "role_ua",
+      "role",
+      "qualification",
+      "specialty",
+      "speciality",
+      "bio_short",
+    ]) ||
+    readString(source, ["about", "bio", "description"])
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .find(Boolean) ||
+    "";
 
   return {
     id: readString(source, ["id"]) || readString(sourceUser, ["id"]) || "me",
+    firstName,
+    lastName,
     fullName: directName || [firstName, lastName].filter(Boolean).join(" ") || email || "Profile",
     email,
     role,
+    profileKind,
     avatar: resolveMediaUrl(
       source.avatar ??
         source.photo ??
@@ -146,7 +244,19 @@ const normalizeProfile = (currentUser: RawRecord | null, userProfile: RawRecord 
         source.picture ??
         source.avatar_url ??
         sourceUser?.avatar,
+      profileKind === "specialist" ? SPECIALIST_FALLBACK_AVATAR : FALLBACK_AVATAR,
     ),
+    profession,
+    phone: readString(source, ["phone", "telephone", "tel", "phone_number", "phoneNumber"]),
+    city: readString(source, ["city", "location", "town"]),
+    education: readString(source, ["education", "degree"]),
+    experience: readString(source, [
+      "work_experience",
+      "workExperience",
+      "experience",
+      "years_of_experience",
+      "yearsOfExperience",
+    ]),
     workHours: readString(source, [
       "work_hours",
       "workHours",
@@ -155,6 +265,43 @@ const normalizeProfile = (currentUser: RawRecord | null, userProfile: RawRecord 
       "workingHours",
     ]),
     about: readString(source, ["about", "bio", "description"]),
+    isVerified:
+      source.is_verified === true ||
+      source.isVerified === true ||
+      currentUser?.is_verified === true ||
+      currentUser?.isVerified === true,
+  };
+};
+
+const normalizeDocument = (raw: RawRecord): CabinetDocument => {
+  const fileRecord = asRecord(raw.file) || asRecord(raw.document);
+  const title =
+    readString(raw, ["title", "name", "filename", "file_name", "fileName"]) ||
+    readString(fileRecord, ["title", "name", "filename", "file_name", "fileName"]) ||
+    "Document";
+  const nestedFileValue = readString(fileRecord, [
+    "url",
+    "file",
+    "document",
+    "file_url",
+    "fileUrl",
+    "path",
+  ]);
+  const fileValue =
+    nestedFileValue ||
+    raw.file ||
+    raw.document ||
+    raw.url ||
+    raw.file_url ||
+    raw.fileUrl ||
+    raw.document_url ||
+    raw.documentUrl ||
+    raw.path;
+
+  return {
+    id: readString(raw, ["id"]) || title,
+    title,
+    fileUrl: resolveMediaUrl(fileValue, ""),
   };
 };
 
@@ -164,9 +311,16 @@ const matchesCurrentUser = (profile: RawRecord, currentUser: RawRecord | null) =
   const currentId = readString(currentUser, ["id"]);
   const currentEmail = readString(currentUser, ["email"]);
   const profileUser = asRecord(profile.user);
+  const currentSpecialist = asRecord(
+    currentUser.specialist_profile ?? currentUser.specialistProfile,
+  );
+  const currentSpecialistId =
+    readString(currentSpecialist, ["id"]) ||
+    readString(currentUser, ["specialist_profile", "specialistProfile", "specialist_id", "specialistProfileId"]);
 
   return (
     !currentId ||
+    (!!currentSpecialistId && readString(profile, ["id"]) === currentSpecialistId) ||
     readString(profile, ["user", "user_id", "userId"]) === currentId ||
     readString(profileUser, ["id"]) === currentId ||
     (!!currentEmail && readString(profileUser, ["email"]) === currentEmail)
@@ -199,6 +353,8 @@ const normalizeAppointment = (
 ): CabinetAppointment => {
   const slot = asRecord(raw.slot);
   const specialist = asRecord(raw.specialist) || asRecord(slot?.specialist);
+  const user = asRecord(raw.user) || asRecord(raw.client) || asRecord(raw.patient);
+  const userProfile = asRecord(user?.profile) || asRecord(raw.profile) || asRecord(raw.user_profile);
   const startValue = readString(raw, [
     "start_time",
     "startTime",
@@ -217,6 +373,17 @@ const normalizeAppointment = (
     ]
       .filter(Boolean)
       .join(" ");
+  const clientName =
+    readString(raw, ["user_full_name", "client_full_name", "clientName", "user_name"]) ||
+    readString(userProfile, ["full_name", "fullName", "name"]) ||
+    [
+      readString(userProfile, ["first_name", "firstName"]),
+      readString(userProfile, ["last_name", "lastName"]),
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    readString(user, ["full_name", "fullName", "name", "email"]) ||
+    readString(raw, ["user_email", "client_email"]);
 
   return {
     id: readString(raw, ["id"]) || `${parsed.date}-${parsed.time}`,
@@ -235,8 +402,13 @@ const normalizeAppointment = (
     specialistRole:
       readString(raw, ["specialist_role", "specialistRole"]) ||
       readString(specialist, ["specialization", "specialisation", "role", "position"]),
+    clientName,
+    clientEmail:
+      readString(raw, ["user_email", "client_email", "email"]) ||
+      readString(user, ["email"]),
     date: readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date,
     time: readString(raw, ["time"]) || readString(slot, ["time"]) || parsed.time,
+    startsAt: startValue || `${readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date}T${readString(raw, ["time"]) || readString(slot, ["time"]) || parsed.time}`,
     bookAgainUrl: readString(raw, ["book_again_url", "bookAgainUrl"]),
   };
 };
@@ -248,12 +420,14 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
       profile: null,
       appointments: [],
       completedAppointments: [],
+      documents: [],
     };
   }
 
   const storedUser = getStoredCurrentUser();
   let currentUser = storedUser;
   let userProfile: RawRecord | null = null;
+  let specialistProfile: RawRecord | null = null;
 
   try {
     currentUser = asRecord(await fetchJson(endpoints.me, signal)) || storedUser;
@@ -269,18 +443,109 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     userProfile = null;
   }
 
-  const [appointments, completedAppointments] = await Promise.all([
+  try {
+    const directSpecialist = asRecord(
+      currentUser?.specialist_profile ?? currentUser?.specialistProfile,
+    );
+
+    if (directSpecialist) {
+      specialistProfile = directSpecialist;
+    } else {
+      const profiles = extractList(await fetchJson(endpoints.specialists, signal));
+      specialistProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
+    }
+  } catch {
+    specialistProfile = null;
+  }
+
+  const [appointments, completedAppointments, documents] = await Promise.all([
     fetchJson(`${endpoints.consultationAppointments}?sort_field=date&sort_direction=asc`, signal)
       .then((data) => extractList(data).map((item) => normalizeAppointment(item, "confirmed")))
       .catch(() => []),
     fetchJson(`${endpoints.consultationCompletedAppointments}?sort_direction=desc`, signal)
       .then((data) => extractList(data).map((item) => normalizeAppointment(item, "completed")))
       .catch(() => []),
+    fetchJson(endpoints.documents, signal)
+      .then((data) => extractList(data).map(normalizeDocument))
+      .catch(() => []),
   ]);
 
   return {
-    profile: normalizeProfile(currentUser, userProfile),
+    profile: normalizeProfile(currentUser, userProfile, specialistProfile),
     appointments,
     completedAppointments,
+    documents,
   };
+}
+
+export async function updateSpecialistProfile(
+  profileId: string,
+  input: SpecialistProfileUpdateInput,
+) {
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const body = new FormData();
+  body.append("first_name", input.firstName);
+  body.append("last_name", input.lastName);
+  body.append("phone", input.phone);
+  body.append("city", input.city);
+  body.append("specialization", input.specialization);
+  body.append("education", input.education);
+  body.append("work_experience", input.experience);
+  body.append("about", input.about);
+
+  if (input.avatar) {
+    body.append("avatar", input.avatar);
+  }
+
+  const response = await fetch(endpoints.specialistProfile(profileId), {
+    method: "PATCH",
+    headers: authHeaders(),
+    body,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Profile update failed: ${response.status}`);
+  }
+
+  return response.json().catch(() => null);
+}
+
+export async function uploadSpecialistDocuments(files: File[]) {
+  const token = getAccessToken();
+  if (!token || files.length === 0) return [];
+  const filesToUpload = files.slice(0, 3);
+
+  const uploadWithField = async (file: File, fieldName: "file" | "document") => {
+    const body = new FormData();
+    body.append(fieldName, file);
+    body.append("title", file.name);
+
+    return fetch(endpoints.documents, {
+      method: "POST",
+      headers: authHeaders(),
+      body,
+    });
+  };
+
+  const results = [];
+
+  for (const file of filesToUpload) {
+    let response = await uploadWithField(file, "file");
+
+    if (!response.ok && response.status === 400) {
+      response = await uploadWithField(file, "document");
+    }
+
+    if (!response.ok) {
+      throw new Error(`Document upload failed: ${response.status}`);
+    }
+
+    results.push(await response.json().catch(() => null));
+  }
+
+  return results;
 }
