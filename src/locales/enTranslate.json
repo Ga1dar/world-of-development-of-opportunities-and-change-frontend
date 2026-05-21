@@ -34,13 +34,11 @@
     "It is a community of people creating light where it is needed most.",
     "Together we can do more. Together we are strong."
   ],
-
   "modeError": {
     "login": "Failed to log in. Please check your email and try again.",
     "registered": "Failed to register. Please check your email and try again."
   },
   "loginSetError": "An unknown error occurred. Please try again.",
-
   "buttonText": {
     "footer": "Register",
     "header": "Login"
@@ -49,44 +47,36 @@
     "login": "Login",
     "registered": "Register"
   },
-
   "buttonApple": "Sign in with Apple",
   "buttonGoogle": "Sign in with Google",
-
+  "buttonGoogleRegister": "Register with Google",
   "emailFormTitle": "Email",
   "emailFormTitleName": "Name",
   "password": "Password",
   "titlePassword": "Minimum 6 characters, 1 uppercase letter and 1 special character",
-
   "buttonSubmit": {
     "sending": "Sending...",
     "further": "Next",
     "registered": "Register"
   },
-
   "dialogTextNoneProf": "Don't have an account?",
   "dialogTextProf": "Already have an account?",
-
   "aboutUs": "About us",
   "events": "Events",
   "contacts": "Contacts",
   "support": "Support",
-
   "footerLabel": "Stay up to date with the latest news",
   "footer-email": "Email address...",
   "footerButton": {
     "sending": "Sending...",
     "subscribe": "Subscribe"
   },
-
   "inputText": "No spam. Unsubscribe anytime.",
-
   "contactTitle": "Contacts:",
   "contactNumber": "Phone: 097 147 63 97",
   "telegram": "t.me/svity_pokrov",
   "inst": "inst: svity_pokrov",
   "facebook": "Facebook: Svity Pokrov Development Space",
-
   "bottomTitle": "Svity",
   "bottomText": "A space for development and mental health for children and adults",
   "developers": "© 2026 Developers",
@@ -106,7 +96,7 @@
   "recoveryMessageSent": "If this email exists, a recovery link will be sent.",
   "recoveryMessageError": "Could not send recovery link. Please try again.",
   "registerPasswordTitle": "Enter password",
-  "registerPasswordHint": "Your password must contain at least 8 characters, minimum 1 uppercase letter, 1 digit, etc.",
+  "registerPasswordHint": "Your password must not be similar to your email, too common, or entirely numeric. Minimum 8 characters.",
   "registerSavePassword": "Save password",
   "repeatPassword": "Repeat password",
   "registerPasswordMismatch": "Passwords do not match.",
@@ -118,11 +108,99 @@
   "hidePassword": "Hide password",
   "googleClientMissing": "Add VITE_GOOGLE_CLIENT_ID to register with Google.",
   "googleAuthUnavailable": "Could not open Google registration.",
+  "googleAuthFailed": "Could not sign in with Google. Please try again.",
+  "googleRegistrationFailed": "Could not register with Google. Please try again.",
+  "googleAuthConnectionError": "Could not connect to the server. Please try again.",
+  "googleAuthCancelled": "Google sign-in was cancelled.",
   "resetPasswordTitle": "Set a new password",
   "newPassword": "New password",
   "confirmResetPassword": "Save password",
   "resetPasswordSuccess": "Password updated successfully. You can now log in.",
   "resetPasswordMissingToken": "The password recovery link is invalid or expired.",
   "resetPasswordError": "Could not update password. Please try again.",
-  "passwordMinLength": "Password must contain at least 8 characters."
+  "passwordMinLength": "Password must contain at least 8 characters.",
+  "passwordTooSimilar": "Password must not be similar to your email.",
+  "passwordTooCommon": "This password is too common. Choose a stronger password.",
+  "passwordNumericOnly": "Password cannot be entirely numeric.",
+  "authConnectionError": "Could not connect to the server. Please try again.",
+  "specialistsLoading": "Loading specialists...",
+  "specialistsLoadError": "Could not load specialists from the server. Showing available local data.",
+  "specialistProfileNotFound": "Specialist was not found.",
+  "specialistBackToList": "Back to specialists",
+  "specialistConsultation": "Book a consultation",
+  "specialistAbout": "About specialist",
+  "specialistEducation": "Education",
+  "specialistExperience": "Experience",
+  "specialistSpecializations": "Specializations",
+  "specialistContacts": "Contacts",
+  "specialistHigherEducation": "Higher education:",
+  "specialistSpecialty": "Specialty:",
+  "specialistWorkExperience": "Work experience",
+  "specialistConsultationNote": "To book a consultation with a specialist, please register.",
+  "consultationDialog": {
+    "introTitle": "Would you like to book a consultation",
+    "introDescription": "To book a consultation, please register on the website",
+    "yes": "Yes",
+    "calendarTitle": "Choose date and time",
+    "calendarDescription": "Choose a date and time that works for you.",
+    "time": "Time",
+    "afterConfirmation": "After the available slot is confirmed, your booking will appear in your personal account",
+    "book": "Book",
+    "submitting": "Booking...",
+    "loadingSlots": "Loading available times...",
+    "slotsLoadFailed": "Could not load available times. Please try again later.",
+    "noSlots": "There are no available times for this date.",
+    "successTitle": "Thank you",
+    "successDescription": "After the available slot is confirmed, your booking will appear in your personal account",
+    "myAppointments": "My bookings",
+    "busyTitle": "This time is taken",
+    "busyDescription": "The selected time is no longer available. Please choose another consultation slot.",
+    "chooseAnotherTime": "Choose another time",
+    "errorTitle": "Could not book",
+    "errorDescription": "Something went wrong while booking. Check your connection and try again.",
+    "tryAgain": "Try again",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
+  "contactAddress": "Heroiv Ukrainy St, 13, Pokrov, Dnipropetrovsk Oblast, Ukraine",
+  "eventsBackToCategories": "Back to categories",
+  "eventsBackToCategory": "Back to category events",
+  "eventsLoading": "Loading event...",
+  "eventRegistration": {
+    "open": "Register for event",
+    "title": "Event registration",
+    "description": "Fill in the form and we will contact you about participation.",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "experience": "Your experience",
+    "comment": "Comment or question",
+    "submit": "Register",
+    "submitting": "Sending...",
+    "successTitle": "Thank you for registering",
+    "successDescription": "We received your registration. After confirmation, we will send participation details.",
+    "errorTitle": "Could not register",
+    "errorDescription": "Check the entered data and try again.",
+    "networkTitle": "Server is not responding",
+    "networkDescription": "We could not reach the server right now. Please try again later.",
+    "tryAgain": "Try again",
+    "done": "Done"
+  },
+  "eventComments": {
+    "title": "Comments",
+    "author": "Your name",
+    "placeholder": "Write a comment",
+    "send": "Send",
+    "sending": "Sending...",
+    "validationError": "Fill in your name and comment.",
+    "fallbackNotice": "The server did not respond, so the comment is shown locally for visual testing.",
+    "reply": "Write a reply",
+    "placeholderShort": "Text...",
+    "authNotice": "To write a comment, you need to register",
+    "guest": "Guest"    
+  },
+  "FailedSubscribe": "Failed to subscribe. Please try again.",
+  "Thank": "Thank you for subscribing!",
+  "UnknownError": "An unknown error occurred."
+
 }

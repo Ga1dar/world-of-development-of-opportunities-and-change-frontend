@@ -108,7 +108,7 @@ export function PasswordRecoveryDialog({
           </FieldGroup>
 
           {error && (
-            <p className="mt-2 font-montserrat text-[12px] text-red-500 xl:text-sm">
+            <p className="mt-3 font-montserrat text-[12px] text-red-500 xl:text-sm">
               {error}
             </p>
           )}

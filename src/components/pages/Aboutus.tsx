@@ -79,12 +79,12 @@ export function Aboutus() {
         </article>
       </section>
 
-      <section className="mx-auto mt-16 flex w-full max-w-[1280px] flex-col items-center justify-center px-4 sm:mt-20 sm:px-10 min-[1420px]:px-0 min-[1900px]:mt-[100px] min-[1900px]:max-w-[1820px]">
-        <h2 className="w-full text-center font-montserrat text-3xl font-medium leading-[140%] text-[#1C100E] sm:text-4xl min-[1420px]:text-[56px] min-[1420px]:leading-[100px]">
+      <section className="mx-auto mt-16 flex w-full max-w-[1280px] flex-col items-center justify-center px-4 sm:mt-20 sm:px-10 min-[1420px]:px-0 min-[1900px]:mt-[100px] min-[1900px]:max-w-[1800px]">
+        <h2 className="w-full text-center font-montserrat text-3xl font-medium leading-[140%] text-[#1C100E] sm:text-4xl min-[1420px]:text-[56px] min-[1420px]:leading-[100px] min-[1900px]:mt-5">
           {t("specialistsTitle")}
         </h2>
 
-        <Specialists isSlider />
+        <Specialists isSlider limit={3} variant="home" />
 
         <Link
           to="/specialists"

@@ -10,9 +10,13 @@ import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Check, Eye, EyeOff } from "lucide-react"
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router-dom"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
+import { endpoints } from "../../api/endpoints"
+import { getAccessToken, notifyAuthChanged, storeCurrentUser } from "../../api/auth"
+import { getUserCabinetData } from "../../api/userCabinet"
 
 type LogInProps = {
   variant?: "header" | "footer" | "menu"
@@ -22,6 +26,29 @@ type LogInProps = {
 type LoginStep = "email" | "password"
 type RegisterStep = "email" | "password" | "role" | "success"
 type UserRole = "specialist" | "user"
+type AuthErrorKey =
+  | "passwordMinLength"
+  | "passwordTooSimilar"
+  | "passwordTooCommon"
+  | "passwordNumericOnly"
+  | "registerPasswordMismatch"
+
+const PASSWORD_MIN_LENGTH = 8
+const COMMON_PASSWORDS = new Set([
+  "password",
+  "password1",
+  "password123",
+  "qwerty",
+  "qwerty123",
+  "12345678",
+  "123456789",
+  "1234567890",
+  "11111111",
+  "00000000",
+  "admin123",
+  "letmein",
+  "iloveyou",
+])
 
 type GoogleWindow = Window &
   typeof globalThis & {
@@ -62,11 +89,14 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showRecoveryLink, setShowRecoveryLink] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => Boolean(getAccessToken())
+  )
+  const [authVersion, setAuthVersion] = useState(0)
+  const [profileAvatar, setProfileAvatar] = useState("")
 
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
-  const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   const resetForm = () => {
@@ -90,7 +120,60 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     if (data.refresh) {
       localStorage.setItem("refreshToken", data.refresh)
     }
+
+    if (data.access || data.refresh) {
+      setIsAuthenticated(Boolean(data.access || getAccessToken()))
+      notifyAuthChanged()
+    }
   }
+
+  useEffect(() => {
+    const updateAuthState = () => {
+      setIsAuthenticated(Boolean(getAccessToken()))
+      setAuthVersion((current) => current + 1)
+    }
+
+    updateAuthState()
+    window.addEventListener("auth-changed", updateAuthState)
+    window.addEventListener("storage", updateAuthState)
+
+    return () => {
+      window.removeEventListener("auth-changed", updateAuthState)
+      window.removeEventListener("storage", updateAuthState)
+    }
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    if (!isAuthenticated) {
+      setProfileAvatar("")
+      return () => {
+        isMounted = false
+      }
+    }
+
+    void getUserCabinetData()
+      .then((data) => {
+        if (!isMounted) return
+
+        const avatar = data.profile?.avatar || ""
+        const isFallbackAvatar =
+          avatar.endsWith("/user.jpg") ||
+          avatar.endsWith("/lashenko2.png") ||
+          avatar === "/user.jpg" ||
+          avatar === "/lashenko2.png"
+
+        setProfileAvatar(isFallbackAvatar ? "" : avatar)
+      })
+      .catch(() => {
+        if (isMounted) setProfileAvatar("")
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [authVersion, isAuthenticated])
 
   const getResponseError = (
     data: Record<string, string[] | string> | null,
@@ -102,14 +185,163 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     const roleError = data?.role
     const nonFieldError = data?.non_field_errors
 
-    return (
+    const message =
       (typeof detail === "string" && detail) ||
       (Array.isArray(emailError) && emailError[0]) ||
       (Array.isArray(passwordError) && passwordError[0]) ||
       (Array.isArray(roleError) && roleError[0]) ||
       (Array.isArray(nonFieldError) && nonFieldError[0]) ||
-      fallback
+      ""
+
+    if (!message) {
+      return fallback
+    }
+
+    const errorKey = getAuthErrorKey(message)
+
+    return errorKey ? t(errorKey) : fallback
+  }
+
+  const getAuthErrorKey = (message: string): AuthErrorKey | null => {
+    const normalizedMessage = message.toLowerCase()
+
+    if (
+      normalizedMessage.includes("similar") ||
+      normalizedMessage.includes("схож")
+    ) {
+      return "passwordTooSimilar"
+    }
+
+    if (
+      normalizedMessage.includes("common") ||
+      normalizedMessage.includes("прост") ||
+      normalizedMessage.includes("пошир")
+    ) {
+      return "passwordTooCommon"
+    }
+
+    if (
+      normalizedMessage.includes("numeric") ||
+      normalizedMessage.includes("числов") ||
+      normalizedMessage.includes("цифр")
+    ) {
+      return "passwordNumericOnly"
+    }
+
+    if (normalizedMessage.includes("8") || normalizedMessage.includes("short")) {
+      return "passwordMinLength"
+    }
+
+    if (normalizedMessage.includes("match")) {
+      return "registerPasswordMismatch"
+    }
+
+    return null
+  }
+
+  const getPasswordSimilarity = (firstValue: string, secondValue: string) => {
+    if (!firstValue || !secondValue) {
+      return 0
+    }
+
+    const rows = firstValue.length + 1
+    const columns = secondValue.length + 1
+    const distances = Array.from({ length: rows }, () =>
+      Array<number>(columns).fill(0)
     )
+
+    for (let row = 0; row < rows; row += 1) {
+      distances[row][0] = row
+    }
+
+    for (let column = 0; column < columns; column += 1) {
+      distances[0][column] = column
+    }
+
+    for (let row = 1; row < rows; row += 1) {
+      for (let column = 1; column < columns; column += 1) {
+        const cost = firstValue[row - 1] === secondValue[column - 1] ? 0 : 1
+
+        distances[row][column] = Math.min(
+          distances[row - 1][column] + 1,
+          distances[row][column - 1] + 1,
+          distances[row - 1][column - 1] + cost
+        )
+      }
+    }
+
+    return (
+      1 -
+      distances[firstValue.length][secondValue.length] /
+        Math.max(firstValue.length, secondValue.length)
+    )
+  }
+
+  const isPasswordTooSimilarToEmail = () => {
+    const normalizedPassword = password.trim().toLowerCase()
+    const emailLocalPart = email.split("@")[0]?.trim().toLowerCase() || ""
+
+    if (normalizedPassword.length < 4 || emailLocalPart.length < 4) {
+      return false
+    }
+
+    return (
+      normalizedPassword.includes(emailLocalPart) ||
+      emailLocalPart.includes(normalizedPassword) ||
+      getPasswordSimilarity(normalizedPassword, emailLocalPart) >= 0.7
+    )
+  }
+
+  const validateRegistrationPassword = () => {
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return t("passwordMinLength")
+    }
+
+    if (isPasswordTooSimilarToEmail()) {
+      return t("passwordTooSimilar")
+    }
+
+    if (COMMON_PASSWORDS.has(password.trim().toLowerCase())) {
+      return t("passwordTooCommon")
+    }
+
+    if (/^\d+$/.test(password)) {
+      return t("passwordNumericOnly")
+    }
+
+    if (password !== passwordConfirm) {
+      return t("registerPasswordMismatch")
+    }
+
+    return ""
+  }
+
+  const getRequestError = (err: unknown, fallback: string) => {
+    if (err instanceof TypeError) {
+      return t("authConnectionError")
+    }
+
+    return err instanceof Error ? err.message : fallback
+  }
+
+  const isPasswordServerError = (
+    data: Record<string, string[] | string> | null
+  ) => {
+    const passwordError = data?.password
+    const detail = data?.detail
+
+    return (
+      (Array.isArray(passwordError) && passwordError.length > 0) ||
+      (typeof detail === "string" && getAuthErrorKey(detail) !== null)
+    )
+  }
+
+  const getGoogleTokenError = (err: unknown) => {
+    if (err instanceof TypeError) {
+      return t("googleAuthConnectionError")
+    }
+
+    return err instanceof Error ? err.message : t("googleAuthFailed")
   }
 
   const registerUser = async (selectedRole: UserRole) => {
@@ -117,7 +349,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setError("")
 
     try {
-      const response = await fetch(`${API_URL}/users/register/`, {
+      const response = await fetch(endpoints.register, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -125,6 +357,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         body: JSON.stringify({
           email,
           password,
+          confirm_password: passwordConfirm,
           role: selectedRole,
         }),
       })
@@ -132,13 +365,44 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        throw new Error(getResponseError(data, t("modeError.registered")))
+        if (isPasswordServerError(data)) {
+          setRegisterStep("password")
+        }
+
+        throw new Error(
+          getResponseError(
+            data,
+            response.status === 400
+              ? "Цей email вже може бути зареєстрований або дані заповнені некоректно."
+              : t("modeError.registered")
+          )
+        )
       }
 
       storeTokens(data || {})
+
+      if (!data?.access) {
+        const loginResponse = await fetch(endpoints.login, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        })
+
+        const loginData = await loginResponse.json().catch(() => null)
+
+        if (loginResponse.ok) {
+          storeTokens(loginData || {})
+        }
+      }
+
+      storeCurrentUser({ email, role: selectedRole })
+      notifyAuthChanged()
+
       setRegisterStep("success")
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("loginSetError"))
+      setError(getRequestError(err, t("loginSetError")))
     } finally {
       setIsLoading(false)
     }
@@ -155,8 +419,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       }
 
       if (registerStep === "password") {
-        if (password !== passwordConfirm) {
-          setError(t("registerPasswordMismatch"))
+        const passwordError = validateRegistrationPassword()
+
+        if (passwordError) {
+          setError(passwordError)
           return
         }
 
@@ -176,7 +442,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/users/login/`, {
+      const response = await fetch(endpoints.login, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -192,18 +458,35 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
       storeTokens(data || {})
 
+      try {
+        const meResponse = await fetch(endpoints.me, {
+          headers: {
+            Authorization: `Bearer ${data?.access || getAccessToken()}`,
+          },
+        })
+
+        if (meResponse.ok) {
+          storeCurrentUser(await meResponse.json())
+          notifyAuthChanged()
+        }
+      } catch {
+        notifyAuthChanged()
+      }
+
       resetForm()
       setOpen(false)
       setMode("login")
     } catch (err) {
       setShowRecoveryLink(true)
-      setError(err instanceof Error ? err.message : t("loginSetError"))
+      setError(getRequestError(err, t("loginSetError")))
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleOpen = () => {
+    if (isAuthenticated) return
+
     resetForm()
 
     if (variant === "footer") {
@@ -238,7 +521,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     accessToken: string,
     authMode: "login" | "register"
   ) => {
-    const response = await fetch(`${API_URL}/users/google/`, {
+    const response = await fetch(endpoints.googleAuth, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -248,16 +531,13 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       }),
     })
 
-    const data = await response.json().catch(() => null)
-
     if (!response.ok) {
       throw new Error(
-        getResponseError(
-          data,
-          authMode === "login" ? t("modeError.login") : t("modeError.registered")
-        )
+        t(authMode === "login" ? "googleAuthFailed" : "googleRegistrationFailed")
       )
     }
+
+    const data = await response.json().catch(() => null)
 
     storeTokens(data || {})
 
@@ -295,13 +575,17 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         callback: async (response) => {
           if (response.error) {
             setIsLoading(false)
-            setError(response.error_description || t("googleAuthUnavailable"))
+            setError(
+              response.error === "access_denied"
+                ? t("googleAuthCancelled")
+                : t("googleAuthFailed")
+            )
             return
           }
 
           if (!response.access_token) {
             setIsLoading(false)
-            setError(t("googleAuthUnavailable"))
+            setError(t("googleAuthFailed"))
             return
           }
 
@@ -309,7 +593,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
             setIsLoading(true)
             await submitGoogleToken(response.access_token, authMode)
           } catch (err) {
-            setError(err instanceof Error ? err.message : t("loginSetError"))
+            setError(getGoogleTokenError(err))
           } finally {
             setIsLoading(false)
           }
@@ -346,7 +630,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
   const buttonText =
     text ||
-    (variant === "footer"
+    (isAuthenticated
+      ? i18n.language.toLowerCase().startsWith("en")
+        ? "Profile"
+        : "Профіль"
+      : variant === "footer"
       ? t("buttonText.footer")
       : variant === "menu"
         ? t("buttonText.header")
@@ -357,7 +645,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
         ? "mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] bg-[#FFFFFF] px-2 py-4 font-montserrat text-[18px] font-[500] text-black sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px]"
-        : "my-auto h-[57px] w-[57px] rounded-[30px] bg-[#FFFFFF] font-montserrat text-[18px] font-[500] text-black sm:w-18.25 min-[1420px]:z-51"
+        : `my-auto h-[57px] rounded-[30px] bg-[#FFFFFF] px-3 font-montserrat font-[500] text-black sm:w-auto min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:text-[18px] ${
+            isAuthenticated
+              ? "w-24 text-[15px] min-[1420px]:!w-24"
+              : "w-[57px] text-[18px] sm:w-18.25 min-[1420px]:!w-14.25"
+          }`
 
   const modalTitle =
     mode === "login"
@@ -375,9 +667,38 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         ? t("buttonSubmit.further")
         : t("registerSavePassword")
 
+  if (isAuthenticated) {
+    if (variant === "header" && profileAvatar) {
+      return (
+        <Link
+          to="/profile"
+          aria-label={buttonText}
+          className="my-auto inline-flex h-[57px] w-[57px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-0 min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:w-14.25"
+        >
+          <img
+            src={profileAvatar}
+            alt={buttonText}
+            className="h-full w-full object-cover"
+          />
+        </Link>
+      )
+    }
+
+    return (
+      <Link to="/profile" className={`inline-flex items-center justify-center ${triggerClassName}`}>
+        {buttonText}
+      </Link>
+    )
+  }
+
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={isAuthenticated ? false : open}
+        onOpenChange={(nextOpen) => {
+          if (!isAuthenticated) setOpen(nextOpen)
+        }}
+      >
         <DialogTrigger asChild>
           <Button className={triggerClassName} onClick={handleOpen}>
             {buttonText}
@@ -385,26 +706,33 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         </DialogTrigger>
 
         <DialogContent
-          className="top-1/2 flex max-h-[calc(100vh-32px)] flex-col overflow-y-auto bg-[#F0E8F0] px-5 py-8 md:max-w-[600px] md:rounded-[24px] md:px-[95px] md:py-9"
+          className="top-1/2 flex max-h-[calc(100vh-32px)] flex-col 
+          overflow-y-auto bg-[#F0E8F0] px-5 py-8 md:max-w-150 
+          md:rounded-3xl md:px-23.75 md:py-9"
         >
           {mode === "register" && registerStep === "success" ? (
             <div className="flex flex-col items-center">
               <img
                 src="/Logo1.png"
                 alt="Logo"
-                className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
+                className="mx-auto h-20 w-20 sm:h-30 sm:w-30 xl:h-46 xl:w-46"
               />
 
               <Check className="mt-2 h-16 w-16 stroke-[#4C3156] stroke-[1.75]" />
 
-              <DialogTitle className="mt-3 max-w-[410px] text-center font-montserrat text-[24px] font-medium leading-[1.2] text-[#2D302D] xl:text-[32px]">
+              <DialogTitle
+                className="mt-3 max-w-102.5 text-center font-montserrat
+                 text-[24px] font-medium leading-[1.2] text-[#2D302D]
+                 xl:text-[32px]">
                 {t("registerSuccessTitle")}
               </DialogTitle>
 
               <Button
                 type="button"
                 onClick={handleSuccessLogin}
-                className="mt-5 h-12 w-full cursor-pointer rounded-[30px] border-2 border-[#FEF85C] text-center font-montserrat text-[14px] leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
+                className="mt-5 h-12 w-full cursor-pointer rounded-[30px] 
+                border-2 border-[#FEF85C] text-center font-montserrat text-[14px]
+                 leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
                 style={{
                   background:
                     "linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%)",
@@ -419,15 +747,19 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 <img
                   src="/Logo1.png"
                   alt="Logo"
-                  className="mx-auto h-20 w-20 sm:w-30 xl:h-30.5 xl:w-46"
+                  className="mx-auto h-20 w-20 sm:h-30 sm:w-30 xl:h-46 xl:w-46"
                 />
 
-                <DialogTitle className="my-1 text-center font-montserrat text-[24px] font-medium leading-[1.2] text-[#2D302D] xl:my-2 xl:text-[32px]">
+                  <DialogTitle
+                    className="my-1 text-center font-montserrat text-[24px] 
+                    font-medium leading-[1.2] text-[#2D302D] xl:my-2 xl:text-[32px]">
                   {modalTitle}
                 </DialogTitle>
 
                 {mode === "register" && registerStep === "password" && (
-                  <p className="mt-3 w-full font-montserrat text-[12px] leading-[1.35] text-[#6C6370] xl:text-[14px]">
+                    <p
+                      className="mt-3 w-full font-montserrat text-[12px] 
+                      leading-[1.35] text-[#6C6370] xl:text-[14px]">
                     {t("registerPasswordHint")}
                   </p>
                 )}
@@ -438,11 +770,13 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                       type="button"
                       variant="outline"
                       disabled={isLoading}
-                      className="h-10 w-full items-center rounded-[30px] bg-[#1C100E] px-5 text-center font-montserrat text-[12px] leading-10 text-[#F3F2F3] xl:h-12 xl:text-[14px]"
+                        className="h-10 w-full items-center rounded-[30px] bg-[#1C100E] 
+                        px-5 text-center font-montserrat text-[12px] leading-10 
+                        text-[#F3F2F3] xl:h-12 xl:text-[14px]"
                       onClick={handleGoogleRegistration}
                     >
                       <img src="/google.png" alt="Google" className="h-4 w-4" />
-                      {t("buttonGoogle")}
+                      {t("buttonGoogleRegister")}
                     </Button>
 
                     <div className="text-center font-montserrat text-[12px] leading-5 text-[#1C100E] xl:text-[14px]">
@@ -455,7 +789,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-4 h-10 w-full items-center rounded-[30px] bg-[#1C100E] px-5 text-center font-montserrat text-[12px] leading-10 text-[#F3F2F3] xl:h-12 xl:text-[14px]"
+                    className="mt-4 h-10 w-full items-center 
+                      rounded-[30px] bg-[#1C100E] px-5 text-center 
+                      font-montserrat text-[12px] leading-10 text-[#F3F2F3] 
+                      xl:h-12 xl:text-[14px]"
                     onClick={handleGoogleLogin}
                   >
                     <img src="/google.png" alt="Google" className="h-4 w-4" />
@@ -483,7 +820,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                       </Label>
 
                       <Input
-                        className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-3 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                          className="h-10 w-full rounded-[30px] border border-primary
+                           bg-[#F0E8F0] px-3 font-montserrat 
+                          text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
                         id="email"
                         name="email"
                         type="email"
@@ -512,14 +851,16 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
                     <div className="relative">
                       <Input
-                        className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-10 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                        className="h-10 w-full rounded-[30px] border
+                        border-primary
+                        bg-[#F0E8F0] px-10 font-montserrat text-[14px] 
+                        font-normal leading-5 text-[#1C100E] 
+                        xl:h-12 xl:text-[16px]"
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder={t("password")}
                         required
-                        minLength={8}
-                        maxLength={128}
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value)
@@ -555,14 +896,15 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
                         <div className="relative">
                           <Input
-                            className="h-10 w-full rounded-[30px] border border-primary bg-[#F0E8F0] px-10 font-montserrat text-[14px] font-normal leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
+                            className="h-10 w-full rounded-[30px] 
+                            border border-primary bg-[#F0E8F0] px-10 
+                            font-montserrat text-[14px] font-normal 
+                            leading-5 text-[#1C100E] xl:h-12 xl:text-[16px]"
                             id="passwordConfirm"
                             name="passwordConfirm"
                             type={showPasswordConfirm ? "text" : "password"}
                             placeholder={t("repeatPassword")}
                             required
-                            minLength={8}
-                            maxLength={128}
                             value={passwordConfirm}
                             onChange={(e) => {
                               setPasswordConfirm(e.target.value)
@@ -604,7 +946,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                     className="h-12 w-full rounded-[30px] bg-[#1C100E] font-montserrat text-[14px] text-[#F3F2F3] hover:bg-[#1C100E]/90"
                     aria-pressed={role === "specialist"}
                   >
-                    {t("roleSpecialist")}
+                    {isLoading && role === "specialist"
+                      ? t("buttonSubmit.sending")
+                      : t("roleSpecialist")}
                   </Button>
 
                   <Button
@@ -614,7 +958,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                     className="h-12 w-full rounded-[30px] bg-[#1C100E] font-montserrat text-[14px] text-[#F3F2F3] hover:bg-[#1C100E]/90"
                     aria-pressed={role === "user"}
                   >
-                    {t("roleUser")}
+                    {isLoading && role === "user"
+                      ? t("buttonSubmit.sending")
+                      : t("roleUser")}
                   </Button>
                 </div>
               )}
@@ -646,7 +992,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="mt-4 h-12 w-full cursor-pointer rounded-[30px] border-2 border-[#FEF85C] text-center font-montserrat text-[14px] leading-12 text-[#1C100E] shadow-btn xl:h-14 xl:text-[18px]"
+                  className="mt-4 h-12 w-full cursor-pointer 
+                  rounded-[30px] border-2 border-[#FEF85C] 
+                  text-center font-montserrat text-[14px]
+                  leading-12 text-[#1C100E] shadow-btn
+                  xl:h-14 xl:text-[18px]"
                   style={{
                     background:
                       "linear-gradient(180deg, #FFC401 0%, #FFC021 45%, #FEFA8B 100%)",
@@ -657,7 +1007,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
               )}
 
               {mode === "login" ? (
-                <div className="mt-7 flex min-h-[22px] justify-between gap-4 font-montserrat text-[12px] font-[400] leading-[22px] text-[#1C100E] xl:mt-10 xl:text-[16px]">
+                  <div
+                    className="mt-7 flex min-h-5.5 justify-between gap-4 font-montserrat
+                    text-[12px] font-normal leading-5.5
+                  text-[#1C100E] xl:mt-10 xl:text-[16px]">
                   {showRecoveryLink && loginStep === "password" ? (
                     <>
                       <span>{t("forgotPassword")}</span>
@@ -685,7 +1038,11 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                 </div>
               ) : (
                 registerStep !== "role" && (
-                  <p className="mt-7 flex min-h-5.5 justify-between gap-4 font-montserrat text-[12px] font-normal leading-[22px] text-[#1C100E] xl:mt-10 xl:text-[16px]">
+                  <p
+                    className="mt-7 flex min-h-5.5 justify-between gap-4 
+                    font-montserrat text-[12px] font-normal
+                    leading-5.5 text-[#1C100E] xl:mt-10 xl:text-[16px]"
+                  >
                     <span>{t("dialogTextProf")}</span>
                     <button
                       type="button"
