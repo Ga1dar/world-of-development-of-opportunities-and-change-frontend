@@ -6,7 +6,7 @@ import {
   type MouseEvent,
   type PointerEvent,
 } from "react";
-import { useTranslation } from "react-i18next";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,22 +14,62 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  bookConsultation,
   CONSULTATION_TIME_OPTIONS,
   getConsultationSlots,
+  rescheduleConsultationAppointment,
+  type ConsultationMutationResult,
   type ConsultationSlot,
-  type ConsultationBookingResult,
 } from "../../api/consultations";
+import type { CabinetAppointment } from "../../api/userCabinet";
 
-type ConsultationDialogProps = {
+type RescheduleAppointmentDialogProps = {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  appointment: CabinetAppointment | null;
   specialistId: number;
+  language: string;
+  onOpenChange: (open: boolean) => void;
+  onRescheduled: (appointmentId: string, slot: ConsultationSlot) => void;
 };
 
-type DialogStep = "intro" | "calendar" | ConsultationBookingResult["status"];
+const copy = {
+  ua: {
+    title: "Обрати дату та час",
+    description: "Оберіть зручну для вас дату та час.",
+    time: "Час",
+    move: "Перенести запис",
+    submitting: "Переносимо...",
+    loadingSlots: "Завантажуємо доступний час...",
+    slotsLoadFailed: "Не вдалося завантажити доступний час.",
+    noSlots: "На цю дату немає вільного часу.",
+    previousMonth: "Попередній місяць",
+    nextMonth: "Наступний місяць",
+    successTitle: "Запис перенесено",
+    busyTitle: "Цей час уже зайнятий",
+    errorTitle: "Не вдалося перенести запис",
+    chooseAnotherTime: "Обрати інший час",
+    close: "Закрити",
+  },
+  en: {
+    title: "Choose date and time",
+    description: "Choose a convenient date and time.",
+    time: "Time",
+    move: "Reschedule booking",
+    submitting: "Rescheduling...",
+    loadingSlots: "Loading available time...",
+    slotsLoadFailed: "Could not load available time.",
+    noSlots: "No available time for this date.",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
+    successTitle: "Booking rescheduled",
+    busyTitle: "This time is already booked",
+    errorTitle: "Could not reschedule booking",
+    chooseAnotherTime: "Choose another time",
+    close: "Close",
+  },
+};
+
+type DialogStep = "calendar" | ConsultationMutationResult["status"];
 
 const toDateInputValue = (date: Date) => {
   const year = date.getFullYear();
@@ -89,14 +129,20 @@ const getMonthDays = (monthDate: Date) => {
   return cells;
 };
 
-export function ConsultationDialog({
+const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en");
+
+export function RescheduleAppointmentDialog({
   open,
-  onOpenChange,
+  appointment,
   specialistId,
-}: ConsultationDialogProps) {
-  const { i18n, t } = useTranslation();
+  language,
+  onOpenChange,
+  onRescheduled,
+}: RescheduleAppointmentDialogProps) {
+  const labels = isEnglishLanguage(language) ? copy.en : copy.ua;
   const today = useMemo(() => new Date(), []);
-  const [step, setStep] = useState<DialogStep>("intro");
+  const calendarLocale = isEnglishLanguage(language) ? "en-US" : "uk-UA";
+  const [step, setStep] = useState<DialogStep>("calendar");
   const [selectedDate, setSelectedDate] = useState(() => toDateInputValue(today));
   const [visibleMonth, setVisibleMonth] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
@@ -114,16 +160,10 @@ export function ConsultationDialog({
     startX: 0,
   });
   const suppressTimeClickRef = useRef(false);
-
-  const isUkrainian = i18n.language === "ua" || i18n.language === "uk";
-  const calendarLocale = isUkrainian ? "uk-UA" : "en-US";
   const weekDays = useMemo(() => getWeekDays(calendarLocale), [calendarLocale]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
   const minDate = toDateInputValue(today);
-  const availableDates = useMemo(
-    () => new Set(slots.map((slot) => slot.date)),
-    [slots],
-  );
+  const availableDates = useMemo(() => new Set(slots.map((slot) => slot.date)), [slots]);
   const selectedDaySlots = useMemo(
     () => slots.filter((slot) => slot.date === selectedDate),
     [selectedDate, slots],
@@ -141,6 +181,7 @@ export function ConsultationDialog({
     if (!open || !Number.isInteger(specialistId) || specialistId <= 0) return;
 
     const controller = new AbortController();
+    setStep("calendar");
     setIsSlotsLoading(true);
     setSlotsLoadFailed(false);
 
@@ -153,9 +194,7 @@ export function ConsultationDialog({
           const firstDate = new Date(firstSlot.date);
           setSelectedDate(firstSlot.date);
           setSelectedTime(firstSlot.time);
-          setVisibleMonth(
-            new Date(firstDate.getFullYear(), firstDate.getMonth(), 1),
-          );
+          setVisibleMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
         } else {
           setSelectedTime("");
         }
@@ -186,21 +225,17 @@ export function ConsultationDialog({
     }
   }, [selectedDate, selectedDaySlots, selectedTime]);
 
-  const reset = () => {
-    setStep("intro");
-    setSelectedDate(toDateInputValue(today));
-    setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedTime("");
-    setSlots([]);
-    setSlotsLoadFailed(false);
-    setIsSubmitting(false);
-  };
-
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
 
     if (!nextOpen) {
-      reset();
+      setStep("calendar");
+      setSelectedDate(toDateInputValue(today));
+      setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+      setSelectedTime("");
+      setSlots([]);
+      setSlotsLoadFailed(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -211,7 +246,7 @@ export function ConsultationDialog({
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || !appointment) return;
 
     if (!selectedSlot) {
       setStep("busy");
@@ -221,36 +256,37 @@ export function ConsultationDialog({
     setIsSubmitting(true);
 
     try {
-      const result = await bookConsultation({
-        slot: selectedSlot.id,
-      });
-
+      const result = await rescheduleConsultationAppointment(
+        appointment.id,
+        selectedSlot.id,
+      );
       setStep(result.status);
+
+      if (result.status === "success") {
+        onRescheduled(appointment.id, selectedSlot);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleTimePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-  const target = event.target as HTMLElement;
+    const target = event.target as HTMLElement;
 
-  if (target.closest("button")) {
-    return;
-  }
+    if (target.closest("button")) return;
 
-  const scroller = timeScrollerRef.current;
+    const scroller = timeScrollerRef.current;
+    if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
 
-  if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
+    timeDragRef.current = {
+      isDragging: true,
+      hasMoved: false,
+      startScrollLeft: scroller.scrollLeft,
+      startX: event.clientX,
+    };
 
-  timeDragRef.current = {
-    isDragging: true,
-    hasMoved: false,
-    startScrollLeft: scroller.scrollLeft,
-    startX: event.clientX,
+    scroller.setPointerCapture(event.pointerId);
   };
-
-  scroller.setPointerCapture(event.pointerId);
-};
 
   const handleTimePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const scroller = timeScrollerRef.current;
@@ -292,58 +328,26 @@ export function ConsultationDialog({
     suppressTimeClickRef.current = false;
   };
 
-  const renderLogo = () => (
-    <img
-      src="/Logo1.png"
-      alt={t("bottomTitle")}
-      className="mx-auto h-auto w-21 object-contain sm:w-24"
-    />
-  );
-
   const renderStatus = () => {
     const isSuccess = step === "success";
     const title = isSuccess
-      ? t("consultationDialog.successTitle")
+      ? labels.successTitle
       : step === "busy"
-        ? t("consultationDialog.busyTitle")
-        : t("consultationDialog.errorTitle");
-    const description = isSuccess
-      ? t("consultationDialog.successDescription")
-      : step === "busy"
-        ? t("consultationDialog.busyDescription")
-        : t("consultationDialog.errorDescription");
-    const action = isSuccess
-      ? t("consultationDialog.myAppointments")
-      : step === "busy"
-        ? t("consultationDialog.chooseAnotherTime")
-        : t("consultationDialog.tryAgain");
+        ? labels.busyTitle
+        : labels.errorTitle;
 
     return (
-      <div
-        className="flex flex-col items-center px-2 
-        pb-5 pt-3 text-center sm:px-8 sm:pb-8">
-        {renderLogo()}
-        <DialogTitle
-          className="mt-6 font-montserrat text-[24px] 
-          font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
+      <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
+        <img src="/Logo1.png" alt="" className="mx-auto h-auto w-21 object-contain sm:w-24" />
+        <DialogTitle className="mt-6 font-montserrat text-[24px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
           {title}
         </DialogTitle>
-        <DialogDescription
-          id="consultation-dialog-description"
-          className="mt-5 max-w-73 font-montserrat text-[12px]
-           leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
-        >
-          {description}
-        </DialogDescription>
         <Button
           type="button"
           onClick={() => (isSuccess ? handleOpenChange(false) : setStep("calendar"))}
-          className="mt-6 h-10 w-full max-w-84 rounded-[30px] 
-          border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B]
-           to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] 
-           shadow-btn hover:brightness-105"
+          className="mt-6 h-10 w-full max-w-84 rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105"
         >
-          {action}
+          {isSuccess ? labels.close : labels.chooseAnotherTime}
         </Button>
       </div>
     );
@@ -352,47 +356,20 @@ export function ConsultationDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        aria-describedby="consultation-dialog-description"
-        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),528px)] 
-        max-w-[min(calc(100vw-24px),528px)] overflow-x-hidden overflow-y-auto rounded-xl
-        border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] 
-        shadow-none ring-0 sm:px-8 sm:py-8 min-[1900px]:w-[825px] min-[1900px]:max-w-[825px]"
+        aria-describedby="reschedule-dialog-description"
+        className="max-h-[calc(100dvh-24px)] w-[min(calc(100vw-24px),390px)] max-w-[min(calc(100vw-24px),390px)] overflow-x-hidden overflow-y-auto rounded-xl border-0 bg-[#FFF7FF] px-5 py-5 text-[#1C100E] shadow-none ring-0 min-[744px]:w-[600px] min-[744px]:max-w-[600px] min-[1023px]:w-[600px] min-[1900px]:w-[825px] min-[1900px]:max-w-[825px] min-[1900px]:px-8"
       >
-        {step === "intro" && (
-          <div className="flex flex-col items-center px-2 pb-5 pt-3 text-center sm:px-8 sm:pb-8">
-            {renderLogo()}
-            <DialogTitle
-              className="mt-7 max-w-90 font-montserrat text-[22px]
-               font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
-              {t("consultationDialog.introTitle")}
-            </DialogTitle>
-            <DialogDescription
-              id="consultation-dialog-description"
-              className="mt-6 max-w-[292px] font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/75 sm:text-[13px]"
-            >
-              {t("consultationDialog.introDescription")}
-            </DialogDescription>
-            <Button
-              type="button"
-              onClick={() => setStep("calendar")}
-              className="mt-6 h-10 w-full max-w-[336px] rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105"
-            >
-              {t("consultationDialog.yes")}
-            </Button>
-          </div>
-        )}
-
-        {step === "calendar" && (
+        {step === "calendar" ? (
           <div className="flex w-full min-w-0 flex-col items-center overflow-hidden px-1 pb-2 pt-3 text-center sm:px-4 sm:pb-5">
-            {renderLogo()}
+            <img src="/Logo1.png" alt="" className="mx-auto h-auto w-21 object-contain sm:w-24" />
             <DialogTitle className="mt-5 max-w-full font-montserrat text-[22px] font-medium leading-[1.2] text-[#1C100E] sm:text-[28px]">
-              {t("consultationDialog.calendarTitle")}
+              {labels.title}
             </DialogTitle>
             <DialogDescription
-              id="consultation-dialog-description"
+              id="reschedule-dialog-description"
               className="mt-4 max-w-full font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/70 sm:text-[13px]"
             >
-              {t("consultationDialog.calendarDescription")}
+              {labels.description}
             </DialogDescription>
 
             <div className="mt-6 w-full max-w-full rounded-xl bg-white px-4 py-4 sm:max-w-85">
@@ -405,7 +382,7 @@ export function ConsultationDialog({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={t("consultationDialog.previousMonth")}
+                    aria-label={labels.previousMonth}
                     onClick={() => moveMonth(-1)}
                     className="size-7 rounded-full text-[#1C100E] hover:bg-[#F0E8F0]"
                   >
@@ -415,7 +392,7 @@ export function ConsultationDialog({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={t("consultationDialog.nextMonth")}
+                    aria-label={labels.nextMonth}
                     onClick={() => moveMonth(1)}
                     className="size-7 rounded-full text-[#1C100E] hover:bg-[#F0E8F0]"
                   >
@@ -426,10 +403,7 @@ export function ConsultationDialog({
 
               <div className="mt-4 grid grid-cols-7 gap-1 text-center">
                 {weekDays.map((day) => (
-                  <span
-                    key={day}
-                    className="font-montserrat text-[11px] font-medium text-[#1C100E]"
-                  >
+                  <span key={day} className="font-montserrat text-[11px] font-medium text-[#1C100E]">
                     {day}
                   </span>
                 ))}
@@ -464,22 +438,26 @@ export function ConsultationDialog({
               </div>
             </div>
 
-            <p className="mt-5 font-montserrat text-[14px] text-[#1C100E]">
-              {t("consultationDialog.time")}
-            </p>
+            <div className="mt-5 flex w-full max-w-full items-center justify-between sm:max-w-[340px]">
+              <p className="font-montserrat text-[14px] text-[#1C100E]">{labels.time}</p>
+              <div className="flex gap-1">
+                <ChevronLeft className="size-4 text-[#1C100E]" />
+                <ChevronRight className="size-4 text-[#1C100E]" />
+              </div>
+            </div>
             {isSlotsLoading && (
               <p className="mt-3 font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/65">
-                {t("consultationDialog.loadingSlots")}
+                {labels.loadingSlots}
               </p>
             )}
             {!isSlotsLoading && slotsLoadFailed && (
               <p className="mt-3 font-montserrat text-[12px] leading-[1.35] text-[#83105F]">
-                {t("consultationDialog.slotsLoadFailed")}
+                {labels.slotsLoadFailed}
               </p>
             )}
             {!isSlotsLoading && !slotsLoadFailed && !selectedDaySlots.length && (
               <p className="mt-3 font-montserrat text-[12px] leading-[1.35] text-[#1C100E]/65">
-                {t("consultationDialog.noSlots")}
+                {labels.noSlots}
               </p>
             )}
             <div
@@ -489,16 +467,8 @@ export function ConsultationDialog({
               onPointerUp={finishTimeDrag}
               onPointerCancel={finishTimeDrag}
               onClickCapture={handleTimeClickCapture}
-              className="mt-3 flex min-h-14 w-full cursor-grab select-none items-center
-              gap-2 overflow-x-auto overflow-y-hidden pb-2 pl-2 active:cursor-grabbing
-              [scrollbar-color:#402940_#F0E8F0] [scrollbar-width:thin]
-              [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
-              [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full
-              [&::-webkit-scrollbar-track]:bg-[#F0E8F0]
-              sm:max-w-[340px] min-[1900px]:max-w-[520px] 
-              min-[1900px]:cursor-default min-[1900px]:overflow-x-visible 
-              min-[1900px]:pl-0 min-[1900px]:[scrollbar-width:none]
-              min-[1900px]:[&::-webkit-scrollbar]:hidden">
+              className="mt-3 flex min-h-14 w-full cursor-grab select-none items-center gap-2 overflow-x-auto overflow-y-hidden pb-2 pl-2 active:cursor-grabbing [scrollbar-color:#402940_#F0E8F0] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#F0E8F0] sm:max-w-[340px] min-[1900px]:max-w-[520px]"
+            >
               {CONSULTATION_TIME_OPTIONS.map((time) => {
                 const slot = selectedDaySlotByTime.get(time);
                 const isAvailable = Boolean(slot);
@@ -513,8 +483,7 @@ export function ConsultationDialog({
                     onClick={() => {
                       if (slot) setSelectedTime(slot.time);
                     }}
-                    className={`flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full
-                       select-none px-0 text-center font-montserrat text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
+                    className={`flex h-8 min-w-[52px] shrink-0 select-none items-center justify-center rounded-full px-0 text-center font-montserrat text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
                       isAvailable
                         ? isSelected
                           ? "bg-[#402940] text-white"
@@ -528,23 +497,18 @@ export function ConsultationDialog({
               })}
             </div>
 
-            <p className="mt-4 max-w-full font-montserrat text-[11px] leading-[1.35] text-[#1C100E]/65 sm:max-w-[340px]">
-              {t("consultationDialog.afterConfirmation")}
-            </p>
             <Button
               type="button"
               disabled={isSubmitting || !selectedSlot}
               onClick={handleSubmit}
               className="mt-5 h-10 w-full max-w-full rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105 disabled:opacity-70 sm:max-w-[340px]"
             >
-              {isSubmitting
-                ? t("consultationDialog.submitting")
-                : t("consultationDialog.book")}
+              {isSubmitting ? labels.submitting : labels.move}
             </Button>
           </div>
+        ) : (
+          renderStatus()
         )}
-
-        {(step === "success" || step === "busy" || step === "error") && renderStatus()}
       </DialogContent>
     </Dialog>
   );
