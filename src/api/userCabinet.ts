@@ -573,6 +573,48 @@ export async function updateSpecialistProfile(
   return response.json().catch(() => null);
 }
 
+export async function updateProfileAvatar(profile: CabinetProfile, avatar: File) {
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const endpoint =
+    profile.profileKind === "specialist"
+      ? endpoints.specialistProfile(profile.id)
+      : `${endpoints.userProfiles}${profile.id}/`;
+
+  const uploadWithField = (fieldName: "avatar" | "photo" | "image" | "picture") => {
+    const body = new FormData();
+    body.append(fieldName, avatar);
+
+    return fetch(endpoint, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body,
+    });
+  };
+
+  let response = await uploadWithField("avatar");
+
+  if (!response.ok && response.status === 400) {
+    for (const fieldName of ["photo", "image", "picture"] as const) {
+      response = await uploadWithField(fieldName);
+      if (response.ok) break;
+    }
+  }
+
+  if (!response.ok) {
+    const details = await response
+      .json()
+      .then((data) => JSON.stringify(data))
+      .catch(() => "");
+    throw new Error(`Avatar update failed: ${response.status}${details ? ` ${details}` : ""}`);
+  }
+
+  return response.json().catch(() => null);
+}
+
 export async function uploadSpecialistDocuments(files: File[]) {
   const token = getAccessToken();
   if (!token || files.length === 0) return [];

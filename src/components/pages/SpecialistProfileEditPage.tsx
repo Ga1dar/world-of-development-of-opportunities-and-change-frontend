@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { notifyAuthChanged } from "../../api/auth";
 import {
   getUserCabinetData,
+  updateProfileAvatar,
   updateSpecialistProfile,
   uploadSpecialistDocuments,
   type CabinetProfile,
@@ -90,7 +91,7 @@ const copy = {
 };
 
 const pageMaxWidth =
-  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-0 min-[1900px]:max-w-[1980px]";
+  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
 
 const yellowButton =
   "rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat font-medium text-[#1C100E] shadow-btn";
@@ -232,8 +233,10 @@ export function SpecialistProfileEditPage() {
     try {
       await updateSpecialistProfile(profile.id, {
         ...form,
-        avatar: avatarFile,
       });
+      if (avatarFile) {
+        await updateProfileAvatar(profile, avatarFile);
+      }
       await uploadSpecialistDocuments(documents);
       notifyAuthChanged();
       setNotice(labels.success);

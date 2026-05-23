@@ -450,7 +450,7 @@ export function EventDetailPage() {
               disabled={isCommentSubmitting}
               className={`ml-auto w-full
               ${variant === "supervision" ? "h-[57px] min-[744px]:h-9 min-[1900px]:h-[57px]" : "h-8 min-[744px]:h-9"}
-              ${variant === "supervision" ? "max-w-none min-[744px]:max-w-42 min-[1900px]:max-w-[277px]" : "max-w-42"}
+              ${variant === "supervision" ? "max-w-none min-[744px]:max-w-42 min-[1900px]:max-w-[277px]" : "max-w-none min-[744px]:max-w-42"}
               rounded-[30px] bg-white
               px-6 font-montserrat text-[12px]
               font-medium text-[#1C100E] hover:bg-white/85
@@ -617,7 +617,7 @@ export function EventDetailPage() {
               <Button
                 type="submit"
                 disabled={isCommentSubmitting}
-                className="ml-auto h-[57px] w-full max-w-[320px] rounded-[30px] bg-white
+                className="ml-auto h-[57px] w-full max-w-none rounded-[30px] bg-white
                 px-6 font-montserrat text-[16px] font-medium text-[#1C100E]
                 hover:bg-white/85 disabled:opacity-70 min-[744px]:h-[57px] min-[744px]:max-w-[320px]
                 min-[744px]:text-[14px] min-[1023px]:max-w-[206px]"
