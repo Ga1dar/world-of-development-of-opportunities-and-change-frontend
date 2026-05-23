@@ -22,6 +22,7 @@ import {
   type ConsultationSlot,
   type ConsultationBookingResult,
 } from "../../api/consultations";
+import { getAccessToken } from "../../api/auth";
 
 type ConsultationDialogProps = {
   open: boolean;
@@ -213,6 +214,11 @@ export function ConsultationDialog({
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
+    if (!getAccessToken()) {
+      setStep("intro");
+      return;
+    }
+
     if (!selectedSlot) {
       setStep("busy");
       return;
@@ -223,6 +229,10 @@ export function ConsultationDialog({
     try {
       const result = await bookConsultation({
         slot: selectedSlot.id,
+        specialist: specialistId,
+        date: selectedSlot.date,
+        time: selectedSlot.time,
+        start_time: selectedSlot.startsAt,
       });
 
       setStep(result.status);
@@ -232,25 +242,19 @@ export function ConsultationDialog({
   };
 
   const handleTimePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-  const target = event.target as HTMLElement;
+    const scroller = timeScrollerRef.current;
 
-  if (target.closest("button")) {
-    return;
-  }
+    if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
 
-  const scroller = timeScrollerRef.current;
+    timeDragRef.current = {
+      isDragging: true,
+      hasMoved: false,
+      startScrollLeft: scroller.scrollLeft,
+      startX: event.clientX,
+    };
 
-  if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
-
-  timeDragRef.current = {
-    isDragging: true,
-    hasMoved: false,
-    startScrollLeft: scroller.scrollLeft,
-    startX: event.clientX,
+    scroller.setPointerCapture(event.pointerId);
   };
-
-  scroller.setPointerCapture(event.pointerId);
-};
 
   const handleTimePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const scroller = timeScrollerRef.current;
@@ -495,10 +499,8 @@ export function ConsultationDialog({
               [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
               [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full
               [&::-webkit-scrollbar-track]:bg-[#F0E8F0]
-              sm:max-w-[340px] min-[1900px]:max-w-[520px] 
-              min-[1900px]:cursor-default min-[1900px]:overflow-x-visible 
-              min-[1900px]:pl-0 min-[1900px]:[scrollbar-width:none]
-              min-[1900px]:[&::-webkit-scrollbar]:hidden">
+              sm:max-w-[340px] min-[1023px]:max-w-[340px] min-[1420px]:max-w-[340px]
+              min-[1900px]:max-w-[520px]">
               {CONSULTATION_TIME_OPTIONS.map((time) => {
                 const slot = selectedDaySlotByTime.get(time);
                 const isAvailable = Boolean(slot);

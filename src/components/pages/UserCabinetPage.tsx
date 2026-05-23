@@ -1,17 +1,18 @@
 import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn } from "./LogIn";
 import {
   getUserCabinetData,
+  updateProfileAvatar,
   type CabinetAppointment,
   type CabinetDocument,
   type CabinetProfile,
 } from "../../api/userCabinet";
 import { getEducationArticles, getEducationVideos } from "../../api/educationMaterials";
 import { getFavoriteEvents } from "../../api/events";
-import { logoutCurrentUser } from "../../api/auth";
+import { logoutCurrentUser, notifyAuthChanged } from "../../api/auth";
 import {
   FAVORITES_CHANGED_EVENT,
   articleToFavoriteContentItem,
@@ -161,7 +162,7 @@ const copy = {
   },
 };
 
-const pageMaxWidth = "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-0 min-[1900px]:max-w-[1980px]";
+const pageMaxWidth = "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
 
 const yellowButton =
   "rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat font-medium text-[#1C100E] shadow-btn";
@@ -273,11 +274,15 @@ function ProfileCard({
   labels,
   activeTab,
   onAbout,
+  onAvatarChange,
+  isAvatarSaving,
 }: {
   profile: CabinetProfile;
   labels: typeof copy.ua;
   activeTab: CabinetTab;
   onAbout: () => void;
+  onAvatarChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  isAvatarSaving: boolean;
 }) {
   const displayName = profile.fullName || labels.fallbackName;
   const isSpecialist = profile.profileKind === "specialist";
@@ -301,9 +306,16 @@ function ProfileCard({
             alt={displayName}
             className="h-full w-full rounded-full object-cover"
           />
-          <span className="absolute right-1 bottom-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#E8DCE8]">
+          <label className="absolute right-1 bottom-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#E8DCE8] transition hover:bg-[#E0D0E0]">
             <Camera className="h-4 w-4 text-[#1C100E]" />
-          </span>
+            <input
+              type="file"
+              accept="image/*"
+              disabled={isAvatarSaving}
+              onChange={onAvatarChange}
+              className="sr-only"
+            />
+          </label>
         </div>
 
         <div className="w-full text-left font-montserrat text-[#1C100E]">
@@ -1290,6 +1302,7 @@ export function UserCabinetPage() {
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+  const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const language = isEnglishLanguage(i18n.language) ? "en" : "ua";
@@ -1406,6 +1419,28 @@ export function UserCabinetPage() {
   const specialistId = Number(profile.id);
   const isSpecialistAbout = isSpecialist && activeTab === "about";
 
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = "";
+
+    if (!file || isAvatarSaving) return;
+
+    setIsAvatarSaving(true);
+    setError("");
+
+    try {
+      await updateProfileAvatar(profile, file);
+      const previewUrl = URL.createObjectURL(file);
+      setProfile((current) => (current ? { ...current, avatar: previewUrl } : current));
+      notifyAuthChanged();
+    } catch (error) {
+      console.error(error);
+      setError(labels.loadError);
+    } finally {
+      setIsAvatarSaving(false);
+    }
+  };
+
   const handleCancelSpecialistAppointment = async () => {
     if (cancellingAppointmentId || !cancelAppointment) return;
 
@@ -1456,6 +1491,8 @@ export function UserCabinetPage() {
           labels={labels}
           activeTab={activeTab}
           onAbout={() => setActiveTab("about")}
+          onAvatarChange={handleAvatarChange}
+          isAvatarSaving={isAvatarSaving}
         />
       )}
 

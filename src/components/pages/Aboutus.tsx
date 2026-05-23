@@ -24,7 +24,7 @@ export function Aboutus() {
 
   return (
     <>
-      <section className="about-shell mx-auto flex w-full max-w-[1280px] flex-col px-4 sm:px-10 min-[1900px]:max-w-[1820px]">
+      <section className="about-shell mx-auto flex w-full max-w-[1280px] flex-col px-4 sm:px-10 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <article className="about-mobile">
           <h1 className="mb-5 font-montserrat text-[24px] font-medium leading-[1.25] text-[#1C100E]">
             {t("homeTopTitle")}
@@ -79,7 +79,7 @@ export function Aboutus() {
         </article>
       </section>
 
-      <section className="mx-auto mt-16 flex w-full max-w-[1280px] flex-col items-center justify-center px-4 sm:mt-20 sm:px-10 min-[1420px]:px-0 min-[1900px]:mt-[100px] min-[1900px]:max-w-[1800px]">
+      <section className="mx-auto mt-16 flex w-full max-w-[1280px] flex-col items-center justify-center px-4 sm:mt-20 sm:px-10 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:mt-[100px] min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <h2 className="w-full text-center font-montserrat text-3xl font-medium leading-[140%] text-[#1C100E] sm:text-4xl min-[1420px]:text-[56px] min-[1420px]:leading-[100px] min-[1900px]:mt-5">
           {t("specialistsTitle")}
         </h2>
