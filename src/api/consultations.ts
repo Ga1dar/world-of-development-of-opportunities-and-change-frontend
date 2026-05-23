@@ -5,10 +5,16 @@ export type ConsultationSlot = {
   date: string;
   time: string;
   startsAt: string;
+  isVirtual?: boolean;
+  specialistId?: number;
 };
 
 export type ConsultationBookingPayload = {
-  slot: number;
+  slot?: number;
+  specialist?: number;
+  date?: string;
+  time?: string;
+  start_time?: string;
 };
 
 export type ConsultationBookingResult =
@@ -91,6 +97,37 @@ const formatTimeValue = (date: Date) => {
   return `${hours}:${minutes}`;
 };
 
+const isPastSlot = (date: string, time: string) => {
+  const startsAt = new Date(`${date}T${time}:00`);
+
+  return !Number.isNaN(startsAt.getTime()) && startsAt.getTime() <= Date.now();
+};
+
+const buildFallbackSlots = (specialistId: number): ConsultationSlot[] => {
+  const today = new Date();
+  const slots: ConsultationSlot[] = [];
+
+  for (let dayOffset = 0; dayOffset < 62; dayOffset += 1) {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + dayOffset);
+    const dateValue = formatDateValue(date);
+
+    CONSULTATION_TIME_OPTIONS.forEach((time, timeIndex) => {
+      if (isPastSlot(dateValue, time)) return;
+
+      slots.push({
+        id: -((dayOffset + 1) * 100 + timeIndex + 1),
+        date: dateValue,
+        time,
+        startsAt: `${dateValue}T${time}:00`,
+        isVirtual: true,
+        specialistId,
+      });
+    });
+  }
+
+  return slots;
+};
+
 const normalizeSlot = (raw: unknown): ConsultationSlot | null => {
   const record = asRecord(raw);
   if (!record) return null;
@@ -166,18 +203,21 @@ export async function getConsultationSlots(
     }
 
     const data = await response.json().catch(() => null);
-    return extractList(data)
+    const slots = extractList(data)
       .map(normalizeSlot)
       .filter((slot): slot is ConsultationSlot => Boolean(slot))
       .filter((slot) => isConsultationBusinessTime(slot.time))
+      .filter((slot) => !isPastSlot(slot.date, slot.time))
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+
+    return slots.length > 0 ? slots : buildFallbackSlots(specialistId);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw error;
     }
 
     console.error(error);
-    return [];
+    return buildFallbackSlots(specialistId);
   }
 }
 
@@ -185,15 +225,31 @@ export async function bookConsultation(
   payload: ConsultationBookingPayload,
   signal?: AbortSignal,
 ): Promise<ConsultationBookingResult> {
-  if (!Number.isInteger(payload.slot) || payload.slot <= 0) {
+  const hasRealSlot = Number.isInteger(payload.slot) && Number(payload.slot) > 0;
+  const hasFallbackSlot =
+    Number.isInteger(payload.specialist) &&
+    Number(payload.specialist) > 0 &&
+    Boolean(payload.date) &&
+    Boolean(payload.time);
+
+  if (!hasRealSlot && !hasFallbackSlot) {
     return { status: "error" };
   }
 
   try {
+    const body = hasRealSlot
+      ? { slot: payload.slot }
+      : {
+          specialist: payload.specialist,
+          date: payload.date,
+          time: payload.time,
+          start_time: payload.start_time || `${payload.date}T${payload.time}:00`,
+        };
+
     const response = await fetch(endpoints.consultationAppointments, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ slot: payload.slot }),
+      body: JSON.stringify(body),
       signal,
     });
 

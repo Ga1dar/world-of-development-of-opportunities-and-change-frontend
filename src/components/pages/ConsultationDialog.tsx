@@ -22,6 +22,7 @@ import {
   type ConsultationSlot,
   type ConsultationBookingResult,
 } from "../../api/consultations";
+import { getAccessToken } from "../../api/auth";
 
 type ConsultationDialogProps = {
   open: boolean;
@@ -213,6 +214,11 @@ export function ConsultationDialog({
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
+    if (!getAccessToken()) {
+      setStep("intro");
+      return;
+    }
+
     if (!selectedSlot) {
       setStep("busy");
       return;
@@ -223,6 +229,10 @@ export function ConsultationDialog({
     try {
       const result = await bookConsultation({
         slot: selectedSlot.id,
+        specialist: specialistId,
+        date: selectedSlot.date,
+        time: selectedSlot.time,
+        start_time: selectedSlot.startsAt,
       });
 
       setStep(result.status);
