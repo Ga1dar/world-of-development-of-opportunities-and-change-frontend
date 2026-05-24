@@ -38,9 +38,9 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
           src="/Logo1.png"
           alt="Logo"
           className="absolute left-0 top-1 h-34.5 w-34.5 sm:h-44
-           sm:w-44 min-[1420px]:left-20 min-[1420px]:top-0 min-[1420px]:z-120
+           sm:w-44 min-[1420px]:left-[12px] min-[1420px]:top-0 min-[1420px]:z-120
             min-[1420px]:h-52.5! min-[1420px]:w-52.5! 
-            min-[1900px]:top-0 min-[1900px]:h-71.75! min-[1900px]:w-69.25!"
+            min-[1900px]:left-[-1px] min-[1900px]:top-0 min-[1900px]:h-71.75! min-[1900px]:w-69.25!"
           onClick={closeMenu}
         />
       </Link>

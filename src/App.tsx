@@ -25,6 +25,7 @@ import { PasswordResetConfirm } from "./components/pages/PasswordResetConfirm.ts
 import { Aboutus } from "./components/pages/Aboutus.tsx";
 import { UserCabinetPage } from "./components/pages/UserCabinetPage.tsx";
 import { SpecialistProfileEditPage } from "./components/pages/SpecialistProfileEditPage.tsx";
+import { DevelopersPage } from "./components/pages/DevelopersPage.tsx";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,6 +60,7 @@ function App() {
             <Route path="/materials/videos/new" element={<VideoCreatePage />} />
             <Route path="/materials/videos/:slug" element={<VideoDetailPage />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/developers" element={<DevelopersPage />} />
             <Route path="/profile" element={<UserCabinetPage />} />
             <Route path="/profile/specialist/edit" element={<SpecialistProfileEditPage />} />
             <Route

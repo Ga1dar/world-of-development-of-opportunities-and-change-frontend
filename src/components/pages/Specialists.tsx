@@ -72,9 +72,27 @@ export function Specialists({ limit, isSlider = false, variant = "default" }: Pr
 
   const isUkrainian = i18n.language === "ua" || i18n.language === "uk";
 
+  const removeTrainerLine = (role: string) => {
+    const trainerMarkers = [
+      "trainer",
+      "\u0442\u0440\u0435\u043d\u0435\u0440",
+      "\u00d1\u0082\u00d1\u0080\u00d0\u00b5\u00d0\u00bd\u00d0\u00b5\u00d1\u0080",
+    ];
+
+    return role
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => {
+        const normalizedPart = part.toLowerCase();
+        return !trainerMarkers.some((marker) => normalizedPart.includes(marker));
+      })
+      .join(", ");
+  };
+
   const renderCard = (item: Specialist) => {
     const name = isUkrainian ? item.nameUa : item.nameEn;
     const role = isUkrainian ? item.roleUa : item.roleEn;
+    const displayRole = item.id === 1 ? removeTrainerLine(role) : role;
     const content = (
       <>
         <img
@@ -88,7 +106,7 @@ export function Specialists({ limit, isSlider = false, variant = "default" }: Pr
         </h3>
 
         <p className={roleClass}>
-          {role}
+          {displayRole}
         </p>
       </>
     );
@@ -102,7 +120,7 @@ export function Specialists({ limit, isSlider = false, variant = "default" }: Pr
         key={item.id}
         to={`/specialists/${item.id}`}
         className={articleClass}
-        aria-label={`${name}. ${role}`}
+        aria-label={`${name}. ${displayRole}`}
       >
         {content}
       </Link>

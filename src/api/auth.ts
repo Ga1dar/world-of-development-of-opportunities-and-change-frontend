@@ -64,6 +64,9 @@ const decodeJwtPayload = (token: string) => {
 export const getAccessToken = () =>
   typeof window === "undefined" ? "" : localStorage.getItem("accessToken") || "";
 
+export const getRefreshToken = () =>
+  typeof window === "undefined" ? "" : localStorage.getItem("refreshToken") || "";
+
 export const getStoredCurrentUser = () => {
   if (typeof window === "undefined") return null;
 
@@ -87,7 +90,13 @@ export const notifyAuthChanged = () => {
   }
 };
 
-const clearLocalSession = () => {
+export const clearStoredCurrentUser = () => {
+  if (typeof window === "undefined") return;
+
+  localStorage.removeItem("currentUser");
+};
+
+export const clearLocalSession = () => {
   if (typeof window === "undefined") return;
 
   localStorage.removeItem("accessToken");
@@ -97,11 +106,126 @@ const clearLocalSession = () => {
   clearFavoriteContentItems();
 };
 
+const notifyAuthRequired = () => {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(new Event("auth-required"));
+};
+
+const redirectToLogin = () => {
+  if (typeof window === "undefined") return;
+
+  const protectedPaths = [
+    "/profile",
+    "/events/categories/new",
+    "/materials/articles/new",
+    "/materials/videos/new",
+  ];
+  const currentPath = window.location.pathname;
+  const isProtectedPath = protectedPaths.some((path) => currentPath.startsWith(path));
+
+  if (isProtectedPath) {
+    window.location.assign("/");
+  }
+};
+
+let refreshTokenRequest: Promise<string | null> | null = null;
+
+const refreshAccessToken = async () => {
+  const refresh = getRefreshToken();
+  if (!refresh) return null;
+
+  if (!refreshTokenRequest) {
+    refreshTokenRequest = fetch(endpoints.tokenRefresh, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refresh }),
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => null);
+        const record = asRecord(data);
+        const access = typeof record?.access === "string" ? record.access : "";
+        const nextRefresh = typeof record?.refresh === "string" ? record.refresh : "";
+
+        if (!response.ok || !access) {
+          return null;
+        }
+
+        localStorage.setItem("accessToken", access);
+
+        if (nextRefresh) {
+          localStorage.setItem("refreshToken", nextRefresh);
+        }
+
+        notifyAuthChanged();
+        return access;
+      })
+      .catch(() => null)
+      .finally(() => {
+        refreshTokenRequest = null;
+      });
+  }
+
+  return refreshTokenRequest;
+};
+
+const withAuthHeader = (headers: HeadersInit | undefined, accessToken: string) => {
+  const nextHeaders = new Headers(headers);
+
+  if (accessToken) {
+    nextHeaders.set("Authorization", `Bearer ${accessToken}`);
+  }
+
+  return nextHeaders;
+};
+
+type ApiFetchInit = RequestInit & {
+  auth?: boolean;
+  redirectOnUnauthorized?: boolean;
+};
+
+export async function apiFetch(input: RequestInfo | URL, init: ApiFetchInit = {}) {
+  const { auth = true, redirectOnUnauthorized = true, headers, ...fetchInit } = init;
+  const accessToken = auth ? getAccessToken() : "";
+  const requestInit: RequestInit = {
+    ...fetchInit,
+    headers: auth ? withAuthHeader(headers, accessToken) : headers,
+  };
+  let response = await fetch(input, requestInit);
+
+  if (response.status !== 401 || !auth) {
+    return response;
+  }
+
+  const refreshedAccessToken = await refreshAccessToken();
+
+  if (refreshedAccessToken) {
+    response = await fetch(input, {
+      ...fetchInit,
+      headers: withAuthHeader(headers, refreshedAccessToken),
+    });
+  }
+
+  if (response.status === 401) {
+    clearLocalSession();
+    notifyAuthChanged();
+    notifyAuthRequired();
+
+    if (redirectOnUnauthorized) {
+      redirectToLogin();
+    }
+  }
+
+  return response;
+}
+
 export async function logoutCurrentUser() {
   if (typeof window === "undefined") return;
 
   const accessToken = getAccessToken();
-  const refresh = localStorage.getItem("refreshToken") || "";
+  const refresh = getRefreshToken();
 
   try {
     if (refresh) {
@@ -126,14 +250,10 @@ export const canCreateEventsFromStoredToken = () =>
 
 export async function canCurrentUserCreateEvents() {
   const accessToken = getAccessToken();
-  if (!accessToken) return false;
+  if (!accessToken && !getRefreshToken()) return false;
 
   try {
-    const response = await fetch(endpoints.me, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await apiFetch(endpoints.me);
 
     if (!response.ok) {
       return canCreateEventsFromStoredToken();

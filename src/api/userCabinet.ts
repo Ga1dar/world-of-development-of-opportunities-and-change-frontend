@@ -1,4 +1,4 @@
-import { getAccessToken, getStoredCurrentUser, storeCurrentUser } from "./auth";
+import { apiFetch, getAccessToken, getRefreshToken, getStoredCurrentUser, storeCurrentUser } from "./auth";
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
 
@@ -152,14 +152,8 @@ const resolveMediaUrl = (value: unknown, fallback = FALLBACK_AVATAR) => {
   return path.startsWith("/") ? path : apiOrigin ? new URL(path, `${apiOrigin}/`).toString() : path;
 };
 
-const authHeaders = (): Record<string, string> => {
-  const token = getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 const fetchJson = async (url: string, signal?: AbortSignal) => {
-  const response = await fetch(url, {
-    headers: authHeaders(),
+  const response = await apiFetch(url, {
     signal,
   });
 
@@ -444,7 +438,8 @@ const normalizeAppointment = (
 
 export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetData> {
   const token = getAccessToken();
-  if (!token) {
+  const refreshToken = getRefreshToken();
+  if (!token && !refreshToken) {
     return {
       profile: null,
       appointments: [],
@@ -462,12 +457,15 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     currentUser = asRecord(await fetchJson(endpoints.me, signal)) || storedUser;
     if (currentUser) storeCurrentUser(currentUser);
   } catch {
-    currentUser = storedUser;
+    currentUser = getStoredCurrentUser();
   }
 
   try {
     const profiles = extractList(await fetchJson(endpoints.userProfiles, signal));
-    userProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || profiles[0] || null;
+    userProfile =
+      profiles.find((profile) => matchesCurrentUser(profile, currentUser)) ||
+      (!currentUser ? profiles[0] : null) ||
+      null;
   } catch {
     userProfile = null;
   }
@@ -499,6 +497,15 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     specialistProfile = null;
   }
 
+  if (!getAccessToken() && !currentUser && !userProfile && !specialistProfile) {
+    return {
+      profile: null,
+      appointments: [],
+      completedAppointments: [],
+      documents: [],
+    };
+  }
+
   const [appointments, completedAppointments, documents] = await Promise.all([
     fetchJson(`${endpoints.consultationAppointments}?sort_field=date&sort_direction=asc`, signal)
       .then((data) => extractList(data).map((item) => normalizeAppointment(item, "confirmed")))
@@ -524,7 +531,7 @@ export async function updateSpecialistProfile(
   input: SpecialistProfileUpdateInput,
 ) {
   const token = getAccessToken();
-  if (!token) {
+  if (!token && !getRefreshToken()) {
     throw new Error("Authentication required");
   }
 
@@ -547,9 +554,8 @@ export async function updateSpecialistProfile(
   };
 
   const sendUpdate = (avatarField = "avatar") =>
-    fetch(endpoints.specialistProfile(profileId), {
+    apiFetch(endpoints.specialistProfile(profileId), {
       method: "PATCH",
-      headers: authHeaders(),
       body: createBody(avatarField),
     });
 
@@ -575,7 +581,7 @@ export async function updateSpecialistProfile(
 
 export async function updateProfileAvatar(profile: CabinetProfile, avatar: File) {
   const token = getAccessToken();
-  if (!token) {
+  if (!token && !getRefreshToken()) {
     throw new Error("Authentication required");
   }
 
@@ -588,9 +594,8 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
     const body = new FormData();
     body.append(fieldName, avatar);
 
-    return fetch(endpoint, {
+    return apiFetch(endpoint, {
       method: "PATCH",
-      headers: authHeaders(),
       body,
     });
   };
@@ -617,7 +622,7 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
 
 export async function uploadSpecialistDocuments(files: File[]) {
   const token = getAccessToken();
-  if (!token || files.length === 0) return [];
+  if ((!token && !getRefreshToken()) || files.length === 0) return [];
   const filesToUpload = files.slice(0, 3);
 
   const uploadWithField = async (file: File, fieldName: "file" | "document") => {
@@ -625,9 +630,8 @@ export async function uploadSpecialistDocuments(files: File[]) {
     body.append(fieldName, file);
     body.append("title", file.name);
 
-    return fetch(endpoints.documents, {
+    return apiFetch(endpoints.documents, {
       method: "POST",
-      headers: authHeaders(),
       body,
     });
   };

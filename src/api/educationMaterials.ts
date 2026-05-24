@@ -1,6 +1,6 @@
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
-import { getAccessToken } from "./auth";
+import { apiFetch, getAccessToken } from "./auth";
 
 type RawRecord = Record<string, unknown>;
 
@@ -216,7 +216,7 @@ const normalizeVideo = (raw: RawRecord, language: "ua" | "en", index: number): E
 
 const fetchJson = async (url: string, signal?: AbortSignal) => {
   const accessToken = getAccessToken();
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     signal,
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
   });
@@ -230,7 +230,7 @@ const fetchJson = async (url: string, signal?: AbortSignal) => {
 
 const postJson = async (url: string, body?: unknown) => {
   const accessToken = getAccessToken();
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: {
       ...(body ? { "Content-Type": "application/json" } : {}),
@@ -263,7 +263,7 @@ const readErrorMessage = async (response: Response) => {
 
 const postFormData = async (url: string, body: FormData) => {
   const accessToken = getAccessToken();
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     body,

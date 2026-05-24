@@ -1,6 +1,6 @@
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
-import { getAccessToken, getStoredCurrentUser } from "./auth";
+import { apiFetch, getAccessToken, getStoredCurrentUser } from "./auth";
 
 export type EventCategory = {
   id: number;
@@ -634,7 +634,7 @@ const getSortTime = (event: EventItem) => {
 };
 
 const requestJson = async (url: string, options?: RequestInit) => {
-  const response = await fetch(url, options);
+  const response = await apiFetch(url, options);
   const data = await response.json().catch(() => null);
   return { response, data };
 };
@@ -784,7 +784,7 @@ export async function createEventCategory(payload: CreateEventCategoryPayload) {
   formData.append("name", payload.name.trim());
   formData.append("image", payload.image);
 
-  const response = await fetch(endpoints.eventCategories, {
+  const response = await apiFetch(endpoints.eventCategories, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -822,7 +822,7 @@ export async function createEvent(payload: CreateEventPayload) {
     formData.append("images", image);
   });
 
-  const response = await fetch(endpoints.events, {
+  const response = await apiFetch(endpoints.events, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
