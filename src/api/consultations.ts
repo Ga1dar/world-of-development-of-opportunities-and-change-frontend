@@ -1,4 +1,5 @@
 import { endpoints } from "./endpoints";
+import { apiFetch } from "./auth";
 
 export type ConsultationSlot = {
   id: number;
@@ -68,20 +69,6 @@ const extractList = (data: unknown) => {
   }
 
   return [];
-};
-
-const getAuthHeaders = () => {
-  const accessToken =
-    typeof window === "undefined" ? "" : localStorage.getItem("accessToken") || "";
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  return headers;
 };
 
 const formatDateValue = (date: Date) => {
@@ -246,9 +233,11 @@ export async function bookConsultation(
           start_time: payload.start_time || `${payload.date}T${payload.time}:00`,
         };
 
-    const response = await fetch(endpoints.consultationAppointments, {
+    const response = await apiFetch(endpoints.consultationAppointments, {
       method: "POST",
-      headers: getAuthHeaders(),
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
       signal,
     });
@@ -283,9 +272,11 @@ export async function cancelConsultationAppointment(
   appointmentId: string | number,
 ): Promise<ConsultationMutationResult> {
   try {
-    const response = await fetch(endpoints.consultationAppointmentCancel(appointmentId), {
+    const response = await apiFetch(endpoints.consultationAppointmentCancel(appointmentId), {
       method: "PATCH",
-      headers: getAuthHeaders(),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     return response.ok ? { status: "success" } : { status: "error" };
@@ -303,11 +294,13 @@ export async function rescheduleConsultationAppointment(
   }
 
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       endpoints.consultationAppointmentReschedule(appointmentId),
       {
         method: "PATCH",
-        headers: getAuthHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ slot: slotId }),
       },
     );

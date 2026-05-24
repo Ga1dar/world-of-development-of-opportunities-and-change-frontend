@@ -15,7 +15,12 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
 import { endpoints } from "../../api/endpoints"
-import { getAccessToken, notifyAuthChanged, storeCurrentUser } from "../../api/auth"
+import {
+  clearStoredCurrentUser,
+  getAccessToken,
+  notifyAuthChanged,
+  storeCurrentUser,
+} from "../../api/auth"
 import { getUserCabinetData } from "../../api/userCabinet"
 
 type LogInProps = {
@@ -115,6 +120,8 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const storeTokens = (data: { access?: string; refresh?: string }) => {
     if (data.access) {
       localStorage.setItem("accessToken", data.access)
+    } else if (data.refresh) {
+      localStorage.removeItem("accessToken")
     }
 
     if (data.refresh) {
@@ -122,6 +129,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     }
 
     if (data.access || data.refresh) {
+      clearStoredCurrentUser()
       setIsAuthenticated(Boolean(data.access || getAccessToken()))
       notifyAuthChanged()
     }

@@ -4,6 +4,7 @@ import { API_URL } from './client.ts';
 export const endpoints = {
   login: `${API_URL}/users/login/`,
   logout: `${API_URL}/users/logout/`,
+  tokenRefresh: `${API_URL}/token/refresh/`,
   register: `${API_URL}/users/register/`,
   me: `${API_URL}/users/list/me/`,
   specialists: `${API_URL}/profiles/specialist-profiles/`,
