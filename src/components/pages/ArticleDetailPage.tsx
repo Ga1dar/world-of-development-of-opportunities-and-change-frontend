@@ -1,5 +1,5 @@
 import { Bookmark, CircleUserRound, Heart, MessageSquare } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { getAccessToken } from "../../api/auth";
@@ -200,6 +200,11 @@ export function ArticleDetailPage() {
   const [comments, setComments] = useState<EducationArticleComment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getAccessToken()));
+  const articleGridRef = useRef<HTMLDivElement>(null);
+  const contentsColumnRef = useRef<HTMLElement>(null);
+  const contentsCardRef = useRef<HTMLDivElement>(null);
+  const contentsStyleRef = useRef("");
+  const [contentsStyle, setContentsStyle] = useState<CSSProperties>();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -248,6 +253,58 @@ export function ArticleDetailPage() {
 
   const sections = getRenderableSections(article);
   const intro = article.content || (sections.length === 0 ? article.description : "");
+
+  useEffect(() => {
+    let frameId = 0;
+
+    const updateContentsPosition = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        const grid = articleGridRef.current;
+        const column = contentsColumnRef.current;
+        const card = contentsCardRef.current;
+
+        if (!grid || !column || !card || window.innerWidth < 1420) {
+          if (contentsStyleRef.current) {
+            contentsStyleRef.current = "";
+            setContentsStyle(undefined);
+          }
+          return;
+        }
+
+        const topOffset = window.innerWidth >= 1900 ? 333 : 303;
+        const footerGap = 24;
+        const columnRect = column.getBoundingClientRect();
+        const gridRect = grid.getBoundingClientRect();
+        const cardHeight = card.offsetHeight;
+        const top = Math.min(topOffset, gridRect.bottom - cardHeight - footerGap);
+
+        const nextStyle: CSSProperties = {
+          position: "fixed",
+          top,
+          left: columnRect.left,
+          width: columnRect.width,
+          zIndex: 20,
+        };
+        const nextKey = `${Math.round(top)}:${Math.round(columnRect.left)}:${Math.round(columnRect.width)}`;
+
+        if (contentsStyleRef.current !== nextKey) {
+          contentsStyleRef.current = nextKey;
+          setContentsStyle(nextStyle);
+        }
+      });
+    };
+
+    updateContentsPosition();
+    window.addEventListener("scroll", updateContentsPosition, { passive: true });
+    window.addEventListener("resize", updateContentsPosition);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", updateContentsPosition);
+      window.removeEventListener("resize", updateContentsPosition);
+    };
+  }, [article.slug, sections.length]);
 
   const handleLike = async () => {
     const nextLiked = !article.isLiked;
@@ -358,7 +415,7 @@ export function ArticleDetailPage() {
 
   return (
     <article className={`${pageMaxWidth} bg-secondary pb-10 pt-4 font-montserrat text-[#1C100E] min-[744px]:pt-8 min-[1023px]:pt-16 min-[1420px]:pt-[105px] min-[1900px]:pt-[135px]`}>
-      <div className="mx-auto grid w-full gap-10 min-[1420px]:max-w-[1240px] min-[1420px]:grid-cols-[minmax(0,790px)_360px] min-[1420px]:gap-16 min-[1900px]:max-w-[1580px] min-[1900px]:grid-cols-[minmax(0,1060px)_430px]">
+      <div ref={articleGridRef} className="mx-auto grid w-full gap-10 min-[1420px]:max-w-[1240px] min-[1420px]:grid-cols-[minmax(0,790px)_360px] min-[1420px]:gap-16 min-[1900px]:max-w-[1580px] min-[1900px]:grid-cols-[minmax(0,1060px)_430px]">
         <div className="relative">
           <img
             src="/sun.png"
@@ -411,8 +468,8 @@ export function ArticleDetailPage() {
           />
         </div>
 
-        <aside className="hidden min-[1420px]:block">
-          <div className="sticky top-10 min-h-[330px] rounded-[20px] border border-[#B45598] bg-[#F8F8F8] px-9 py-9 min-[1900px]:min-h-[370px] min-[1900px]:px-11 min-[1900px]:py-10">
+        <aside ref={contentsColumnRef} className="hidden min-[1420px]:block">
+          <div ref={contentsCardRef} style={contentsStyle} className="min-h-[330px] rounded-[20px] border border-[#B45598] bg-[#F8F8F8] px-9 py-9 min-[1900px]:min-h-[370px] min-[1900px]:px-11 min-[1900px]:py-10">
             <h2 className="sr-only">{labels.contents}</h2>
             <nav className="space-y-8 text-[15px] font-medium leading-[1.25] min-[1900px]:space-y-9 min-[1900px]:text-[17px]">
               {sections.filter((section) => section.title).map((section) => (
