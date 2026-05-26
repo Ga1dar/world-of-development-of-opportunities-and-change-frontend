@@ -43,7 +43,7 @@ export function Footer() {
     }
   };
   return (
-    <footer className="box-border flex w-full  flex-col gap-x-6 rounded-t-[30px] bg-primary px-4 pt-4 pb-1 text-[#F0E8F0] sm:mb-4 min-[1420px]:px-20 min-[1420px]:pt-6 min-[1420px]:pb-0">
+    <footer className="box-border flex w-full flex-col gap-x-6 rounded-t-[30px] bg-primary px-4 pt-4 pb-1 text-[#F0E8F0] min-[1023px]:px-16 min-[1420px]:px-16 min-[1420px]:pt-6 min-[1420px]:pb-0">
       <div className="mb-6 flex flex-col min-[1420px]:flex-row min-[1420px]:gap-x-8">
         <Field className="flex flex-col">
           <form onSubmit={handleSubscribe} className="flex flex-col gap-y-4 mb-6">
