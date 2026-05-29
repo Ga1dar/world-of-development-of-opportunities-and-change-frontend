@@ -3,6 +3,7 @@
 }
 
 .about-tablet,
+.about-medium,
 .about-desktop,
 .about-big {
   display: none;
@@ -15,6 +16,16 @@
 
   .about-tablet {
     display: grid;
+  }
+}
+
+@media (min-width: 1023px) and (max-width: 1419px) {
+  .about-tablet {
+    display: none;
+  }
+
+  .about-medium {
+    display: block;
   }
 }
 

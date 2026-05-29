@@ -43,7 +43,7 @@ export function Footer() {
     }
   };
   return (
-    <footer className="box-border flex w-full flex-col gap-x-6 rounded-t-[30px] bg-primary px-4 pt-4 pb-1 text-[#F0E8F0] min-[1023px]:px-16 min-[1420px]:px-16 min-[1420px]:pt-6 min-[1420px]:pb-0">
+    <footer className="mb-0 box-border flex w-full flex-col gap-x-6 rounded-t-[30px] bg-primary px-4 pt-4 pb-0 text-[#F0E8F0] min-[1023px]:mb-0 min-[1023px]:px-16 min-[1023px]:pb-0 min-[1420px]:px-16 min-[1420px]:pt-6 min-[1420px]:pb-0">
       <div className="mb-6 flex flex-col min-[1420px]:flex-row min-[1420px]:gap-x-8">
         <Field className="flex flex-col">
           <form onSubmit={handleSubscribe} className="flex flex-col gap-y-4 mb-6">
@@ -57,7 +57,7 @@ export function Footer() {
                 placeholder={t("footer-email")}
                 className="mb-2 h-10 rounded-[30px] bg-[#F0E8F0] p-3 
                 font-montserrat text-[#2D302D] sm:col-start-1 min-[1420px]:h-12 
-                min-[1420px]:w-[410px] min-[1900px]:h-[46px] min-[1900px]:w-[585px]"
+                min-[1420px]:w-102.5 min-[1900px]:h-11.5 min-[1900px]:w-146.25"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

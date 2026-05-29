@@ -31,11 +31,12 @@ function App() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-secondary">
-      <Header isOpen={isOpen} setIsOpen={setIsOpen} />
+    <div className="mb-0 flex min-h-screen flex-col overflow-x-hidden bg-primary pb-0">
+      <div className="flex flex-1 flex-col bg-secondary">
+        <Header isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      <main className="relative flex-1 min-[1420px]:flex">
-        <Menu isOpen={isOpen} setIsOpen={setIsOpen} />
+        <main className="relative flex flex-1 flex-col min-[1420px]:flex-row">
+          <Menu isOpen={isOpen} setIsOpen={setIsOpen} />
 
         <div
           className={`${isOpen ? "hidden sm:block" : "block"} flex-1 min-[1420px]:block`}
@@ -73,7 +74,8 @@ function App() {
             />
           </Routes>
         </div>
-      </main>
+        </main>
+      </div>
 
       <Footer />
     </div>

@@ -104,7 +104,7 @@ export function SpecialistProfil() {
       <section
         className="flex min-h-[50vh] items-center 
         justify-center bg-secondary px-5 py-16
-        font-montserrat text-[18px] text-[#1C100E]"
+        font-montserrat text-[18px] text-[#1C100E] min-[1023px]:px-16"
       >
         {t("specialistsLoading")}
       </section>
@@ -116,7 +116,7 @@ export function SpecialistProfil() {
       <section
         className="flex min-h-[50vh] flex-col items-center 
         justify-center gap-8 bg-secondary px-5 py-16
-        text-center font-montserrat text-[#1C100E]"
+        text-center font-montserrat text-[#1C100E] min-[1023px]:px-16"
       >
         <h1
           className="text-[28px] font-medium sm:text-[36px]">
@@ -144,7 +144,7 @@ export function SpecialistProfil() {
        font-montserrat text-[#1C100E]
         sm:pb-24 sm:pt-8 min-[1420px]:pb-20 min-[1420px]:pt-9
          min-[1900px]:pb-40 min-[1900px]:pt-0">
-      <div className="mx-auto w-full max-w-295 px-5 sm:px-10 min-[1420px]:max-w-217 min-[1420px]:px-0 min-[1900px]:max-w-295">
+      <div className="mx-auto w-full max-w-295 px-5 sm:px-10 min-[1023px]:px-16 min-[1420px]:max-w-217 min-[1440px]:max-w-[calc(100vw-160px)] min-[1420px]:px-0 min-[1900px]:max-w-295 min-[1908px]:max-w-[calc(100vw-160px)]">
         {hasError && (
           <p className="mt-4 text-[14px] text-[#7A1E1E]">
             {t("specialistsLoadError")}

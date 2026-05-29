@@ -12,6 +12,7 @@ export const endpoints = {
     `${API_URL}/profiles/specialist-profiles/${id}/`,
   documents: `${API_URL}/profiles/documents/`,
   userProfiles: `${API_URL}/profiles/user-profiles/`,
+  userProfile: (id: string | number) => `${API_URL}/profiles/user-profiles/${id}/`,
   profiles: `${API_URL}/profiles/`,
   events: `${API_URL}/events/`,
   eventCategories:

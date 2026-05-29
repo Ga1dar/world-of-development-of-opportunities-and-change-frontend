@@ -324,7 +324,7 @@ export function EventDetailPage() {
 
   if (!event) {
     return (
-      <section className="flex min-h-[40vh] items-center justify-center bg-secondary font-montserrat text-[#1C100E]">
+      <section className="flex min-h-[40vh] items-center justify-center bg-secondary px-5 font-montserrat text-[#1C100E] min-[1023px]:px-16">
         {t("eventsLoading")}
       </section>
     );

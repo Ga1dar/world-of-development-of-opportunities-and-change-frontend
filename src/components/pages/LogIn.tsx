@@ -16,6 +16,7 @@ import { Link } from "react-router-dom"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
 import { endpoints } from "../../api/endpoints"
 import {
+  apiFetch,
   clearStoredCurrentUser,
   getAccessToken,
   notifyAuthChanged,
@@ -467,11 +468,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       storeTokens(data || {})
 
       try {
-        const meResponse = await fetch(endpoints.me, {
-          headers: {
-            Authorization: `Bearer ${data?.access || getAccessToken()}`,
-          },
-        })
+        const meResponse = await apiFetch(endpoints.me)
 
         if (meResponse.ok) {
           storeCurrentUser(await meResponse.json())
@@ -548,6 +545,17 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     const data = await response.json().catch(() => null)
 
     storeTokens(data || {})
+
+    try {
+      const meResponse = await apiFetch(endpoints.me)
+
+      if (meResponse.ok) {
+        storeCurrentUser(await meResponse.json())
+        notifyAuthChanged()
+      }
+    } catch {
+      notifyAuthChanged()
+    }
 
     if (authMode === "register") {
       setRegisterStep("success")

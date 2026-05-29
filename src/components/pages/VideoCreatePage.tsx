@@ -241,7 +241,7 @@ export function VideoCreatePage() {
 
   if (!canCreateVideos) {
     return (
-      <section className="-mt-14 flex min-h-[50vh] items-center justify-center bg-secondary px-5 py-12 font-montserrat text-[#1C100E] sm:-mt-20 min-[1420px]:mt-0!">
+      <section className="-mt-14 flex min-h-[50vh] items-center justify-center bg-secondary px-5 py-12 font-montserrat text-[#1C100E] sm:-mt-20 min-[1023px]:px-16 min-[1420px]:mt-0!">
         <p className="max-w-[520px] text-center text-[16px] leading-[1.4]">
           {copy.denied}
         </p>
@@ -251,7 +251,7 @@ export function VideoCreatePage() {
 
   return (
     <>
-      <section className="-mt-14 min-h-[420px] bg-secondary px-4 pb-8 pt-5 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-6 min-[744px]:min-h-[760px] min-[744px]:px-10 min-[744px]:pb-12 min-[744px]:pt-8 min-[1023px]:min-h-[780px] min-[1023px]:px-[74px] min-[1023px]:pt-[42px] min-[1420px]:mt-0! min-[1420px]:min-h-[760px] min-[1420px]:px-20 min-[1420px]:pt-[150px] min-[1900px]:min-h-[850px] min-[1900px]:pt-[178px]">
+      <section className="-mt-14 min-h-[420px] bg-secondary px-4 pb-8 pt-5 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-6 min-[744px]:min-h-[760px] min-[744px]:px-10 min-[744px]:pb-12 min-[744px]:pt-8 min-[1023px]:min-h-[780px] min-[1023px]:px-16 min-[1023px]:pt-[42px] min-[1420px]:mt-0! min-[1420px]:min-h-[760px] min-[1420px]:px-20 min-[1420px]:pt-[150px] min-[1900px]:min-h-[850px] min-[1900px]:pt-[178px]">
         <form
           onSubmit={handleSubmit}
           className="mx-auto flex w-full max-w-[340px] flex-col items-center min-[744px]:max-w-[641px] min-[1023px]:max-w-[884px] min-[1420px]:max-w-[800px] min-[1900px]:max-w-[1140px]"

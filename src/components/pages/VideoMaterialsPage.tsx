@@ -16,7 +16,7 @@ import { createFallbackVideos } from "../../api/videoFallbacks";
 import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
 
 const pageMaxWidth =
-  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
+  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
 
 const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en");
 

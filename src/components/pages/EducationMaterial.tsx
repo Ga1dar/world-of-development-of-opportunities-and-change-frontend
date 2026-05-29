@@ -19,7 +19,7 @@ import {
 } from "../../api/userFavorites";
 
 const pageMaxWidth =
-  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
+  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
 
 const yellowButton =
   "rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat font-medium text-[#1C100E] shadow-btn";
@@ -520,7 +520,7 @@ export function Edukationmaterial() {
         <div className="mt-4 flex justify-end min-[744px]:mt-5 min-[1023px]:mt-6">
           <Link
             to="/materials/articles"
-            className={`${yellowButton} flex h-10 w-full max-w-[278px] items-center justify-center text-[13px] min-[744px]:max-w-[280px] min-[1023px]:h-12 min-[1023px]:max-w-[278px] min-[1420px]:max-w-[310px] min-[1900px]:max-w-[345px] min-[1900px]:text-[15px]`}
+            className={`${yellowButton} flex h-10 w-full items-center justify-center text-[13px] min-[744px]:max-w-[280px] min-[1023px]:h-12 min-[1023px]:max-w-[278px] min-[1420px]:max-w-[310px] min-[1900px]:max-w-[345px] min-[1900px]:text-[15px]`}
           >
             {labels.allArticles}
           </Link>
@@ -539,7 +539,7 @@ export function Edukationmaterial() {
         <div className="mt-4 flex justify-end min-[744px]:mt-5 min-[1023px]:mt-6">
           <Link
             to="/materials/videos"
-            className={`${yellowButton} flex h-10 w-full max-w-[278px] items-center justify-center text-[13px] min-[744px]:max-w-[280px] min-[1023px]:h-12 min-[1023px]:max-w-[278px] min-[1420px]:max-w-[310px] min-[1900px]:max-w-[345px] min-[1900px]:text-[15px]`}
+            className={`${yellowButton} flex h-10 w-full items-center justify-center text-[13px] min-[744px]:max-w-[280px] min-[1023px]:h-12 min-[1023px]:max-w-[278px] min-[1420px]:max-w-[310px] min-[1900px]:max-w-[345px] min-[1900px]:text-[15px]`}
           >
             {labels.allVideos}
           </Link>

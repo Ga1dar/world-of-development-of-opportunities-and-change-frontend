@@ -30,7 +30,7 @@ export function Events() {
     lang === "en" ? category.title_en : category.title_ua;
 
   return (
-    <section className="bg-secondary px-5 pb-12 pt-6 font-montserrat text-[#1C100E] min-[390px]:px-8 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-9 min-[1023px]:px-13 min-[1023px]:pb-16 min-[1023px]:pt-12 min-[1420px]:px-20 min-[1420px]:pb-20 min-[1420px]:pt-[120px] min-[1900px]:pb-[142px] min-[1900px]:pt-[120px]">
+    <section className="bg-secondary px-5 pb-12 pt-6 font-montserrat text-[#1C100E] min-[390px]:px-8 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-9 min-[1023px]:px-16 min-[1023px]:pb-16 min-[1023px]:pt-12 min-[1420px]:px-20 min-[1420px]:pb-20 min-[1420px]:pt-[120px] min-[1900px]:pb-[142px] min-[1900px]:pt-[120px]">
       <div className="mx-auto w-full max-w-[326px] min-[744px]:max-w-[648px] min-[1023px]:max-w-[760px] min-[1420px]:max-w-[1134px] min-[1900px]:max-w-[1548px]">
         <h1 className="sr-only">{t("events")}</h1>
 

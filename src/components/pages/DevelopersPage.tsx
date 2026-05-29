@@ -95,7 +95,7 @@ export function DevelopersPage() {
   const isEnglish = isEnglishLanguage(i18n.language);
 
   return (
-    <section className="bg-secondary px-4 pb-16 pt-8 font-montserrat text-[#1C100E] sm:px-10 sm:pb-20 min-[1420px]:px-20 min-[1420px]:pb-28 min-[1420px]:pt-[100px] min-[1900px]:pb-36 min-[1900px]:pt-[120px]">
+    <section className="bg-secondary px-4 pb-16 pt-8 font-montserrat text-[#1C100E] sm:px-10 sm:pb-20 min-[1023px]:px-16 min-[1420px]:px-20 min-[1420px]:pb-28 min-[1420px]:pt-[100px] min-[1900px]:pb-36 min-[1900px]:pt-[120px]">
       <div className="mx-auto w-full max-w-[1180px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1740px]">
         <h1 className="text-center text-[28px] font-medium leading-[1.2] sm:text-[36px] min-[1420px]:text-[56px] min-[1420px]:leading-[100px]">
           {isEnglish ? "Project Team" : "Команда проєкту"}

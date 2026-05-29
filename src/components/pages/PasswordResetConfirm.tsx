@@ -66,7 +66,7 @@ export function PasswordResetConfirm() {
   }
 
   return (
-    <section className="mx-auto flex min-h-[60vh] w-full max-w-[600px] items-center px-5 py-10">
+    <section className="mx-auto flex min-h-[60vh] w-full max-w-[600px] items-center px-5 py-10 min-[1023px]:px-16">
       <form
         onSubmit={handleSubmit}
         className="w-full rounded-[24px] bg-[#F0E8F0] px-5 py-8 shadow-md sm:px-[95px] sm:py-9"
