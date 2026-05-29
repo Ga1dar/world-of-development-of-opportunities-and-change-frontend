@@ -34,7 +34,7 @@ export function Home() {
 
   return (
     <>
-      <section className="mx-auto flex w-full max-w-7xl flex-col px-4 sm:px-10 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
+      <section className="mx-auto flex w-full max-w-7xl flex-col px-4 sm:px-10 min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <article
           className="mb-10 grid gap-4 sm:grid-cols-2 sm:grid-rows-[auto_auto_auto] 
             sm:gap-x-6 sm:gap-y-4 min-[1420px]:mb-20 min-[1420px]:grid-cols-[631px_628px]
@@ -160,7 +160,7 @@ export function Home() {
 
       <section
         className="mx-auto flex w-full max-w-7xl 
-        flex-col items-center justify-center px-4 sm:px-10 min-[1420px]:max-w-[1440px] min-[1420px]:px-20
+        flex-col items-center justify-center px-4 sm:px-10 min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20
         min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <h1
           className="w-full text-center font-montserrat 

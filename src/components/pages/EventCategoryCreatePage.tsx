@@ -79,7 +79,7 @@ export function EventCategoryCreatePage() {
 
   if (!canCreateEvents) {
     return (
-      <section className="-mt-14 flex min-h-[50vh] items-center justify-center bg-secondary px-5 py-12 font-montserrat text-[#1C100E] sm:-mt-20 min-[1420px]:mt-0!">
+      <section className="-mt-14 flex min-h-[50vh] items-center justify-center bg-secondary px-5 py-12 font-montserrat text-[#1C100E] sm:-mt-20 min-[1023px]:px-16 min-[1420px]:mt-0!">
         <p className="max-w-[520px] text-center text-[16px] leading-[1.4]">
           Створювати категорії подій можуть тільки спеціалісти з профілем або
           адміністратори.
@@ -89,7 +89,7 @@ export function EventCategoryCreatePage() {
   }
 
   return (
-    <section className="-mt-14 bg-secondary px-5 pb-12 pt-5 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-7 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-8 min-[1023px]:px-12 min-[1023px]:pt-10 min-[1420px]:mt-0! min-[1420px]:px-20 min-[1420px]:pt-16 min-[1900px]:pt-20">
+    <section className="-mt-14 bg-secondary px-5 pb-12 pt-5 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-7 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-8 min-[1023px]:px-16 min-[1023px]:pt-10 min-[1420px]:mt-0! min-[1420px]:px-20 min-[1420px]:pt-16 min-[1900px]:pt-20">
       <form
         onSubmit={handleSubmit}
         className="mx-auto flex w-full max-w-[340px] flex-col items-center min-[744px]:max-w-[641px] min-[1023px]:max-w-[848px] min-[1420px]:max-w-[800px] min-[1900px]:max-w-[1140px]"

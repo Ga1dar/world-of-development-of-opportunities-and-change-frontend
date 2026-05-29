@@ -107,7 +107,7 @@ export function EventCategoryPage() {
     lang === "en" ? event.description_en : event.description_ua;
 
   return (
-    <section className="-mt-14 bg-secondary px-5 pb-12 pt-10 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-7 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-[60px] min-[1023px]:px-[84px] min-[1023px]:pb-15 min-[1023px]:pt-[100px] min-[1420px]:mt-0! min-[1420px]:px-20 min-[1420px]:pb-18 min-[1420px]:pt-[100px] min-[1900px]:px-20 min-[1900px]:pb-24 min-[1900px]:pt-[134px]">
+    <section className="-mt-14 bg-secondary px-5 pb-12 pt-10 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-7 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-[60px] min-[1023px]:px-16 min-[1023px]:pb-15 min-[1023px]:pt-[100px] min-[1420px]:mt-0! min-[1420px]:px-20 min-[1420px]:pb-18 min-[1420px]:pt-[100px] min-[1900px]:px-20 min-[1900px]:pb-24 min-[1900px]:pt-[134px]">
       <div className="w-full">
         <div className="grid grid-cols-1 gap-y-12 min-[744px]:gap-y-14 min-[1023px]:grid-cols-[436px_1fr] min-[1420px]:grid-cols-[628px_1fr] min-[1900px]:grid-cols-[585px_1fr]">
           <div className="flex flex-col gap-12 min-[744px]:gap-14">

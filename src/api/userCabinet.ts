@@ -6,6 +6,8 @@ type RawRecord = Record<string, unknown>;
 
 export type CabinetProfile = {
   id: string;
+  userProfileId?: string;
+  specialistProfileId?: string;
   firstName?: string;
   lastName?: string;
   fullName: string;
@@ -131,6 +133,20 @@ const readSpecialistProfileId = (currentUser: RawRecord | null) => {
   );
 };
 
+const readUserProfileId = (currentUser: RawRecord | null) => {
+  if (!currentUser) return "";
+
+  return (
+    readReferenceId(currentUser.user_profile) ||
+    readReferenceId(currentUser.userProfile) ||
+    readReferenceId(currentUser.profile) ||
+    readReferenceId(currentUser.profile_id) ||
+    readReferenceId(currentUser.profileId) ||
+    readReferenceId(currentUser.user_profile_id) ||
+    readReferenceId(currentUser.userProfileId)
+  );
+};
+
 const getApiOrigin = () => {
   try {
     return API_URL ? new URL(API_URL).origin : "";
@@ -213,6 +229,8 @@ const normalizeProfile = (
   const sourceUser = userFromProfile || asRecord(source.user) || currentUser;
   const specialistProfileId =
     profileKind === "specialist" ? readString(sourceProfile, ["id"]) || readSpecialistProfileId(currentUser) : "";
+  const userProfileId =
+    profileKind !== "specialist" ? readString(userProfile, ["id"]) || readUserProfileId(currentUser) : "";
 
   const firstName =
     readString(source, ["first_name", "firstName"]) ||
@@ -256,9 +274,12 @@ const normalizeProfile = (
   return {
     id:
       specialistProfileId ||
+      userProfileId ||
       readString(source, ["id"]) ||
       readString(sourceUser, ["id"]) ||
       "me",
+    userProfileId,
+    specialistProfileId,
     firstName,
     lastName,
     fullName: directName || [firstName, lastName].filter(Boolean).join(" ") || email || "Profile",
@@ -346,7 +367,9 @@ const matchesCurrentUser = (profile: RawRecord, currentUser: RawRecord | null) =
     (!!currentSpecialistId && readString(profile, ["id"]) === currentSpecialistId) ||
     readString(profile, ["user", "user_id", "userId"]) === currentId ||
     readString(profileUser, ["id"]) === currentId ||
-    (!!currentEmail && readString(profileUser, ["email"]) === currentEmail)
+    (!!currentEmail &&
+      (readString(profile, ["user", "user_email", "userEmail", "email"]) === currentEmail ||
+        readString(profileUser, ["email"]) === currentEmail))
   );
 };
 
@@ -461,11 +484,25 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
   }
 
   try {
-    const profiles = extractList(await fetchJson(endpoints.userProfiles, signal));
-    userProfile =
-      profiles.find((profile) => matchesCurrentUser(profile, currentUser)) ||
-      (!currentUser ? profiles[0] : null) ||
-      null;
+    const directUserProfile = asRecord(currentUser?.user_profile ?? currentUser?.userProfile ?? currentUser?.profile);
+    const directUserProfileId = readUserProfileId(currentUser);
+
+    if (directUserProfile) {
+      userProfile = directUserProfile;
+    } else if (directUserProfileId) {
+      try {
+        userProfile = asRecord(await fetchJson(endpoints.userProfile(directUserProfileId), signal));
+      } catch {
+        const profiles = extractList(await fetchJson(endpoints.userProfiles, signal));
+        userProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
+      }
+    } else {
+      const profiles = extractList(await fetchJson(endpoints.userProfiles, signal));
+      userProfile =
+        profiles.find((profile) => matchesCurrentUser(profile, currentUser)) ||
+        (!currentUser ? profiles[0] : null) ||
+        null;
+    }
   } catch {
     userProfile = null;
   }
@@ -588,7 +625,13 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
   const endpoint =
     profile.profileKind === "specialist"
       ? endpoints.specialistProfile(profile.id)
-      : `${endpoints.userProfiles}${profile.id}/`;
+      : profile.userProfileId
+        ? endpoints.userProfile(profile.userProfileId)
+        : "";
+
+  if (!endpoint) {
+    throw new Error("User profile id is missing");
+  }
 
   const uploadWithField = (fieldName: "avatar" | "photo" | "image" | "picture") => {
     const body = new FormData();
