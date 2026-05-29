@@ -11,7 +11,11 @@ export function Aboutus() {
   const restParagraphs = t("aboutTextRest", { returnObjects: true }) as string[];
   const paragraphs = [...firstParagraphs, ...restParagraphs];
   const imageAlt = t("aboutUs");
-
+  const mediumHeroParagraphs = [
+    t("homeTopText1"),
+    t("homeTopText2"),
+    t("homeTopText3"),
+  ];
   const renderParagraphs = (items: string[], className = "") => (
     <div
       className={`flex flex-col gap-4 font-montserrat text-[16px] font-normal leading-[140%] text-[#1C100E] min-[1420px]:text-lg ${className}`}
@@ -24,7 +28,7 @@ export function Aboutus() {
 
   return (
     <>
-      <section className="about-shell mx-auto flex w-full max-w-[1280px] flex-col px-4 sm:px-10 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
+      <section className="about-shell mx-auto flex w-full max-w-[1280px] flex-col px-4 sm:px-10 min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <article className="about-mobile">
           <h1 className="mb-5 font-montserrat text-[24px] font-medium leading-[1.25] text-[#1C100E]">
             {t("homeTopTitle")}
@@ -49,6 +53,26 @@ export function Aboutus() {
             className="col-start-2 row-start-2 h-[257px] w-[320px] rounded-[20px] object-cover"
           />
           {renderParagraphs(paragraphs.slice(3), "col-span-2 mt-4")}
+        </article>
+
+        <article className="about-medium">
+          <div className="grid grid-cols-[minmax(0,1fr)_440px] gap-x-6">
+            <div>
+              <h1 className="font-montserrat text-[24px] font-medium leading-[1.2] text-[#1C100E]">
+                {t("homeTopTitle")}
+              </h1>
+              <div className="mt-4 flex flex-col gap-2 font-montserrat text-[12px] font-normal leading-[1.35] text-[#1C100E]">
+                {mediumHeroParagraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            </div>
+            <img
+              src="/rectangle 2.png"
+              alt={imageAlt}
+              className="h-[311px] w-[440px] rounded-[8px] object-cover"
+            />
+          </div>
         </article>
 
         <article className="about-desktop min-[1420px]:grid-cols-[628px_628px] min-[1420px]:gap-x-6">
@@ -79,7 +103,7 @@ export function Aboutus() {
         </article>
       </section>
 
-      <section className="mx-auto mt-16 flex w-full max-w-[1280px] flex-col items-center justify-center px-4 sm:mt-20 sm:px-10 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:mt-[100px] min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
+      <section className="mx-auto mt-16 flex w-full max-w-[1280px] flex-col items-center justify-center px-4 sm:mt-20 sm:px-10 min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:mt-[100px] min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <h2 className="w-full text-center font-montserrat text-3xl font-medium leading-[140%] text-[#1C100E] sm:text-4xl min-[1420px]:text-[56px] min-[1420px]:leading-[100px] min-[1900px]:mt-5">
           {t("specialistsTitle")}
         </h2>

@@ -44,7 +44,7 @@ export function Specialists({ limit, isSlider = false, variant = "default" }: Pr
     ? isHomeSlider
       ? "specialists-home-slider mt-6 flex w-full snap-x snap-mandatory overflow-x-auto px-0 pb-2 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:mt-10"
       : "mt-6 flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-0 pb-2 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:mt-10 xl:gap-20 min-[1900px]:gap-36"
-    : "mx-auto grid w-full max-w-[1180px] grid-cols-1 justify-items-center gap-x-10 gap-y-12 px-5 pt-8 sm:grid-cols-2 sm:px-10 sm:pt-12 lg:grid-cols-3 min-[1420px]:max-w-[1260px] min-[1420px]:gap-y-20 min-[1900px]:max-w-[1740px] min-[1900px]:grid-cols-3 min-[1900px]:gap-x-36 min-[1900px]:gap-y-28";
+    : "mx-auto grid w-full max-w-[1180px] grid-cols-1 justify-items-center gap-x-10 gap-y-12 px-5 pt-8 sm:grid-cols-2 sm:px-10 sm:pt-12 lg:grid-cols-3 min-[1023px]:px-16 min-[1420px]:max-w-[1260px] min-[1440px]:max-w-[calc(100vw-160px)] min-[1420px]:gap-y-20 min-[1900px]:max-w-[1740px] min-[1908px]:max-w-[calc(100vw-160px)] min-[1900px]:grid-cols-3 min-[1900px]:gap-x-36 min-[1900px]:gap-y-28";
 
   const articleClass = isSlider
     ? isHomeSlider
@@ -135,8 +135,8 @@ export function Specialists({ limit, isSlider = false, variant = "default" }: Pr
          min-[1420px]:pt-20 min-[1900px]:pb-44"
       >
         <div
-          className="mx-auto w-full max-w-295 px-5 sm:px-10 
-          min-[1420px]:max-w-315 min-[1900px]:max-w-435">
+          className="mx-auto w-full max-w-295 px-5 sm:px-10 min-[1023px]:px-16
+          min-[1420px]:max-w-315 min-[1440px]:max-w-[calc(100vw-160px)] min-[1900px]:max-w-435 min-[1908px]:max-w-[calc(100vw-160px)]">
           <h1
             className="text-center text-[28px] font-medium leading-[1.2] 
             sm:text-[36px] min-[1420px]:text-[48px] min-[1900px]:text-[64px]">

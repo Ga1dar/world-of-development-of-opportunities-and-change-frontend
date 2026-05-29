@@ -46,7 +46,7 @@ export function Contacts() {
   const { t } = useTranslation();
 
   return (
-    <section className="bg-secondary px-5 pb-12 pt-0 font-montserrat text-[#1C100E] sm:px-10 sm:pb-16 min-[1420px]:px-20 min-[1420px]:pb-15 min-[1420px]:pt-[100px] min-[1900px]:pt-[120px] min-[1900px]:pb-17">
+    <section className="bg-secondary px-5 pb-12 pt-0 font-montserrat text-[#1C100E] sm:px-10 sm:pb-16 min-[1023px]:px-16 min-[1420px]:px-20 min-[1420px]:pb-15 min-[1420px]:pt-[100px] min-[1900px]:pt-[120px] min-[1900px]:pb-17">
       <div className="mx-auto grid w-full max-w-[1180px] gap-8 min-[1420px]:max-w-[1200px] min-[1420px]:grid-cols-[358px_1fr] min-[1420px]:items-center min-[1420px]:gap-20 min-[1900px]:max-w-[1548px] min-[1900px]:grid-cols-[464px_1fr] min-[1900px]:gap-24">
         <div className="pt-3 sm:pt-0 min-[1420px]:pt-0">
           <h1 className="text-center text-[28px] font-medium leading-[1.2] sm:text-[32px] min-[1420px]:text-left min-[1420px]:text-[32px] min-[1900px]:text-[40px]">

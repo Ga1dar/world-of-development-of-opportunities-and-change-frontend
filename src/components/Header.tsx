@@ -21,10 +21,10 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
   return (
     <header
       className={`relative z-80 flex h-21.25 w-full items-end justify-end gap-7
-        bg-[#4029401A] pr-10 pl-0 sm:mb-20 sm:h-23.25 sm:gap-5 sm:px-5
+        bg-[#4029401A] px-0 sm:mb-20 sm:h-23.25 sm:gap-5
         min-[1420px]:mt-0! min-[1420px]:mb-0! min-[1420px]:h-36.75!
          min-[1420px]:items-start min-[1420px]:gap-6 min-[1420px]:bg-secondary
-          min-[1420px]:px-20 min-[1420px]:pt-8.75 min-[1900px]:h-38! min-[1900px]:pt-10 
+          min-[1420px]:pl-20 min-[1420px]:pr-16 min-[1420px]:pt-8.75 min-[1900px]:h-38! min-[1900px]:pt-10 
           ${isOpen ? "mb-14" : "mb-14" }`}
       >
       <div
@@ -37,8 +37,8 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         <img
           src="/Logo1.png"
           alt="Logo"
-          className="absolute left-0 top-1 h-34.5 w-34.5 sm:h-44
-           sm:w-44 min-[1420px]:left-[12px] min-[1420px]:top-0 min-[1420px]:z-120
+          className="absolute left-0 top-1 h-34.5 w-34.5 
+            sm:h-44 sm:w-44 min-[1023px]:left-8.75 min-[1420px]:left-3 min-[1420px]:top-0 min-[1420px]:z-120
             min-[1420px]:h-52.5! min-[1420px]:w-52.5! 
             min-[1900px]:left-[-1px] min-[1900px]:top-0 min-[1900px]:h-71.75! min-[1900px]:w-69.25!"
           onClick={closeMenu}
@@ -67,6 +67,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         </NavLink>
       </nav>
 
+      <div className="relative z-100 flex my-auto items-center justify-end gap-7 pr-10 sm:gap-5 sm:pr-5 min-[1023px]:pr-0 min-[1420px]:contents">
       <div
         className=" flex my-auto 
         z-100 sm:static min-[1420px]:order-2
@@ -82,7 +83,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8]
         px-4 text-center font-montserrat text-[18px] font-medium text-[sidebar]
         shadow-btn sm:flex sm:items-center sm:justify-center min-[1420px]:order-3 
-        min-[1420px]:mt-5.75 min-[1420px]:h-14.25 min-[1420px]:w-41.25 min-[1420px]:text-[18px]"
+        min-[1420px]:mt-5.75 min-[1440px]:-translate-x-[17px] min-[1420px]:h-14.25 min-[1420px]:w-41.25 min-[1420px]:text-[18px]"
       >
         {t("support")}
       </Link>
@@ -101,7 +102,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         className="flex my-auto top-7.5 left-76.5 
         z-100 flex h-6 w-6 cursor-pointer 
         items-center justify-end 
-        sm:static sm:h-8 sm:w-8 min-[1420px]:hidden"
+        sm:static sm:h-8 sm:w-8 min-[1023px]:mr-12 min-[1420px]:mr-0 min-[1420px]:hidden"
       >
         <img
           src={isOpen ? "/close.png" : "/Menu.png"}
@@ -109,6 +110,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
           className="h-6 w-6 sm:h-8 sm:w-8"
         />
       </button>
+      </div>
     </header>
   );
 }

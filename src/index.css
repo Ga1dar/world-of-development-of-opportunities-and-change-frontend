@@ -128,3 +128,10 @@
     @apply font-sans;
     }
 }
+
+@media (min-width: 1023px) and (max-width: 1419.98px) {
+  main :is(section, article, div)[class*="min-[1023px]:px-16"],
+  footer[class*="min-[1023px]:px-16"] {
+    padding-inline: 4rem !important;
+  }
+}

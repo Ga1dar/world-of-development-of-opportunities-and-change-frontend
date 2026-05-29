@@ -47,7 +47,7 @@ export function WorkshopEventContent({
         <section
           className="bg-secondary px-4 pb-10
           pt-3 font-montserrat min-[744px]:px-10
-          min-[1023px]:px-8 min-[1420px]:px-20
+          min-[1023px]:px-16 min-[1420px]:px-20
           min-[1900px]:pb-14 min-[1900px]:pt-33.5">
           <article
             className="mx-auto w-full max-w-89.5 min-[744px]:max-w-166

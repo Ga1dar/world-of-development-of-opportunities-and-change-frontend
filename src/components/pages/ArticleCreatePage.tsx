@@ -237,7 +237,7 @@ export function ArticleCreatePage() {
 
   if (!canCreateArticles) {
     return (
-      <section className="-mt-14 flex min-h-[50vh] items-center justify-center bg-secondary px-5 py-12 font-montserrat text-[#1C100E] sm:-mt-20 min-[1420px]:mt-0!">
+      <section className="-mt-14 flex min-h-[50vh] items-center justify-center bg-secondary px-5 py-12 font-montserrat text-[#1C100E] sm:-mt-20 min-[1023px]:px-16 min-[1420px]:mt-0!">
         <p className="max-w-[520px] text-center text-[16px] leading-[1.4]">
           {copy.denied}
         </p>
@@ -247,7 +247,7 @@ export function ArticleCreatePage() {
 
   return (
     <>
-      <section className="-mt-14 min-h-[420px] bg-secondary px-5 pb-8 pt-5 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-7 min-[744px]:min-h-[714px] min-[744px]:px-10 min-[744px]:pb-12 min-[744px]:pt-6 min-[1023px]:min-h-[780px] min-[1023px]:px-[74px] min-[1023px]:pt-[34px] min-[1420px]:mt-0! min-[1420px]:min-h-[760px] min-[1420px]:px-20 min-[1420px]:pt-[145px] min-[1900px]:min-h-[840px] min-[1900px]:pt-[168px]">
+      <section className="-mt-14 min-h-[420px] bg-secondary px-5 pb-8 pt-5 font-montserrat text-[#1C100E] sm:-mt-20 min-[390px]:px-7 min-[744px]:min-h-[714px] min-[744px]:px-10 min-[744px]:pb-12 min-[744px]:pt-6 min-[1023px]:min-h-[780px] min-[1023px]:px-16 min-[1023px]:pt-[34px] min-[1420px]:mt-0! min-[1420px]:min-h-[760px] min-[1420px]:px-20 min-[1420px]:pt-[145px] min-[1900px]:min-h-[840px] min-[1900px]:pt-[168px]">
         <form
           onSubmit={handleSubmit}
           className="mx-auto flex w-full max-w-[340px] flex-col items-center min-[744px]:max-w-[641px] min-[1023px]:max-w-[884px] min-[1420px]:max-w-[800px] min-[1900px]:max-w-[1140px]"

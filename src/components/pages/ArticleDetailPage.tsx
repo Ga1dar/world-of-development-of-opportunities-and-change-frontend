@@ -20,7 +20,7 @@ import {
 import { getFallbackArticle } from "../../api/articleFallbacks";
 
 const pageMaxWidth =
-  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
+  "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-16 min-[1900px]:max-w-[1980px] min-[1900px]:px-16";
 
 const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en");
 
@@ -200,11 +200,15 @@ export function ArticleDetailPage() {
   const [comments, setComments] = useState<EducationArticleComment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getAccessToken()));
+  const [isContentsOpen, setIsContentsOpen] = useState(false);
   const articleGridRef = useRef<HTMLDivElement>(null);
   const contentsColumnRef = useRef<HTMLElement>(null);
   const contentsCardRef = useRef<HTMLDivElement>(null);
+  const mobileContentsCardRef = useRef<HTMLDivElement>(null);
   const contentsStyleRef = useRef("");
+  const mobileContentsStyleRef = useRef("");
   const [contentsStyle, setContentsStyle] = useState<CSSProperties>();
+  const [mobileContentsStyle, setMobileContentsStyle] = useState<CSSProperties>();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -253,6 +257,7 @@ export function ArticleDetailPage() {
 
   const sections = getRenderableSections(article);
   const intro = article.content || (sections.length === 0 ? article.description : "");
+  const titledSections = sections.filter((section) => section.title);
 
   useEffect(() => {
     let frameId = 0;
@@ -305,6 +310,74 @@ export function ArticleDetailPage() {
       window.removeEventListener("resize", updateContentsPosition);
     };
   }, [article.slug, sections.length]);
+
+  useEffect(() => {
+    let frameId = 0;
+
+    const updateMobileContentsPosition = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        const card = mobileContentsCardRef.current;
+
+        if (!isContentsOpen || !card || window.innerWidth >= 1420) {
+          if (mobileContentsStyleRef.current) {
+            mobileContentsStyleRef.current = "";
+            setMobileContentsStyle(undefined);
+          }
+          return;
+        }
+
+        const topOffset = window.innerWidth >= 1023 ? 170 : window.innerWidth >= 744 ? 150 : 124;
+        const footerGap = 24;
+        const footer = document.querySelector("footer");
+        const footerTop = footer?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
+        const cardHeight = card.offsetHeight;
+        const top = Math.max(16, Math.min(topOffset, footerTop - cardHeight - footerGap));
+        const nextKey = `${Math.round(top)}`;
+
+        if (mobileContentsStyleRef.current !== nextKey) {
+          mobileContentsStyleRef.current = nextKey;
+          setMobileContentsStyle({ top });
+        }
+      });
+    };
+
+    updateMobileContentsPosition();
+    window.addEventListener("scroll", updateMobileContentsPosition, { passive: true });
+    window.addEventListener("resize", updateMobileContentsPosition);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", updateMobileContentsPosition);
+      window.removeEventListener("resize", updateMobileContentsPosition);
+    };
+  }, [isContentsOpen, article.slug, sections.length]);
+
+  useEffect(() => {
+    setIsContentsOpen(false);
+  }, [article.slug]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsContentsOpen(false);
+      }
+    };
+
+    const handleResize = () => {
+      if (window.innerWidth >= 1420) {
+        setIsContentsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const handleLike = async () => {
     const nextLiked = !article.isLiked;
@@ -415,7 +488,7 @@ export function ArticleDetailPage() {
 
   return (
     <article className={`${pageMaxWidth} bg-secondary pb-10 pt-4 font-montserrat text-[#1C100E] min-[744px]:pt-8 min-[1023px]:pt-16 min-[1420px]:pt-[105px] min-[1900px]:pt-[135px]`}>
-      <div ref={articleGridRef} className="mx-auto grid w-full gap-10 min-[1420px]:max-w-[1240px] min-[1420px]:grid-cols-[minmax(0,790px)_360px] min-[1420px]:gap-16 min-[1900px]:max-w-[1580px] min-[1900px]:grid-cols-[minmax(0,1060px)_430px]">
+      <div ref={articleGridRef} className="mx-auto grid w-full gap-10 min-[1420px]:max-w-none min-[1420px]:grid-cols-[minmax(0,790px)_360px] min-[1420px]:gap-16 min-[1900px]:max-w-none min-[1900px]:grid-cols-[minmax(0,1060px)_430px]">
         <div className="relative">
           <img
             src="/sun.png"
@@ -426,10 +499,36 @@ export function ArticleDetailPage() {
           <div className="flex justify-end min-[1420px]:hidden">
             <button
               type="button"
+              aria-expanded={isContentsOpen}
+              onClick={() => setIsContentsOpen((current) => !current)}
               className="rounded-full bg-[#E9D4E3] px-7 py-3 text-[15px] font-medium"
             >
               {labels.contents}
             </button>
+          </div>
+
+          <div
+            ref={mobileContentsCardRef}
+            style={mobileContentsStyle}
+            className={`fixed right-3 top-[124px] z-[140] max-h-[calc(100dvh-148px)] w-[min(calc(100vw-24px),280px)] overflow-y-auto rounded-[20px] border border-[#B45598] bg-[#F8F8F8] px-6 py-6 shadow-[0_14px_36px_rgba(64,33,63,0.18)] transition duration-200 min-[744px]:right-8 min-[744px]:top-[150px] min-[744px]:w-[340px] min-[1023px]:top-[170px] min-[1023px]:w-[360px] min-[1420px]:hidden ${
+              isContentsOpen
+                ? "pointer-events-auto translate-x-0 opacity-100"
+                : "pointer-events-none translate-x-4 opacity-0"
+            }`}
+          >
+            <h2 className="sr-only">{labels.contents}</h2>
+            <nav className="space-y-5 text-[14px] font-medium leading-[1.25] min-[744px]:space-y-6 min-[744px]:text-[15px]">
+              {titledSections.map((section) => (
+                <a
+                  key={section.id}
+                  href={`#${section.slug}`}
+                  onClick={() => setIsContentsOpen(false)}
+                  className="block transition hover:text-[#9A176B]"
+                >
+                  {section.title}
+                </a>
+              ))}
+            </nav>
           </div>
 
           <h1 className="mt-2 max-w-[820px] text-[24px] font-medium leading-[1.22] min-[744px]:mt-7 min-[744px]:text-[38px] min-[1023px]:text-[36px] min-[1420px]:mt-0 min-[1900px]:text-[42px]">
@@ -472,7 +571,7 @@ export function ArticleDetailPage() {
           <div ref={contentsCardRef} style={contentsStyle} className="min-h-[330px] rounded-[20px] border border-[#B45598] bg-[#F8F8F8] px-9 py-9 min-[1900px]:min-h-[370px] min-[1900px]:px-11 min-[1900px]:py-10">
             <h2 className="sr-only">{labels.contents}</h2>
             <nav className="space-y-8 text-[15px] font-medium leading-[1.25] min-[1900px]:space-y-9 min-[1900px]:text-[17px]">
-              {sections.filter((section) => section.title).map((section) => (
+              {titledSections.map((section) => (
                 <a
                   key={section.id}
                   href={`#${section.slug}`}
