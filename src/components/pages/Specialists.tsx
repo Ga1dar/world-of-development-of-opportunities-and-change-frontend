@@ -111,7 +111,16 @@ export function Specialists({ limit, isSlider = false, variant = "default" }: Pr
       </>
     );
 
-    return isSlider ? (
+    return isHomeSlider ? (
+      <Link
+        key={item.id}
+        to={`/specialists/${item.id}`}
+        className={articleClass}
+        aria-label={`${name}. ${displayRole}`}
+      >
+        {content}
+      </Link>
+    ) : isSlider ? (
       <article key={item.id} className={articleClass}>
         {content}
       </article>

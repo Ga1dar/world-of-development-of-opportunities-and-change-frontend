@@ -44,8 +44,8 @@ export function Footer() {
   };
   return (
     <footer className="mb-0 box-border flex w-full flex-col gap-x-6 rounded-t-[30px] bg-primary px-4 pt-4 pb-0 text-[#F0E8F0] min-[1023px]:mb-0 min-[1023px]:px-16 min-[1023px]:pb-0 min-[1420px]:px-16 min-[1420px]:pt-6 min-[1420px]:pb-0">
-      <div className="mb-6 flex flex-col min-[1420px]:flex-row min-[1420px]:gap-x-8">
-        <Field className="flex flex-col">
+      <div className="mb-6 flex flex-col min-[1420px]:mb-[5px] min-[1420px]:grid min-[1420px]:grid-cols-[636px_146px_411px] min-[1420px]:justify-between min-[1900px]:mb-[7px] min-[1900px]:grid-cols-[886px_146px_411px]">
+        <Field className="flex flex-col min-[1420px]:w-[636px] min-[1900px]:w-[886px]">
           <form onSubmit={handleSubscribe} className="flex flex-col gap-y-4 mb-6">
             <Label htmlFor="footer-email" className="flex flex-col items-start font-montserrat text-lg font-medium text-[#F0E8F0] min-[1420px]:text-2xl">
               {t("footerLabel")}
@@ -79,8 +79,8 @@ export function Footer() {
             {error && <p className="mt-3 font-montserrat text-[12px] text-red-500 xl:text-sm">{error}</p>}
           </form>
         </Field>
-        <div className="sm:flex sm:w-full gap-x-6 justify-between">
-          <div className="flex justify-between sm:w-[35%]">
+        <div className="sm:flex sm:w-full gap-x-6 justify-between min-[1420px]:contents!">
+          <div className="flex justify-between sm:w-[35%] min-[1420px]:w-full!">
             <div className="flex flex-col gap-y-2">
               <h3 className="font-montserrat font-medium text-2xl sm:mb-2">{t("contactTitle")}</h3>
               <a
@@ -122,45 +122,45 @@ export function Footer() {
           <nav
             className="mb-4 grid grid-cols-2 grid-rows-3
             sm:grid-cols-[auto_auto_auto] sm:grid-rows-[25px_25px]
-            min-[1420px]:grid-cols-[auto_auto] min-[1420px]:grid-rows-[25px_25px]
+            min-[1420px]:grid-cols-[auto_auto]! min-[1420px]:grid-rows-[25px_25px_25px]!
             font-montserrat font-normal text-xs min-[1420px]:text-sm
-            justify-between gap-y-4 sm:mt-2 sm:w-full min-[1420px]:w-102.75"
+            justify-between gap-y-4 sm:mt-2 sm:w-full min-[1420px]:w-full"
           >
             <Link
               to="/about"
-              className="col-start-1 row-start-1">
+              className="col-start-1 row-start-1 min-[1420px]:col-start-1! min-[1420px]:row-start-1!">
               {t("aboutUs")}
             </Link>
             <Link
               to="/events"
-              className="col-start-1 row-start-2 sm:row-start-2 min-[1420px]:row-start-3">
+              className="col-start-1 row-start-2 sm:row-start-2 min-[1420px]:col-start-1! min-[1420px]:row-start-3!">
               {t("events")}
             </Link>
             <Link
               to="/contacts"
-              className="col-start-2 row-start-1 sm:col-start-2">
+              className="col-start-2 row-start-1 sm:col-start-2 min-[1420px]:col-start-2! min-[1420px]:row-start-1!">
               {t("contacts")}
             </Link>
             <Link
               to="/specialists"
-              className="col-start-2 row-start-3 sm:col-start-3 sm:row-start-2 min-[1420px]:col-start-1 min-[1420px]:row-start-2">
+              className="col-start-2 row-start-3 sm:col-start-3 sm:row-start-2 min-[1420px]:col-start-1! min-[1420px]:row-start-2!">
               {t("specialistsTitle")}
             </Link>
             <Link
               to="/materials"
-              className="col-start-1 row-start-3 sm:col-start-3 sm:row-start-1 min-[1420px]:col-start-2 min-[1420px]:row-start-2">
+              className="col-start-1 row-start-3 sm:col-start-3 sm:row-start-1 min-[1420px]:col-start-2! min-[1420px]:row-start-2!">
               {t("materials")}
             </Link>
             <Link
               to="/"
-              className="col-start-2 row-start-2 min-[1420px]:col-start-2 min-[1420px]:row-start-2">
+              className="col-start-2 row-start-2 min-[1420px]:col-start-2! min-[1420px]:row-start-3!">
               {t("support")}
             </Link>
           </nav>
         </div>
       </div>
-      <div className="flex flex-col min-[1420px]:flex-row min-[1420px]:gap-x-0">
-        <div className="w-full font-montserrat text-[#E8E8E8] min-[1420px]:w-[668px] min-[1900px]:w-[918px]">
+      <div className="flex flex-col min-[1420px]:grid min-[1420px]:grid-cols-[636px_146px_411px] min-[1420px]:justify-between min-[1900px]:grid-cols-[886px_146px_411px]">
+        <div className="w-full font-montserrat text-[#E8E8E8]">
           <h3 className="font-montserrat font-medium text-2xl mb-2">
             {t("bottomTitle")}
           </h3>
@@ -171,19 +171,18 @@ export function Footer() {
         <div
           className="grid grid-cols-2 grid-rows-[24px_24px_24px] 
           justify-between gap-y-2 sm:grid-cols-[auto_auto_auto]
-          min-[1420px]:min-w-0 min-[1420px]:flex-1 min-[1420px]:grid-cols-[170px_220px_1fr] min-[1420px]:grid-rows-[40px_40px_40px]
-          min-[1900px]:grid-cols-[184px_320px_1fr]">
-            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs row-start-2 min-[1420px]:col-start-2 min-[1420px]:row-start-1">
+          min-[1420px]:col-span-2 min-[1420px]:min-w-0 min-[1420px]:grid-cols-[minmax(0,1fr)_411px]! min-[1420px]:grid-rows-[40px_40px_40px]!">
+            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs row-start-2 min-[1420px]:col-start-2! min-[1420px]:row-start-1!">
               {t("politics")}
             </Link>
-            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-2 row-start-3 min-[1420px]:col-start-2 min-[1420px]:row-start-2">
+            <Link to="" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-2 row-start-3 min-[1420px]:col-start-2! min-[1420px]:row-start-2!">
               {t("conditions")}
             </Link>
-            <Link to="/developers" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-3 min-[1420px]:col-start-1 min-[1420px]:row-start-2">
+            <Link to="/developers" className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-3 min-[1420px]:col-start-1! min-[1420px]:row-start-2!">
               {t("developers")}
             </Link>
-            <div className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-2 min-[1420px]:col-start-1 min-[1420px]:row-start-1">{t("mdInUkr")}</div>
-            <Link to="/" className="hidden sm:block sm:col-start-3 sm:row-start-1 sm:row-end-4 mt-0 min-[1420px]:justify-self-end">
+            <div className="font-montserrat font-normal text-[#B6B6B6] text-xs col-start-1 row-start-2 min-[1420px]:col-start-1! min-[1420px]:row-start-1!">{t("mdInUkr")}</div>
+            <Link to="/" className="hidden sm:block sm:col-start-3 sm:row-start-1 sm:row-end-4 mt-0 min-[1420px]:col-start-2! min-[1420px]:row-start-1! min-[1420px]:row-end-4! min-[1420px]:justify-self-end">
               <img 
               src="/Logo1.png" 
               alt="Logo" 
