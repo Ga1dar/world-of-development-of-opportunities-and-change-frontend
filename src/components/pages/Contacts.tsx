@@ -13,6 +13,8 @@ const MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
 
 const contactIconClass =
   "flex size-5 shrink-0 items-center justify-center rounded-full border border-[#402940]/35 text-[#402940] min-[1420px]:size-4 min-[1900px]:size-5";
+const socialIconClass =
+  "size-5 shrink-0 object-contain brightness-0 opacity-70 min-[1420px]:size-4 min-[1900px]:size-5";
 
 function MapPreview() {
   return (
@@ -70,9 +72,7 @@ export function Contacts() {
               rel="noopener noreferrer"
               className="flex items-center gap-3 text-[16px] leading-[1.35] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[1420px]:text-[14px] min-[1900px]:text-[18px]"
             >
-              <span className={contactIconClass}>
-                <img src="/telega.png" alt="" className="size-3.5" aria-hidden="true" />
-              </span>
+              <img src="/telega.png" alt="" className={socialIconClass} aria-hidden="true" />
               {t("telegram")}
             </a>
 
@@ -82,9 +82,7 @@ export function Contacts() {
               rel="noopener noreferrer"
               className="flex items-center gap-3 text-[16px] leading-[1.35] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[1420px]:text-[14px] min-[1900px]:text-[18px]"
             >
-              <span className={contactIconClass}>
-                <img src="/inst.png" alt="" className="size-3.5" aria-hidden="true" />
-              </span>
+              <img src="/inst.png" alt="" className={socialIconClass} aria-hidden="true" />
               {t("inst")}
             </a>
 
@@ -94,9 +92,7 @@ export function Contacts() {
               rel="noopener noreferrer"
               className="flex items-center gap-3 text-[16px] leading-[1.35] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[1420px]:text-[14px] min-[1900px]:text-[18px]"
             >
-              <span className={contactIconClass}>
-                <img src="/fb.png" alt="" className="size-3.5" aria-hidden="true" />
-              </span>
+              <img src="/fb.png" alt="" className={socialIconClass} aria-hidden="true" />
               {t("facebook")}
             </a>
 

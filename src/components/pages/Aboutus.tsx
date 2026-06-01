@@ -28,7 +28,9 @@ export function Aboutus() {
 
   return (
     <>
-      <section className="about-shell mx-auto flex w-full max-w-[1280px] flex-col px-4 sm:px-10 min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
+      <section className="about-shell mx-auto flex w-full 
+      max-w-[1280px] flex-col px-4 sm:px-10 min-[1023px]:px-16
+      min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-21">
         <article className="about-mobile">
           <h1 className="mb-5 font-montserrat text-[24px] font-medium leading-[1.25] text-[#1C100E]">
             {t("homeTopTitle")}
@@ -75,7 +77,7 @@ export function Aboutus() {
           </div>
         </article>
 
-        <article className="about-desktop min-[1420px]:grid-cols-[628px_628px] min-[1420px]:gap-x-6">
+        <article className="about-desktop min-[1420px]:grid-cols-[635px_635px] min-[1420px]:gap-x-12">
           <h1 className="font-montserrat text-[32px] font-medium leading-[45px] text-[#1C100E]">
             {t("homeTopTitle")}
           </h1>
@@ -88,7 +90,7 @@ export function Aboutus() {
           {renderParagraphs(paragraphs.slice(2), "col-span-2 mt-6")}
         </article>
 
-        <article className="about-big min-[1900px]:grid-cols-[874px_894px] min-[1900px]:gap-x-[52px]">
+        <article className="about-big min-[1900px]:grid-cols-[910px_910px] min-[1900px]:gap-x-[52px]">
           <div className="flex h-[540px] flex-col justify-start">
             <h1 className="mb-8 max-w-[720px] font-montserrat text-[32px] font-medium leading-[45px] text-[#1C100E]">
               {t("homeTopTitle")}
