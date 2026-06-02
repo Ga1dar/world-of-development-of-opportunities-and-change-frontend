@@ -17,6 +17,7 @@ import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
 import { endpoints } from "../../api/endpoints"
 import {
   apiFetch,
+  clearLocalSession,
   clearStoredCurrentUser,
   getAccessToken,
   notifyAuthChanged,
@@ -390,7 +391,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
       storeTokens(data || {})
 
-      if (!data?.access) {
+      if (!getAccessToken()) {
         const loginResponse = await fetch(endpoints.login, {
           method: "POST",
           headers: {
@@ -401,17 +402,34 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
         const loginData = await loginResponse.json().catch(() => null)
 
-        if (loginResponse.ok) {
-          storeTokens(loginData || {})
+        if (!loginResponse.ok) {
+          throw new Error(getResponseError(loginData, t("modeError.login")))
         }
+
+        storeTokens(loginData || {})
       }
 
-      storeCurrentUser({ email, role: selectedRole })
+      if (!getAccessToken()) {
+        throw new Error(t("modeError.login"))
+      }
+
+      const meResponse = await apiFetch(endpoints.me)
+      if (!meResponse.ok) {
+        throw new Error(t("modeError.login"))
+      }
+
+      storeCurrentUser(await meResponse.json())
       await ensureAccountProfile(selectedRole)
       notifyAuthChanged()
 
-      setRegisterStep("success")
+      resetForm()
+      setMode("login")
+      setOpen(false)
     } catch (err) {
+      if (!getAccessToken()) {
+        clearLocalSession()
+        notifyAuthChanged()
+      }
       setError(getRequestError(err, t("loginSetError")))
     } finally {
       setIsLoading(false)
@@ -547,19 +565,21 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
     storeTokens(data || {})
 
+    if (!getAccessToken()) {
+      throw new Error(t(authMode === "login" ? "googleAuthFailed" : "googleRegistrationFailed"))
+    }
+
     let currentUser: unknown = null
 
-    try {
-      const meResponse = await apiFetch(endpoints.me)
+    const meResponse = await apiFetch(endpoints.me)
 
-      if (meResponse.ok) {
-        currentUser = await meResponse.json()
-        storeCurrentUser(currentUser)
-        notifyAuthChanged()
-      }
-    } catch {
-      notifyAuthChanged()
+    if (!meResponse.ok) {
+      throw new Error(t(authMode === "login" ? "googleAuthFailed" : "googleRegistrationFailed"))
     }
+
+    currentUser = await meResponse.json()
+    storeCurrentUser(currentUser)
+    notifyAuthChanged()
 
     if (authMode === "register") {
       const currentRole =
