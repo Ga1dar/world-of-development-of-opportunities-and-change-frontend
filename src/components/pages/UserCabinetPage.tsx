@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn } from "./LogIn";
 import {
+  ensureAccountProfile,
   getUserCabinetData,
   updateProfileAvatar,
   type CabinetAppointment,
@@ -1433,9 +1434,21 @@ export function UserCabinetPage() {
     setError("");
 
     try {
-      const uploadedAvatar = await updateProfileAvatar(profile, file);
+      const needsProfile =
+        profile.profileKind === "specialist"
+          ? !profile.specialistProfileId
+          : !profile.userProfileId;
+      const avatarProfile = needsProfile
+        ? await ensureAccountProfile(profile.profileKind === "specialist" ? "specialist" : "user")
+        : profile;
+
+      if (!avatarProfile) {
+        throw new Error("Profile is unavailable");
+      }
+
+      const uploadedAvatar = await updateProfileAvatar(avatarProfile, file);
       const previewUrl = uploadedAvatar || URL.createObjectURL(file);
-      setProfile((current) => (current ? { ...current, avatar: previewUrl } : current));
+      setProfile((current) => (current ? { ...current, ...avatarProfile, avatar: previewUrl } : current));
       notifyAuthChanged();
     } catch (error) {
       console.error(error);
