@@ -25,6 +25,7 @@ import { PasswordResetConfirm } from "./components/pages/PasswordResetConfirm.ts
 import { Aboutus } from "./components/pages/Aboutus.tsx";
 import { UserCabinetPage } from "./components/pages/UserCabinetPage.tsx";
 import { SpecialistProfileEditPage } from "./components/pages/SpecialistProfileEditPage.tsx";
+import { UserProfileEditPage } from "./components/pages/UserProfileEditPage.tsx";
 import { DevelopersPage } from "./components/pages/DevelopersPage.tsx";
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/developers" element={<DevelopersPage />} />
             <Route path="/profile" element={<UserCabinetPage />} />
+            <Route path="/profile/edit" element={<UserProfileEditPage />} />
             <Route path="/profile/specialist/edit" element={<SpecialistProfileEditPage />} />
             <Route
               path="/password-reset/confirm"

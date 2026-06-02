@@ -37,6 +37,14 @@ export type SpecialistProfileUpdateInput = {
   avatar?: File | null;
 };
 
+export type UserProfileUpdateInput = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  city: string;
+  about: string;
+};
+
 export type CabinetAppointment = {
   id: string;
   status: "confirmed" | "completed" | "cancelled" | string;
@@ -66,6 +74,7 @@ export type CabinetData = {
 
 const FALLBACK_AVATAR = "/user.jpg";
 const SPECIALIST_FALLBACK_AVATAR = "/lashenko2.png";
+let profileAvatarVersion = "";
 
 const asRecord = (value: unknown): RawRecord | null =>
   value && typeof value === "object" ? (value as RawRecord) : null;
@@ -166,6 +175,39 @@ const resolveMediaUrl = (value: unknown, fallback = FALLBACK_AVATAR) => {
   }
 
   return path.startsWith("/") ? path : apiOrigin ? new URL(path, `${apiOrigin}/`).toString() : path;
+};
+
+const withAvatarVersion = (url: string) => {
+  if (!url || !profileAvatarVersion || url === FALLBACK_AVATAR || url === SPECIALIST_FALLBACK_AVATAR) {
+    return url;
+  }
+
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${profileAvatarVersion}`;
+};
+
+const resolveProfileAvatar = (value: unknown, fallback: string) =>
+  withAvatarVersion(resolveMediaUrl(value, fallback));
+
+const readAvatarFromResponse = (data: unknown) => {
+  const response = asRecord(data);
+  const profile =
+    asRecord(response?.data) ||
+    asRecord(response?.profile) ||
+    asRecord(response?.user_profile) ||
+    asRecord(response?.specialist_profile) ||
+    response;
+  const user = asRecord(profile?.user);
+
+  return resolveProfileAvatar(
+    profile?.avatar ??
+      profile?.photo ??
+      profile?.image ??
+      profile?.picture ??
+      profile?.avatar_url ??
+      user?.avatar,
+    "",
+  );
 };
 
 const fetchJson = async (url: string, signal?: AbortSignal) => {
@@ -286,7 +328,7 @@ const normalizeProfile = (
     email,
     role,
     profileKind,
-    avatar: resolveMediaUrl(
+    avatar: resolveProfileAvatar(
       source.avatar ??
         source.photo ??
         source.image ??
@@ -487,15 +529,18 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     const directUserProfile = asRecord(currentUser?.user_profile ?? currentUser?.userProfile ?? currentUser?.profile);
     const directUserProfileId = readUserProfileId(currentUser);
 
-    if (directUserProfile) {
-      userProfile = directUserProfile;
-    } else if (directUserProfileId) {
+    if (directUserProfileId) {
       try {
         userProfile = asRecord(await fetchJson(endpoints.userProfile(directUserProfileId), signal));
       } catch {
-        const profiles = extractList(await fetchJson(endpoints.userProfiles, signal));
-        userProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
+        userProfile = directUserProfile;
+        if (!userProfile) {
+          const profiles = extractList(await fetchJson(endpoints.userProfiles, signal));
+          userProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
+        }
       }
+    } else if (directUserProfile) {
+      userProfile = directUserProfile;
     } else {
       const profiles = extractList(await fetchJson(endpoints.userProfiles, signal));
       userProfile =
@@ -513,17 +558,20 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     );
     const directSpecialistId = readSpecialistProfileId(currentUser);
 
-    if (directSpecialist) {
-      specialistProfile = directSpecialist;
-    } else if (directSpecialistId) {
+    if (directSpecialistId) {
       try {
         specialistProfile = asRecord(
           await fetchJson(endpoints.specialistProfile(directSpecialistId), signal),
         );
       } catch {
-        const profiles = extractList(await fetchJson(endpoints.specialists, signal));
-        specialistProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
+        specialistProfile = directSpecialist;
+        if (!specialistProfile) {
+          const profiles = extractList(await fetchJson(endpoints.specialists, signal));
+          specialistProfile = profiles.find((profile) => matchesCurrentUser(profile, currentUser)) || null;
+        }
       }
+    } else if (directSpecialist) {
+      specialistProfile = directSpecialist;
     }
 
     if (!specialistProfile && !directSpecialistId) {
@@ -616,6 +664,35 @@ export async function updateSpecialistProfile(
   return response.json().catch(() => null);
 }
 
+export async function updateUserProfile(profileId: string, input: UserProfileUpdateInput) {
+  const token = getAccessToken();
+  if (!token && !getRefreshToken()) {
+    throw new Error("Authentication required");
+  }
+
+  const body = new FormData();
+  body.append("first_name", input.firstName);
+  body.append("last_name", input.lastName);
+  body.append("phone", input.phone);
+  body.append("city", input.city);
+  body.append("about", input.about);
+
+  const response = await apiFetch(endpoints.userProfile(profileId), {
+    method: "PATCH",
+    body,
+  });
+
+  if (!response.ok) {
+    const details = await response
+      .json()
+      .then((data) => JSON.stringify(data))
+      .catch(() => "");
+    throw new Error(`Profile update failed: ${response.status}${details ? ` ${details}` : ""}`);
+  }
+
+  return response.json().catch(() => null);
+}
+
 export async function updateProfileAvatar(profile: CabinetProfile, avatar: File) {
   const token = getAccessToken();
   if (!token && !getRefreshToken()) {
@@ -660,7 +737,10 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
     throw new Error(`Avatar update failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 
-  return response.json().catch(() => null);
+  const data = await response.json().catch(() => null);
+  profileAvatarVersion = String(Date.now());
+
+  return readAvatarFromResponse(data) || withAvatarVersion(profile.avatar);
 }
 
 export async function uploadSpecialistDocuments(files: File[]) {
