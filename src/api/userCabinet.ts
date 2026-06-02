@@ -693,6 +693,43 @@ export async function updateUserProfile(profileId: string, input: UserProfileUpd
   return response.json().catch(() => null);
 }
 
+export async function ensureAccountProfile(profileKind: "user" | "specialist") {
+  const hasRequestedProfile = (profile: CabinetProfile | null) =>
+    profileKind === "specialist"
+      ? Boolean(profile?.specialistProfileId)
+      : Boolean(profile?.userProfileId);
+
+  const currentCabinet = await getUserCabinetData();
+  if (hasRequestedProfile(currentCabinet.profile)) {
+    return currentCabinet.profile;
+  }
+
+  const endpoint = profileKind === "specialist" ? endpoints.specialists : endpoints.userProfiles;
+  const response = await apiFetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!response.ok) {
+    const refreshedCabinet = await getUserCabinetData();
+    if (hasRequestedProfile(refreshedCabinet.profile)) {
+      return refreshedCabinet.profile;
+    }
+
+    const details = await response
+      .json()
+      .then((data) => JSON.stringify(data))
+      .catch(() => "");
+    throw new Error(`Profile creation failed: ${response.status}${details ? ` ${details}` : ""}`);
+  }
+
+  const refreshedCabinet = await getUserCabinetData();
+  return refreshedCabinet.profile;
+}
+
 export async function updateProfileAvatar(profile: CabinetProfile, avatar: File) {
   const token = getAccessToken();
   if (!token && !getRefreshToken()) {
