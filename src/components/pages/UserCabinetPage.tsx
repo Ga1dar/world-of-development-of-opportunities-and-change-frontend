@@ -338,7 +338,7 @@ function ProfileCard({
 
       <div className="mt-5 flex w-full flex-col gap-3 min-[744px]:mt-0 min-[744px]:w-[196px]">
         <Link
-          to={isSpecialist ? "/profile/specialist/edit" : "/profile"}
+          to={isSpecialist ? "/profile/specialist/edit" : "/profile/edit"}
           className={`${yellowButton} flex h-11 items-center justify-center text-[14px]`}
         >
           {labels.edit}
@@ -585,12 +585,14 @@ function AppointmentsView({
         {labels.cancelNote}
       </p>
 
-      <img
-        src="/sunForPersonalOfice.png"
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-10 z-0 hidden w-[220px] -translate-x-1/2 opacity-90 min-[744px]:block min-[1023px]:w-[250px]"
-      />
+      {items.length ? (
+        <img
+          src="/sunForPersonalOfice.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-10 z-0 hidden w-[220px] -translate-x-1/2 opacity-90 min-[744px]:block min-[1023px]:w-[250px]"
+        />
+      ) : null}
 
       {items.length ? (
         <div className="relative z-10 mt-5 grid gap-4 min-[1023px]:grid-cols-2 min-[1420px]:gap-6">
@@ -742,12 +744,14 @@ function SpecialistAppointmentsView({
         ))}
       </div>
 
-      <img
-        src="/sunForPersonalOfice.png"
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-16 z-0 hidden w-[220px] -translate-x-1/2 opacity-65 min-[744px]:block min-[1023px]:w-[280px]"
-      />
+      {filteredAppointments.length ? (
+        <img
+          src="/sunForPersonalOfice.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-16 z-0 hidden w-[220px] -translate-x-1/2 opacity-65 min-[744px]:block min-[1023px]:w-[280px]"
+        />
+      ) : null}
 
       {error ? (
         <p className="relative z-10 mt-4 font-montserrat text-[12px] leading-[1.35] text-[#83105F]">
@@ -1429,8 +1433,8 @@ export function UserCabinetPage() {
     setError("");
 
     try {
-      await updateProfileAvatar(profile, file);
-      const previewUrl = URL.createObjectURL(file);
+      const uploadedAvatar = await updateProfileAvatar(profile, file);
+      const previewUrl = uploadedAvatar || URL.createObjectURL(file);
       setProfile((current) => (current ? { ...current, avatar: previewUrl } : current));
       notifyAuthChanged();
     } catch (error) {
