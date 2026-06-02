@@ -22,7 +22,7 @@ import {
   notifyAuthChanged,
   storeCurrentUser,
 } from "../../api/auth"
-import { getUserCabinetData } from "../../api/userCabinet"
+import { ensureAccountProfile, getUserCabinetData } from "../../api/userCabinet"
 
 type LogInProps = {
   variant?: "header" | "footer" | "menu"
@@ -407,6 +407,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       }
 
       storeCurrentUser({ email, role: selectedRole })
+      await ensureAccountProfile(selectedRole)
       notifyAuthChanged()
 
       setRegisterStep("success")
@@ -546,11 +547,14 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
     storeTokens(data || {})
 
+    let currentUser: unknown = null
+
     try {
       const meResponse = await apiFetch(endpoints.me)
 
       if (meResponse.ok) {
-        storeCurrentUser(await meResponse.json())
+        currentUser = await meResponse.json()
+        storeCurrentUser(currentUser)
         notifyAuthChanged()
       }
     } catch {
@@ -558,6 +562,14 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     }
 
     if (authMode === "register") {
+      const currentRole =
+        currentUser &&
+        typeof currentUser === "object" &&
+        "role" in currentUser &&
+        currentUser.role === "specialist"
+          ? "specialist"
+          : "user"
+      await ensureAccountProfile(currentRole)
       setRegisterStep("success")
     } else {
       resetForm()

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { notifyAuthChanged } from "../../api/auth";
 import {
+  ensureAccountProfile,
   getUserCabinetData,
   updateProfileAvatar,
   updateUserProfile,
@@ -144,9 +145,13 @@ export function UserProfileEditPage() {
 
       try {
         const data = await getUserCabinetData(controller.signal);
-        setProfile(data.profile);
-        setForm(toFormState(data.profile));
-        setAvatarPreview(data.profile?.avatar || "");
+        const profile =
+          data.profile && data.profile.profileKind !== "specialist" && !data.profile.userProfileId
+            ? await ensureAccountProfile("user")
+            : data.profile;
+        setProfile(profile);
+        setForm(toFormState(profile));
+        setAvatarPreview(profile?.avatar || "");
       } catch {
         setError(labels.saveError);
       } finally {
