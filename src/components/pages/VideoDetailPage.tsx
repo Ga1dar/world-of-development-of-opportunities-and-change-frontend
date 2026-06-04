@@ -188,17 +188,14 @@ export function VideoDetailPage() {
     const controller = new AbortController();
 
     const loadComments = async () => {
-      const items = await getEducationVideoComments(video.slug, controller.signal);
-      if (!controller.signal.aborted) {
-        setComments(items);
-      }
+      if (video.id.startsWith("fallback")) return [];
+
+      return getEducationVideoComments(video.slug, controller.signal);
     };
 
-    if (!video.id.startsWith("fallback")) {
-      void loadComments();
-    } else {
-      setComments([]);
-    }
+    void loadComments().then((items) => {
+      if (!controller.signal.aborted) setComments(items);
+    });
 
     return () => controller.abort();
   }, [video.id, video.slug]);
@@ -228,7 +225,7 @@ export function VideoDetailPage() {
     if (video.id.startsWith("fallback")) {
       syncFavoriteContentItem(
         videoToFavoriteContentItem(optimisticVideo),
-        optimisticVideo.isLiked || optimisticVideo.isFavorite,
+        optimisticVideo.isFavorite,
       );
       return;
     }
@@ -244,13 +241,13 @@ export function VideoDetailPage() {
       setVideo(updatedVideo);
       syncFavoriteContentItem(
         videoToFavoriteContentItem(updatedVideo),
-        updatedVideo.isLiked || updatedVideo.isFavorite,
+        updatedVideo.isFavorite,
       );
     } catch {
       setVideo(video);
       syncFavoriteContentItem(
         videoToFavoriteContentItem(video),
-        video.isLiked || video.isFavorite,
+        video.isFavorite,
       );
     }
   };
@@ -269,7 +266,7 @@ export function VideoDetailPage() {
     if (video.id.startsWith("fallback")) {
       syncFavoriteContentItem(
         videoToFavoriteContentItem(optimisticVideo),
-        optimisticVideo.isLiked || optimisticVideo.isFavorite,
+        optimisticVideo.isFavorite,
       );
       return;
     }
@@ -289,13 +286,13 @@ export function VideoDetailPage() {
       setVideo(updatedVideo);
       syncFavoriteContentItem(
         videoToFavoriteContentItem(updatedVideo),
-        updatedVideo.isLiked || updatedVideo.isFavorite,
+        updatedVideo.isFavorite,
       );
     } catch {
       setVideo(video);
       syncFavoriteContentItem(
         videoToFavoriteContentItem(video),
-        video.isLiked || video.isFavorite,
+        video.isFavorite,
       );
     }
   };

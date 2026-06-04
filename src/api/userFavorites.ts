@@ -34,6 +34,9 @@ const asNumber = (value: unknown, fallback = 0) => {
 
 const itemKey = (kind: FavoriteContentKind, id: string | number) => `${kind}:${id}`;
 
+const itemIdentity = (item: FavoriteContentItem) =>
+  `${item.kind}:${item.href || item.slug || item.id}`.toLowerCase();
+
 const notifyFavoritesChanged = () => {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(FAVORITES_CHANGED_EVENT));
@@ -47,7 +50,8 @@ export const readFavoriteContentItems = (): FavoriteContentItem[] => {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     if (!Array.isArray(value)) return [];
 
-    return value
+    return mergeFavoriteContentItems(
+      value
       .map<FavoriteContentItem | null>((item) => {
         const record = asRecord(item);
         if (!record) return null;
@@ -76,7 +80,8 @@ export const readFavoriteContentItems = (): FavoriteContentItem[] => {
 
         return favoriteItem;
       })
-      .filter((item): item is FavoriteContentItem => Boolean(item));
+      .filter((item): item is FavoriteContentItem => Boolean(item)),
+    );
   } catch {
     return [];
   }
@@ -85,7 +90,7 @@ export const readFavoriteContentItems = (): FavoriteContentItem[] => {
 const writeFavoriteContentItems = (items: FavoriteContentItem[]) => {
   if (typeof window === "undefined") return;
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(mergeFavoriteContentItems(items)));
   notifyFavoritesChanged();
 };
 
@@ -103,7 +108,10 @@ export const syncFavoriteContentItem = (
   const items = readFavoriteContentItems();
   const key = item.key || itemKey(item.kind, item.id);
   const nextItem = { ...item, key };
-  const existingIndex = items.findIndex((current) => current.key === key);
+  const identity = itemIdentity(nextItem);
+  const existingIndex = items.findIndex(
+    (current) => current.key === key || itemIdentity(current) === identity,
+  );
 
   if (isFavorite) {
     if (existingIndex >= 0) items[existingIndex] = nextItem;
@@ -121,13 +129,13 @@ export const syncFavoriteContentItem = (
 export const mergeFavoriteContentItems = (
   ...groups: FavoriteContentItem[][]
 ) => {
-  const byKey = new Map<string, FavoriteContentItem>();
+  const byIdentity = new Map<string, FavoriteContentItem>();
 
   groups.flat().forEach((item) => {
-    byKey.set(item.key, item);
+    byIdentity.set(itemIdentity(item), item);
   });
 
-  return Array.from(byKey.values());
+  return Array.from(byIdentity.values());
 };
 
 export const eventToFavoriteContentItem = (

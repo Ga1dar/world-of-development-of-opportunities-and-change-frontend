@@ -229,17 +229,14 @@ export function ArticleDetailPage() {
     const controller = new AbortController();
 
     const loadComments = async () => {
-      const items = await getEducationArticleComments(article.slug, controller.signal);
-      if (!controller.signal.aborted) {
-        setComments(items);
-      }
+      if (article.id.startsWith("fallback")) return [];
+
+      return getEducationArticleComments(article.slug, controller.signal);
     };
 
-    if (!article.id.startsWith("fallback")) {
-      void loadComments();
-    } else {
-      setComments([]);
-    }
+    void loadComments().then((items) => {
+      if (!controller.signal.aborted) setComments(items);
+    });
 
     return () => controller.abort();
   }, [article.id, article.slug]);
@@ -354,7 +351,9 @@ export function ArticleDetailPage() {
   }, [isContentsOpen, article.slug, sections.length]);
 
   useEffect(() => {
-    setIsContentsOpen(false);
+    const timeoutId = window.setTimeout(() => setIsContentsOpen(false), 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [article.slug]);
 
   useEffect(() => {
@@ -393,7 +392,7 @@ export function ArticleDetailPage() {
     if (article.id.startsWith("fallback")) {
       syncFavoriteContentItem(
         articleToFavoriteContentItem(optimisticArticle),
-        optimisticArticle.isLiked || optimisticArticle.isFavorite,
+        optimisticArticle.isFavorite,
       );
       return;
     }
@@ -413,13 +412,13 @@ export function ArticleDetailPage() {
       setArticle(updatedArticle);
       syncFavoriteContentItem(
         articleToFavoriteContentItem(updatedArticle),
-        updatedArticle.isLiked || updatedArticle.isFavorite,
+        updatedArticle.isFavorite,
       );
     } catch {
       setArticle(article);
       syncFavoriteContentItem(
         articleToFavoriteContentItem(article),
-        article.isLiked || article.isFavorite,
+        article.isFavorite,
       );
     }
   };
@@ -438,7 +437,7 @@ export function ArticleDetailPage() {
     if (article.id.startsWith("fallback")) {
       syncFavoriteContentItem(
         articleToFavoriteContentItem(optimisticArticle),
-        optimisticArticle.isLiked || optimisticArticle.isFavorite,
+        optimisticArticle.isFavorite,
       );
       return;
     }
@@ -458,13 +457,13 @@ export function ArticleDetailPage() {
       setArticle(updatedArticle);
       syncFavoriteContentItem(
         articleToFavoriteContentItem(updatedArticle),
-        updatedArticle.isLiked || updatedArticle.isFavorite,
+        updatedArticle.isFavorite,
       );
     } catch {
       setArticle(article);
       syncFavoriteContentItem(
         articleToFavoriteContentItem(article),
-        article.isLiked || article.isFavorite,
+        article.isFavorite,
       );
     }
   };

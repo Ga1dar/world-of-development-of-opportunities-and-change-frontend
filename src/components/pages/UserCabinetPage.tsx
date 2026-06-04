@@ -1321,14 +1321,18 @@ export function UserCabinetPage() {
     const serverItems = [
       ...events.map((event) => eventToFavoriteContentItem(event, language)),
       ...articles
-        .filter((article) => article.isLiked || article.isFavorite)
+        .filter((article) => article.isFavorite)
         .map(articleToFavoriteContentItem),
       ...videos
-        .filter((video) => video.isLiked || video.isFavorite)
+        .filter((video) => video.isFavorite)
         .map(videoToFavoriteContentItem),
     ];
 
-    return mergeFavoriteContentItems(readFavoriteContentItems(), serverItems);
+    const cachedEventItems = readFavoriteContentItems().filter(
+      (item) => item.kind === "event",
+    );
+
+    return mergeFavoriteContentItems(cachedEventItems, serverItems);
   };
 
   useEffect(() => {
