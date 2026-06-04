@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { notifyAuthChanged } from "../../api/auth";
 import {
-  ensureAccountProfile,
+  createSpecialistProfile,
   getUserCabinetData,
   updateProfileAvatar,
   updateSpecialistProfile,
@@ -105,8 +105,10 @@ const isEnglishLanguage = (language: string) => language.toLowerCase().startsWit
 const splitFullName = (profile: CabinetProfile | null) => {
   if (!profile) return { firstName: "", lastName: "" };
 
-  const firstName = profile.firstName || profile.fullName.split(" ")[0] || "";
-  const lastName = profile.lastName || profile.fullName.split(" ").slice(1).join(" ");
+  const fullName = profile.fullName.trim();
+  const canUseFullName = fullName && fullName !== profile.email && fullName !== "Profile";
+  const firstName = profile.firstName || (canUseFullName ? fullName.split(" ")[0] : "");
+  const lastName = profile.lastName || (canUseFullName ? fullName.split(" ").slice(1).join(" ") : "");
 
   return { firstName, lastName };
 };
@@ -181,10 +183,7 @@ export function SpecialistProfileEditPage() {
 
       try {
         const data = await getUserCabinetData(controller.signal);
-        const profile =
-          data.profile?.profileKind === "specialist" && !data.profile.specialistProfileId
-            ? await ensureAccountProfile("specialist")
-            : data.profile;
+        const profile = data.profile;
         setProfile(profile);
         setForm(toFormState(profile));
         setAvatarPreview(profile?.avatar || "");
@@ -226,7 +225,7 @@ export function SpecialistProfileEditPage() {
 
     if (!profile || profile.profileKind !== "specialist") return;
 
-    if (!hasConsent) {
+    if (!profile.specialistProfileId && !hasConsent) {
       setError(labels.consentError);
       return;
     }
@@ -236,11 +235,19 @@ export function SpecialistProfileEditPage() {
     setNotice("");
 
     try {
-      await updateSpecialistProfile(profile.id, {
-        ...form,
-      });
-      if (avatarFile) {
-        await updateProfileAvatar(profile, avatarFile);
+      if (profile.specialistProfileId) {
+        await updateSpecialistProfile(profile.specialistProfileId, {
+          ...form,
+        });
+        if (avatarFile) {
+          await updateProfileAvatar(profile, avatarFile);
+        }
+      } else {
+        await createSpecialistProfile({
+          ...form,
+          avatar: avatarFile,
+          acceptDataProcessingConsent: hasConsent,
+        });
       }
       await uploadSpecialistDocuments(documents);
       notifyAuthChanged();
@@ -381,15 +388,17 @@ export function SpecialistProfileEditPage() {
             <span className="mt-1 block text-[11px] leading-[1.2] text-[#1C100E]/55">{labels.optional}</span>
           </label>
 
-          <label className="flex cursor-pointer items-start gap-3 text-[11px] leading-[1.25] text-[#1C100E]/75 min-[744px]:text-[12px]">
-            <input
-              type="checkbox"
-              checked={hasConsent}
-              onChange={(event) => setHasConsent(event.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-[#83105F]"
-            />
-            <span>{labels.consent}</span>
-          </label>
+          {!profile.specialistProfileId ? (
+            <label className="flex cursor-pointer items-start gap-3 text-[11px] leading-[1.25] text-[#1C100E]/75 min-[744px]:text-[12px]">
+              <input
+                type="checkbox"
+                checked={hasConsent}
+                onChange={(event) => setHasConsent(event.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[#83105F]"
+              />
+              <span>{labels.consent}</span>
+            </label>
+          ) : null}
 
           <label className={`${darkButton} flex h-12 cursor-pointer items-center justify-center gap-2 text-[13px] min-[744px]:h-11 min-[744px]:text-[14px]`}>
             <Upload className="h-4 w-4" aria-hidden="true" />
