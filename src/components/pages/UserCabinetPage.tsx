@@ -1328,11 +1328,11 @@ export function UserCabinetPage() {
         .map(videoToFavoriteContentItem),
     ];
 
-    const cachedEventItems = readFavoriteContentItems().filter(
-      (item) => item.kind === "event",
+    const cachedFavoriteItems = readFavoriteContentItems().filter(
+      (item) => item.kind === "event" || item.savedByFavorite,
     );
 
-    return mergeFavoriteContentItems(cachedEventItems, serverItems);
+    return mergeFavoriteContentItems(cachedFavoriteItems, serverItems);
   };
 
   useEffect(() => {
