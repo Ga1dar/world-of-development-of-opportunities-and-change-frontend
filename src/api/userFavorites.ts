@@ -15,6 +15,7 @@ export type FavoriteContentItem = {
   commentsCount: number;
   favoritesCount?: number;
   date?: string;
+  savedByFavorite?: boolean;
 };
 
 export const FAVORITES_CHANGED_EVENT = "svity-favorites-changed";
@@ -76,6 +77,7 @@ export const readFavoriteContentItems = (): FavoriteContentItem[] => {
           commentsCount: asNumber(record.commentsCount),
           favoritesCount: asNumber(record.favoritesCount),
           date: asString(record.date),
+          savedByFavorite: record.savedByFavorite === true,
         };
 
         return favoriteItem;
@@ -107,7 +109,7 @@ export const syncFavoriteContentItem = (
 ) => {
   const items = readFavoriteContentItems();
   const key = item.key || itemKey(item.kind, item.id);
-  const nextItem = { ...item, key };
+  const nextItem = { ...item, key, savedByFavorite: isFavorite || item.savedByFavorite };
   const identity = itemIdentity(nextItem);
   const existingIndex = items.findIndex(
     (current) => current.key === key || itemIdentity(current) === identity,
