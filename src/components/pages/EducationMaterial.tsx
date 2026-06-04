@@ -22,6 +22,7 @@ import {
   syncFavoriteContentItem,
   videoToFavoriteContentItem,
 } from "../../api/userFavorites";
+import { VideoPreviewLoader } from "../ui/VideoPreviewLoader";
 
 const pageMaxWidth =
   "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
@@ -496,7 +497,7 @@ function VideoCard({
           className="h-[116px] w-full rounded-[14px] object-cover min-[744px]:h-[238px] min-[1023px]:h-[232px] min-[1420px]:h-[174px] min-[1900px]:h-[206px]"
         />
       ) : (
-        <div className="h-[116px] w-full rounded-[14px] bg-[#D9D9D9] min-[744px]:h-[238px] min-[1023px]:h-[232px] min-[1420px]:h-[174px] min-[1900px]:h-[206px]" />
+        <VideoPreviewLoader className="h-[116px] w-full rounded-[14px] min-[744px]:h-[238px] min-[1023px]:h-[232px] min-[1420px]:h-[174px] min-[1900px]:h-[206px]" />
       )}
 
       <div className="mt-2 grid grid-cols-[1fr_42px] items-end gap-2">

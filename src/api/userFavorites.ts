@@ -1,5 +1,7 @@
 import type { EducationArticle, EducationVideo } from "./educationMaterials";
 import type { EventItem } from "./events";
+import { apiFetch, getAccessToken } from "./auth";
+import { endpoints } from "./endpoints";
 
 export type FavoriteContentKind = "event" | "article" | "video";
 
@@ -33,6 +35,18 @@ const asNumber = (value: unknown, fallback = 0) => {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : fallback;
 };
+
+const stripHtml = (value: string) =>
+  value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+const readLocalizedString = (
+  record: Record<string, unknown>,
+  baseKey: string,
+  language: "ua" | "en",
+) =>
+  asString(record[`${baseKey}_${language}`]) ||
+  asString(record[language === "ua" ? `${baseKey}_uk` : `${baseKey}_en`]) ||
+  asString(record[baseKey]);
 
 const normalizeUserKey = (value: unknown) => asString(value).trim().toLowerCase();
 
@@ -221,6 +235,155 @@ export const mergeFavoriteContentItems = (
   });
 
   return Array.from(byIdentity.values());
+};
+
+const extractFavoriteList = (data: unknown, key: "events" | "articles" | "videos") => {
+  const record = asRecord(data);
+  if (!record) return [];
+
+  const value = record[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is Record<string, unknown> => Boolean(asRecord(item)));
+  }
+
+  const nestedRecord = asRecord(value);
+  const results = nestedRecord?.results ?? nestedRecord?.data;
+  return Array.isArray(results)
+    ? results.filter((item): item is Record<string, unknown> => Boolean(asRecord(item)))
+    : [];
+};
+
+const normalizeServerFavoriteEvent = (
+  raw: Record<string, unknown>,
+  language: "ua" | "en",
+  index: number,
+): FavoriteContentItem => {
+  const id = asString(raw.id, String(index + 1));
+  const slug = asString(raw.slug, id);
+  const category = asRecord(raw.category);
+  const categorySlug =
+    asString(raw.category_slug ?? raw.categorySlug) ||
+    asString(category?.slug) ||
+    "favorites";
+  const title =
+    readLocalizedString(raw, "title", language) ||
+    asString(raw.name) ||
+    `Event ${index + 1}`;
+  const descriptionSource =
+    readLocalizedString(raw, "short_description", language) ||
+    readLocalizedString(raw, "description", language) ||
+    asString(raw.content);
+
+  return {
+    key: itemKey("event", id),
+    kind: "event",
+    id,
+    slug,
+    title,
+    description: stripHtml(descriptionSource),
+    href: `/events/${categorySlug}/${id}`,
+    likesCount: asNumber(raw.likes_count ?? raw.likesCount),
+    commentsCount: asNumber(raw.comments_count ?? raw.commentsCount),
+    favoritesCount: asNumber(raw.favorites_count ?? raw.favoritesCount),
+    date: asString(raw.event_date ?? raw.eventDate ?? raw.published_at ?? raw.created_at),
+    savedByFavorite: true,
+    userKeys: getCurrentUserKeys(),
+  };
+};
+
+const normalizeServerFavoriteArticle = (
+  raw: Record<string, unknown>,
+  language: "ua" | "en",
+  index: number,
+): FavoriteContentItem => {
+  const id = asString(raw.id, String(index + 1));
+  const slug = asString(raw.slug, id);
+  const title =
+    readLocalizedString(raw, "title", language) ||
+    asString(raw.name) ||
+    `Article ${index + 1}`;
+  const descriptionSource =
+    readLocalizedString(raw, "short_description", language) ||
+    readLocalizedString(raw, "description", language) ||
+    readLocalizedString(raw, "content", language);
+
+  return {
+    key: itemKey("article", id || slug),
+    kind: "article",
+    id: id || slug,
+    slug,
+    title,
+    description: stripHtml(descriptionSource),
+    href: `/materials/articles/${slug}`,
+    likesCount: asNumber(raw.likes_count ?? raw.likesCount),
+    commentsCount: asNumber(raw.comments_count ?? raw.commentsCount),
+    favoritesCount: asNumber(raw.favorites_count ?? raw.favoritesCount),
+    date: asString(raw.published_at ?? raw.publishedAt ?? raw.created_at ?? raw.createdAt),
+    savedByFavorite: true,
+    userKeys: getCurrentUserKeys(),
+  };
+};
+
+const normalizeServerFavoriteVideo = (
+  raw: Record<string, unknown>,
+  language: "ua" | "en",
+  index: number,
+): FavoriteContentItem => {
+  const id = asString(raw.id, String(index + 1));
+  const slug = asString(raw.slug, id);
+  const title =
+    readLocalizedString(raw, "title", language) ||
+    asString(raw.name) ||
+    `Video ${index + 1}`;
+  const descriptionSource =
+    readLocalizedString(raw, "short_description", language) ||
+    readLocalizedString(raw, "description", language) ||
+    readLocalizedString(raw, "content", language);
+
+  return {
+    key: itemKey("video", id || slug),
+    kind: "video",
+    id: id || slug,
+    slug,
+    title,
+    description: stripHtml(descriptionSource),
+    href: `/materials/videos/${slug}`,
+    likesCount: asNumber(raw.likes_count ?? raw.likesCount),
+    commentsCount: asNumber(raw.comments_count ?? raw.commentsCount),
+    favoritesCount: asNumber(raw.favorites_count ?? raw.favoritesCount),
+    date: asString(raw.published_at ?? raw.publishedAt ?? raw.created_at ?? raw.createdAt),
+    savedByFavorite: true,
+    userKeys: getCurrentUserKeys(),
+  };
+};
+
+export const getCurrentUserFavoriteContentItems = async (
+  language: "ua" | "en",
+) => {
+  const accessToken = getAccessToken();
+  if (!accessToken) return [];
+
+  const response = await apiFetch(endpoints.userFavorites, {
+    cache: "no-store",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Favorites request failed: ${response.status}`);
+  }
+
+  const data = await response.json().catch(() => null);
+  const events = extractFavoriteList(data, "events").map((item, index) =>
+    normalizeServerFavoriteEvent(item, language, index),
+  );
+  const articles = extractFavoriteList(data, "articles").map((item, index) =>
+    normalizeServerFavoriteArticle(item, language, index),
+  );
+  const videos = extractFavoriteList(data, "videos").map((item, index) =>
+    normalizeServerFavoriteVideo(item, language, index),
+  );
+
+  return [...events, ...articles, ...videos];
 };
 
 export const eventToFavoriteContentItem = (
