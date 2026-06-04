@@ -7,8 +7,10 @@ import {
   getEvent,
   getEventComments,
   getLocallyLikedEventIds,
+  readStoredEventCommentReaction,
   toggleCommentLike,
   toggleEventLike,
+  toggleStoredEventCommentLike,
   type EventComment,
   type EventItem,
 } from "../../api/events";
@@ -205,14 +207,39 @@ export function EventDetailPage() {
   const [isEventLiked, setIsEventLiked] = useState(false);
   const [likedCommentIds, setLikedCommentIds] = useState<Set<number>>(new Set());
 
+  const applyLocalCommentReactions = (
+    eventItem: EventItem | null,
+    commentItems: EventComment[],
+  ) =>
+    commentItems.map((comment) => {
+      if (!eventItem?.isFallback) return comment;
+
+      const reaction = readStoredEventCommentReaction(eventItem.id, comment.id);
+      return reaction
+        ? {
+            ...comment,
+            isLiked: reaction.liked,
+            likesCount: reaction.likesCount,
+          }
+        : comment;
+    });
+
   useEffect(() => {
     let isMounted = true;
 
     Promise.all([getEvent(eventId), getEventComments(eventId)]).then(
       ([eventItem, commentItems]) => {
         if (!isMounted) return;
+        const hydratedComments = applyLocalCommentReactions(eventItem, commentItems);
         setEvent(eventItem);
-        setComments(commentItems);
+        setComments(hydratedComments);
+        setLikedCommentIds(
+          new Set(
+            hydratedComments
+              .filter((comment) => comment.isLiked)
+              .map((comment) => comment.id),
+          ),
+        );
         setIsEventLiked(
           Boolean(eventItem?.isLiked || (eventItem && getLocallyLikedEventIds().has(eventItem.id))),
         );
@@ -297,11 +324,18 @@ export function EventDetailPage() {
   };
 
   const handleCommentLike = async (commentId: number) => {
+    const targetComment = comments.find((comment) => comment.id === commentId);
+    if (!targetComment) return;
+
     const wasLiked = likedCommentIds.has(commentId);
 
-    try {
-      const result = await toggleCommentLike(eventId, commentId);
-      const delta = result.liked ? (wasLiked ? 0 : 1) : -1;
+    if (event?.isFallback) {
+      const result = toggleStoredEventCommentLike(
+        event.id,
+        commentId,
+        wasLiked,
+        targetComment.likesCount || 0,
+      );
 
       setLikedCommentIds((current) => {
         const next = new Set(current);
@@ -315,6 +349,32 @@ export function EventDetailPage() {
           comment.id === commentId
             ? {
                 ...comment,
+                isLiked: result.liked,
+                likesCount: result.likesCount,
+              }
+            : comment,
+        ),
+      );
+      return;
+    }
+
+    try {
+      const result = await toggleCommentLike(eventId, commentId);
+      const delta = result.liked ? (wasLiked ? 0 : 1) : wasLiked ? -1 : 0;
+
+      setLikedCommentIds((current) => {
+        const next = new Set(current);
+        if (result.liked) next.add(commentId);
+        else next.delete(commentId);
+        return next;
+      });
+
+      setComments((current) =>
+        current.map((comment) =>
+          comment.id === commentId
+            ? {
+                ...comment,
+                isLiked: result.liked,
                 likesCount: Math.max((comment.likesCount || 0) + delta, 0),
               }
             : comment,
