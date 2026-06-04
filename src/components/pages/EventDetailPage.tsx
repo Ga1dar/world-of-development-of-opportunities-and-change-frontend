@@ -306,15 +306,18 @@ export function EventDetailPage() {
         eventToFavoriteContentItem(nextEvent, lang),
         liked,
       );
+
+      return nextLikesCount;
     };
 
-    applyLikeState(nextLiked);
+    const optimisticLikesCount = applyLikeState(nextLiked);
 
     try {
       const result = await toggleEventLike(
         targetEvent.id,
         nextLiked,
         Boolean(targetEvent.isFallback),
+        optimisticLikesCount,
       );
       if (result.liked !== nextLiked) applyLikeState(result.liked);
     } catch (error) {
