@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { notifyAuthChanged } from "../../api/auth";
 import {
-  ensureAccountProfile,
+  createUserProfile,
   getUserCabinetData,
   updateProfileAvatar,
   updateUserProfile,
@@ -17,6 +17,7 @@ type FormState = {
   lastName: string;
   phone: string;
   city: string;
+  birthDate: string;
   about: string;
 };
 
@@ -29,10 +30,13 @@ const copy = {
     firstNamePlaceholder: "Ім'я..",
     lastName: "Прізвище*",
     lastNamePlaceholder: "Прізвище..",
-    phone: "Телефон",
+    phone: "Телефон*",
     phonePlaceholder: "Телефон",
-    city: "Місто",
+    city: "Місто*",
     cityPlaceholder: "Місто",
+    birthDate: "Дата народження*",
+    consent: "Я надаю згоду на обробку персональних даних",
+    consentError: "Підтвердіть згоду на обробку персональних даних.",
     about: "Про себе",
     aboutPlaceholder: "Коротка інформація про себе",
     chooseAvatar: "Змінити фото",
@@ -49,10 +53,13 @@ const copy = {
     firstNamePlaceholder: "First name..",
     lastName: "Last name*",
     lastNamePlaceholder: "Last name..",
-    phone: "Phone",
+    phone: "Phone*",
     phonePlaceholder: "Phone",
-    city: "City",
+    city: "City*",
     cityPlaceholder: "City",
+    birthDate: "Birth date*",
+    consent: "I consent to personal data processing",
+    consentError: "Confirm personal data processing consent.",
     about: "About",
     aboutPlaceholder: "Short information about yourself",
     chooseAvatar: "Change photo",
@@ -74,10 +81,12 @@ const isEnglishLanguage = (language: string) => language.toLowerCase().startsWit
 
 const splitFullName = (profile: CabinetProfile | null) => {
   if (!profile) return { firstName: "", lastName: "" };
+  const fullName = profile.fullName.trim();
+  const canUseFullName = fullName && fullName !== profile.email && fullName !== "Profile";
 
   return {
-    firstName: profile.firstName || profile.fullName.split(" ")[0] || "",
-    lastName: profile.lastName || profile.fullName.split(" ").slice(1).join(" "),
+    firstName: profile.firstName || (canUseFullName ? fullName.split(" ")[0] : ""),
+    lastName: profile.lastName || (canUseFullName ? fullName.split(" ").slice(1).join(" ") : ""),
   };
 };
 
@@ -89,6 +98,7 @@ const toFormState = (profile: CabinetProfile | null): FormState => {
     lastName: name.lastName,
     phone: profile?.phone || "",
     city: profile?.city || "",
+    birthDate: profile?.birthDate || "",
     about: profile?.about || "",
   };
 };
@@ -98,12 +108,14 @@ function Field({
   placeholder,
   value,
   onChange,
+  type = "text",
   required = false,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
+  type?: string;
   required?: boolean;
 }) {
   return (
@@ -111,6 +123,7 @@ function Field({
       <span className="mb-1 block text-[12px] leading-[1.2] min-[744px]:text-[13px]">{label}</span>
       <input
         value={value}
+        type={type}
         onChange={(event) => onChange(event.target.value)}
         required={required}
         placeholder={placeholder}
@@ -132,6 +145,7 @@ export function UserProfileEditPage() {
   const [form, setForm] = useState<FormState>(() => toFormState(null));
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
+  const [hasConsent, setHasConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -145,15 +159,14 @@ export function UserProfileEditPage() {
 
       try {
         const data = await getUserCabinetData(controller.signal);
-        const profile =
-          data.profile && data.profile.profileKind !== "specialist" && !data.profile.userProfileId
-            ? await ensureAccountProfile("user")
-            : data.profile;
+        const profile = data.profile;
         setProfile(profile);
         setForm(toFormState(profile));
         setAvatarPreview(profile?.avatar || "");
-      } catch {
-        setError(labels.saveError);
+      } catch (error) {
+        console.error(error);
+        const details = error instanceof Error && error.message ? ` (${error.message})` : "";
+        setError(`${labels.saveError}${details}`);
       } finally {
         setIsLoading(false);
       }
@@ -177,14 +190,27 @@ export function UserProfileEditPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!profile?.userProfileId || profile.profileKind === "specialist") return;
+    if (!profile || profile.profileKind === "specialist") return;
+
+    if (!profile.userProfileId && !hasConsent) {
+      setError(labels.consentError);
+      return;
+    }
 
     setIsSaving(true);
     setError("");
 
     try {
-      await updateUserProfile(profile.userProfileId, form);
-      if (avatarFile) await updateProfileAvatar(profile, avatarFile);
+      if (profile.userProfileId) {
+        await updateUserProfile(profile.userProfileId, form);
+        if (avatarFile) await updateProfileAvatar(profile, avatarFile);
+      } else {
+        await createUserProfile({
+          ...form,
+          avatar: avatarFile,
+          acceptDataProcessingConsent: hasConsent,
+        });
+      }
       notifyAuthChanged();
       navigate("/profile");
     } catch (error) {
@@ -208,7 +234,7 @@ export function UserProfileEditPage() {
     return (
       <section className={`${pageMaxWidth} min-h-[520px] pt-6 pb-14 min-[1420px]:pt-20`}>
         <div className="mx-auto max-w-[520px] rounded-[22px] bg-[#F8F8F8] px-6 py-10 text-center font-montserrat">
-          <p className="text-[14px] text-[#1C100E]/70">{labels.authRequired}</p>
+          <p className="text-[14px] text-[#1C100E]/70">{error || labels.authRequired}</p>
           <div className="mx-auto mt-6 max-w-[220px] [&_button]:w-full">
             <LogIn variant="menu" text="Вхід" />
           </div>
@@ -217,7 +243,7 @@ export function UserProfileEditPage() {
     );
   }
 
-  if (!profile.userProfileId || profile.profileKind === "specialist") {
+  if (profile.profileKind === "specialist") {
     return (
       <section className={`${pageMaxWidth} min-h-[520px] pt-6 pb-14 min-[1420px]:pt-20`}>
         <div className="mx-auto max-w-[520px] rounded-[22px] bg-[#F8F8F8] px-6 py-10 text-center font-montserrat text-[14px] text-[#1C100E]/70">
@@ -282,12 +308,22 @@ export function UserProfileEditPage() {
             placeholder={labels.phonePlaceholder}
             value={form.phone}
             onChange={updateField("phone")}
+            required
           />
           <Field
             label={labels.city}
             placeholder={labels.cityPlaceholder}
             value={form.city}
             onChange={updateField("city")}
+            required
+          />
+          <Field
+            label={labels.birthDate}
+            placeholder={labels.birthDate}
+            value={form.birthDate}
+            onChange={updateField("birthDate")}
+            type="date"
+            required
           />
 
           <label className="block font-montserrat text-[#1C100E]">
@@ -300,6 +336,18 @@ export function UserProfileEditPage() {
               className="w-full resize-y rounded-[18px] border border-[#40213F] bg-[#F0E8F0] px-3 py-2 font-montserrat text-[12px] text-[#1C100E] outline-none transition placeholder:text-[#1C100E]/45 focus:ring-2 focus:ring-[#B34D8D]/30"
             />
           </label>
+
+          {!profile.userProfileId ? (
+            <label className="flex cursor-pointer items-start gap-3 text-[11px] leading-[1.25] text-[#1C100E]/75 min-[744px]:text-[12px]">
+              <input
+                type="checkbox"
+                checked={hasConsent}
+                onChange={(event) => setHasConsent(event.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[#83105F]"
+              />
+              <span>{labels.consent}</span>
+            </label>
+          ) : null}
 
           {error ? (
             <p className="text-center text-[12px] leading-[1.3] text-[#83105F]">{error}</p>
