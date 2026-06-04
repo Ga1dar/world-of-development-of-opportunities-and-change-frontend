@@ -235,6 +235,7 @@ function ArticleCard({
         currentArticle.slug,
         nextLiked,
         nextLikesCount,
+        language,
       );
       const updatedArticle = {
         ...currentArticle,
@@ -273,6 +274,7 @@ function ArticleCard({
         currentArticle.slug,
         nextFavorite,
         nextFavoritesCount,
+        language,
       );
       const updatedArticle = {
         ...currentArticle,
@@ -322,9 +324,11 @@ function ArticleCard({
 function VideoCard({
   video,
   labels,
+  language,
 }: {
   video: DisplayVideo;
   labels: typeof copy.ua;
+  language: "ua" | "en";
 }) {
   const [currentVideo, setCurrentVideo] = useState(video);
 
@@ -359,6 +363,7 @@ function VideoCard({
         currentVideo.slug,
         nextLiked,
         nextLikesCount,
+        language,
       );
       const updatedVideo = {
         ...currentVideo,
@@ -397,6 +402,7 @@ function VideoCard({
         currentVideo.slug,
         nextFavorite,
         nextFavoritesCount,
+        language,
       );
       const updatedVideo = {
         ...currentVideo,
@@ -528,7 +534,7 @@ export function Edukationmaterial() {
 
         <div className="mt-4 grid gap-4 min-[744px]:mt-5 min-[1023px]:grid-cols-3 min-[1023px]:gap-6 min-[1420px]:mt-6 min-[1900px]:gap-10">
           {visibleVideos.map((video) => (
-            <VideoCard key={video.id} video={video} labels={labels} />
+            <VideoCard key={video.id} video={video} labels={labels} language={language} />
           ))}
         </div>
 

@@ -74,6 +74,7 @@ function ArticleListCard({
         article.slug,
         nextLiked,
         nextLikesCount,
+        language,
       );
       setIsLiked(result.isLiked);
       setLikesCount(result.likesCount);
@@ -106,6 +107,7 @@ function ArticleListCard({
         article.slug,
         nextFavorite,
         nextFavoritesCount,
+        language,
       );
       setIsFavorite(result.isFavorite);
       setFavoritesCount(result.favoritesCount);
