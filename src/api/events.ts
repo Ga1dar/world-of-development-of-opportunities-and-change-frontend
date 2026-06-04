@@ -16,6 +16,7 @@ export type EventComment = {
   userAvatar?: string;
   text: string;
   likesCount?: number;
+  isLiked?: boolean;
   createdAt?: string;
 };
 
@@ -308,6 +309,7 @@ const fallbackEvents: EventItem[] = [
 ].map((event) => ({ ...event, isFallback: true }));
 
 const LIKED_EVENT_IDS_STORAGE_KEY = "svityLikedEventIds";
+const EVENT_COMMENT_REACTIONS_STORAGE_KEY = "svityEventCommentReactions";
 
 const asRecord = (value: unknown): RawRecord | null =>
   value && typeof value === "object" ? (value as RawRecord) : null;
@@ -455,6 +457,63 @@ const syncStoredEventLike = (eventId: string | number, liked: boolean) => {
 
 export const getLocallyLikedEventIds = () => readStoredLikedEventIds();
 
+type StoredEventCommentReaction = {
+  liked: boolean;
+  likesCount: number;
+};
+
+const eventCommentReactionKey = (
+  eventId: string | number,
+  commentId: string | number,
+) => `${String(eventId)}:${String(commentId)}`;
+
+const readStoredEventCommentReactions = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(EVENT_COMMENT_REACTIONS_STORAGE_KEY) || "{}",
+    );
+
+    return value && typeof value === "object"
+      ? (value as Record<string, StoredEventCommentReaction>)
+      : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveStoredEventCommentReactions = (
+  reactions: Record<string, StoredEventCommentReaction>,
+) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(EVENT_COMMENT_REACTIONS_STORAGE_KEY, JSON.stringify(reactions));
+};
+
+export const readStoredEventCommentReaction = (
+  eventId: string | number,
+  commentId: string | number,
+) => {
+  const reactions = readStoredEventCommentReactions();
+  return reactions[eventCommentReactionKey(eventId, commentId)] || null;
+};
+
+export const toggleStoredEventCommentLike = (
+  eventId: string | number,
+  commentId: string | number,
+  currentLiked: boolean,
+  currentLikesCount: number,
+) => {
+  const liked = !currentLiked;
+  const likesCount = Math.max(currentLikesCount + (liked ? 1 : -1), 0);
+  const reactions = readStoredEventCommentReactions();
+
+  reactions[eventCommentReactionKey(eventId, commentId)] = { liked, likesCount };
+  saveStoredEventCommentReactions(reactions);
+
+  return { liked, likesCount };
+};
+
 const isSameCurrentUser = (candidate: unknown) => {
   const currentUser = getStoredCurrentUser();
   if (!currentUser) return false;
@@ -504,6 +563,12 @@ const hasCurrentUserLike = (record: RawRecord, eventId: number) => {
 
 const normalizeComment = (raw: unknown, index: number): EventComment => {
   const record = asRecord(raw) || {};
+  const isLiked =
+    record.is_liked ??
+    record.isLiked ??
+    record.liked ??
+    record.liked_by_user ??
+    record.current_user_liked;
 
   return {
     id: asNumber(record.id, index + 1),
@@ -518,6 +583,7 @@ const normalizeComment = (raw: unknown, index: number): EventComment => {
     userAvatar: resolveImageUrl(record.user_avatar ?? record.avatar, ""),
     text: asString(record.text ?? record.comment ?? record.body),
     likesCount: asNumber(record.likes_count ?? record.likesCount, 0),
+    isLiked: typeof isLiked === "boolean" ? isLiked : false,
     createdAt: asString(record.created_at ?? record.createdAt ?? record.created),
   };
 };
