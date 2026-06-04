@@ -18,6 +18,7 @@ export type CabinetProfile = {
   profession?: string;
   phone?: string;
   city?: string;
+  birthDate?: string;
   education?: string;
   experience?: string;
   workHours?: string;
@@ -37,12 +38,22 @@ export type SpecialistProfileUpdateInput = {
   avatar?: File | null;
 };
 
+export type SpecialistProfileCreateInput = SpecialistProfileUpdateInput & {
+  acceptDataProcessingConsent: boolean;
+};
+
 export type UserProfileUpdateInput = {
   firstName: string;
   lastName: string;
   phone: string;
   city: string;
+  birthDate: string;
   about: string;
+};
+
+export type UserProfileCreateInput = UserProfileUpdateInput & {
+  acceptDataProcessingConsent: boolean;
+  avatar?: File | null;
 };
 
 export type CabinetAppointment = {
@@ -340,6 +351,7 @@ const normalizeProfile = (
     profession,
     phone: readString(source, ["phone", "telephone", "tel", "phone_number", "phoneNumber"]),
     city: readString(source, ["city", "location", "town"]),
+    birthDate: readString(source, ["birth_date", "birthDate"]),
     education: readString(source, ["education", "degree"]),
     experience: readString(source, [
       "work_experience",
@@ -626,10 +638,10 @@ export async function updateSpecialistProfile(
     body.append("last_name", input.lastName);
     body.append("phone", input.phone);
     body.append("city", input.city);
-    body.append("specialization", input.specialization);
+    body.append("specialisation", input.specialization);
     body.append("education", input.education);
-    body.append("work_experience", input.experience);
-    body.append("about", input.about);
+    body.append("experience", input.experience);
+    body.append("bio", input.about);
 
     if (input.avatar) {
       body.append(avatarField, input.avatar);
@@ -664,6 +676,43 @@ export async function updateSpecialistProfile(
   return response.json().catch(() => null);
 }
 
+export async function createSpecialistProfile(input: SpecialistProfileCreateInput) {
+  const token = getAccessToken();
+  if (!token && !getRefreshToken()) {
+    throw new Error("Authentication required");
+  }
+
+  const body = new FormData();
+  body.append("first_name", input.firstName);
+  body.append("last_name", input.lastName);
+  body.append("phone", input.phone);
+  body.append("city", input.city);
+  body.append("specialisation", input.specialization);
+  body.append("education", input.education);
+  body.append("experience", input.experience);
+  body.append("bio", input.about);
+  body.append("accept_data_processing_consent", String(input.acceptDataProcessingConsent));
+
+  if (input.avatar) {
+    body.append("avatar", input.avatar);
+  }
+
+  const response = await apiFetch(endpoints.specialists, {
+    method: "POST",
+    body,
+  });
+
+  if (!response.ok) {
+    const details = await response
+      .json()
+      .then((data) => JSON.stringify(data))
+      .catch(() => "");
+    throw new Error(`Profile creation failed: ${response.status}${details ? ` ${details}` : ""}`);
+  }
+
+  return response.json().catch(() => null);
+}
+
 export async function updateUserProfile(profileId: string, input: UserProfileUpdateInput) {
   const token = getAccessToken();
   if (!token && !getRefreshToken()) {
@@ -675,7 +724,8 @@ export async function updateUserProfile(profileId: string, input: UserProfileUpd
   body.append("last_name", input.lastName);
   body.append("phone", input.phone);
   body.append("city", input.city);
-  body.append("about", input.about);
+  body.append("birth_date", input.birthDate);
+  body.append("bio", input.about);
 
   const response = await apiFetch(endpoints.userProfile(profileId), {
     method: "PATCH",
@@ -693,32 +743,31 @@ export async function updateUserProfile(profileId: string, input: UserProfileUpd
   return response.json().catch(() => null);
 }
 
-export async function ensureAccountProfile(profileKind: "user" | "specialist") {
-  const hasRequestedProfile = (profile: CabinetProfile | null) =>
-    profileKind === "specialist"
-      ? Boolean(profile?.specialistProfileId)
-      : Boolean(profile?.userProfileId);
-
-  const currentCabinet = await getUserCabinetData();
-  if (hasRequestedProfile(currentCabinet.profile)) {
-    return currentCabinet.profile;
+export async function createUserProfile(input: UserProfileCreateInput) {
+  const token = getAccessToken();
+  if (!token && !getRefreshToken()) {
+    throw new Error("Authentication required");
   }
 
-  const endpoint = profileKind === "specialist" ? endpoints.specialists : endpoints.userProfiles;
-  const response = await apiFetch(endpoint, {
+  const body = new FormData();
+  body.append("first_name", input.firstName);
+  body.append("last_name", input.lastName);
+  body.append("phone", input.phone);
+  body.append("city", input.city);
+  body.append("birth_date", input.birthDate);
+  body.append("bio", input.about);
+  body.append("accept_data_processing_consent", String(input.acceptDataProcessingConsent));
+
+  if (input.avatar) {
+    body.append("avatar", input.avatar);
+  }
+
+  const response = await apiFetch(endpoints.userProfiles, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({}),
+    body,
   });
 
   if (!response.ok) {
-    const refreshedCabinet = await getUserCabinetData();
-    if (hasRequestedProfile(refreshedCabinet.profile)) {
-      return refreshedCabinet.profile;
-    }
-
     const details = await response
       .json()
       .then((data) => JSON.stringify(data))
@@ -726,8 +775,7 @@ export async function ensureAccountProfile(profileKind: "user" | "specialist") {
     throw new Error(`Profile creation failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 
-  const refreshedCabinet = await getUserCabinetData();
-  return refreshedCabinet.profile;
+  return response.json().catch(() => null);
 }
 
 export async function updateProfileAvatar(profile: CabinetProfile, avatar: File) {
@@ -738,7 +786,7 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
 
   const endpoint =
     profile.profileKind === "specialist"
-      ? endpoints.specialistProfile(profile.id)
+      ? endpoints.specialistProfile(profile.specialistProfileId || profile.id)
       : profile.userProfileId
         ? endpoints.userProfile(profile.userProfileId)
         : "";

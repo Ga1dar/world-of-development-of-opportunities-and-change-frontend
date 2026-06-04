@@ -23,7 +23,7 @@ import {
   notifyAuthChanged,
   storeCurrentUser,
 } from "../../api/auth"
-import { ensureAccountProfile, getUserCabinetData } from "../../api/userCabinet"
+import { getUserCabinetData } from "../../api/userCabinet"
 
 type LogInProps = {
   variant?: "header" | "footer" | "menu"
@@ -419,7 +419,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       }
 
       storeCurrentUser(await meResponse.json())
-      await ensureAccountProfile(selectedRole)
       notifyAuthChanged()
 
       resetForm()
@@ -582,14 +581,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     notifyAuthChanged()
 
     if (authMode === "register") {
-      const currentRole =
-        currentUser &&
-        typeof currentUser === "object" &&
-        "role" in currentUser &&
-        currentUser.role === "specialist"
-          ? "specialist"
-          : "user"
-      await ensureAccountProfile(currentRole)
       setRegisterStep("success")
     } else {
       resetForm()
