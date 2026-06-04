@@ -309,6 +309,7 @@ const fallbackEvents: EventItem[] = [
 ].map((event) => ({ ...event, isFallback: true }));
 
 const LIKED_EVENT_IDS_STORAGE_KEY = "svityLikedEventIds";
+const EVENT_REACTIONS_STORAGE_KEY = "svityEventReactions";
 const EVENT_COMMENT_REACTIONS_STORAGE_KEY = "svityEventCommentReactions";
 
 const asRecord = (value: unknown): RawRecord | null =>
@@ -445,7 +446,41 @@ const saveStoredLikedEventIds = (ids: Set<number>) => {
   );
 };
 
-const syncStoredEventLike = (eventId: string | number, liked: boolean) => {
+type StoredEventReaction = {
+  liked: boolean;
+  likesCount: number;
+};
+
+const eventReactionKey = (eventId: string | number) => String(eventId);
+
+const readStoredEventReactions = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const value = JSON.parse(localStorage.getItem(EVENT_REACTIONS_STORAGE_KEY) || "{}");
+    return value && typeof value === "object"
+      ? (value as Record<string, StoredEventReaction>)
+      : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveStoredEventReactions = (reactions: Record<string, StoredEventReaction>) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(EVENT_REACTIONS_STORAGE_KEY, JSON.stringify(reactions));
+};
+
+const readStoredEventReaction = (eventId: string | number) => {
+  const reactions = readStoredEventReactions();
+  return reactions[eventReactionKey(eventId)] || null;
+};
+
+const syncStoredEventLike = (
+  eventId: string | number,
+  liked: boolean,
+  likesCount?: number,
+) => {
   const numericId = Number(eventId);
   if (!Number.isFinite(numericId)) return;
 
@@ -453,9 +488,39 @@ const syncStoredEventLike = (eventId: string | number, liked: boolean) => {
   if (liked) ids.add(numericId);
   else ids.delete(numericId);
   saveStoredLikedEventIds(ids);
+
+  const reactions = readStoredEventReactions();
+  const key = eventReactionKey(eventId);
+  const current = reactions[key];
+  reactions[key] = {
+    liked,
+    likesCount:
+      typeof likesCount === "number" && Number.isFinite(likesCount)
+        ? Math.max(likesCount, 0)
+        : current?.likesCount || (liked ? 1 : 0),
+  };
+  saveStoredEventReactions(reactions);
 };
 
 export const getLocallyLikedEventIds = () => readStoredLikedEventIds();
+
+const applyStoredEventReaction = (event: EventItem): EventItem => {
+  const storedReaction = readStoredEventReaction(event.id);
+  const localLiked = readStoredLikedEventIds().has(event.id);
+
+  if (!storedReaction && !localLiked) return event;
+
+  return {
+    ...event,
+    isLiked: storedReaction?.liked ?? localLiked,
+    likesCount:
+      storedReaction?.likesCount ??
+      Math.max(event.likesCount || 0, localLiked ? 1 : 0),
+  };
+};
+
+const applyStoredEventReactions = (events: EventItem[]) =>
+  events.map(applyStoredEventReaction);
 
 type StoredEventCommentReaction = {
   liked: boolean;
@@ -649,6 +714,16 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
     readNestedString(category, ["slug", "code"]) ||
     slugify(categoryEn || categoryUa, fallback.categorySlug);
   const id = asNumber(record.id, fallback.id || index + 1);
+  const baseLikesCount = asNumber(
+    record.likes_count ?? record.likesCount,
+    fallback.likesCount || 0,
+  );
+  const storedReaction = readStoredEventReaction(id);
+  const localLiked = readStoredLikedEventIds().has(id);
+  const isLiked = storedReaction?.liked ?? hasCurrentUserLike(record, id);
+  const likesCount =
+    storedReaction?.likesCount ??
+    (localLiked && baseLikesCount === 0 ? 1 : baseLikesCount);
 
   return {
     id,
@@ -679,8 +754,8 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
         record.gallery,
       fallback.galleryImages,
     ),
-    likesCount: asNumber(record.likes_count ?? record.likesCount, fallback.likesCount || 0),
-    isLiked: hasCurrentUserLike(record, id),
+    likesCount,
+    isLiked,
     commentsCount: asNumber(
       record.comments_count ?? record.commentsCount,
       fallback.commentsCount ?? fallback.comments.length,
@@ -931,7 +1006,9 @@ export async function getEvents(): Promise<EventItem[]> {
     }
 
     const rawEvents = extractList(data, ["results", "events", "data"]);
-    const events = rawEvents.length ? rawEvents.map(normalizeEvent) : fallbackEvents;
+    const events = rawEvents.length
+      ? rawEvents.map(normalizeEvent)
+      : applyStoredEventReactions(fallbackEvents);
 
     return events.sort((a, b) => {
       const byDate = getSortTime(b) - getSortTime(a);
@@ -939,7 +1016,7 @@ export async function getEvents(): Promise<EventItem[]> {
     });
   } catch (error) {
     console.error(error);
-    return fallbackEvents;
+    return applyStoredEventReactions(fallbackEvents);
   }
 }
 
@@ -964,7 +1041,9 @@ export async function getEventsByCategory(categorySlug: string) {
     }
 
     const rawEvents = extractList(data, ["results", "events", "data"]);
-    const events = rawEvents.length ? rawEvents.map(normalizeEvent) : fallback;
+    const events = rawEvents.length
+      ? rawEvents.map(normalizeEvent)
+      : applyStoredEventReactions(fallback);
 
     return events.sort((a, b) => {
       const byDate = getSortTime(b) - getSortTime(a);
@@ -972,7 +1051,7 @@ export async function getEventsByCategory(categorySlug: string) {
     });
   } catch (error) {
     console.error(error);
-    return fallback;
+    return applyStoredEventReactions(fallback);
   }
 }
 
@@ -1045,9 +1124,10 @@ export async function toggleEventLike(
   eventId: string | number,
   fallbackLiked = true,
   localOnly = false,
+  fallbackLikesCount?: number,
 ) {
   if (localOnly) {
-    syncStoredEventLike(eventId, fallbackLiked);
+    syncStoredEventLike(eventId, fallbackLiked, fallbackLikesCount);
     return { liked: fallbackLiked };
   }
 
@@ -1062,15 +1142,15 @@ export async function toggleEventLike(
     });
 
     if (!response.ok) {
-      syncStoredEventLike(eventId, fallbackLiked);
+      syncStoredEventLike(eventId, fallbackLiked, fallbackLikesCount);
       return { liked: fallbackLiked };
     }
 
     const result = parseToggleResult(data, "event liked", fallbackLiked);
-    syncStoredEventLike(eventId, result.liked);
+    syncStoredEventLike(eventId, result.liked, fallbackLikesCount);
     return result;
   } catch {
-    syncStoredEventLike(eventId, fallbackLiked);
+    syncStoredEventLike(eventId, fallbackLiked, fallbackLikesCount);
     return { liked: fallbackLiked };
   }
 }

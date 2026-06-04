@@ -89,15 +89,17 @@ export function EventCategoryPage() {
       );
 
       syncFavoriteContentItem(eventToFavoriteContentItem(nextEvent, lang), liked);
+      return nextLikesCount;
     };
 
-    applyLikeState(nextLiked);
+    const optimisticLikesCount = applyLikeState(nextLiked);
 
     try {
       const result = await toggleEventLike(
         eventId,
         nextLiked,
         Boolean(targetEvent.isFallback),
+        optimisticLikesCount,
       );
       if (result.liked !== nextLiked) applyLikeState(result.liked);
     } catch (error) {
