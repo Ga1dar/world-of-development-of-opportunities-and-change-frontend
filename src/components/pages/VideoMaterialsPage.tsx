@@ -69,7 +69,7 @@ function VideoStats({
   );
 }
 
-function VideoCard({ video }: { video: EducationVideo }) {
+function VideoCard({ video, language }: { video: EducationVideo; language: "ua" | "en" }) {
   const [currentVideo, setCurrentVideo] = useState(video);
 
   useEffect(() => {
@@ -103,6 +103,7 @@ function VideoCard({ video }: { video: EducationVideo }) {
         currentVideo.slug,
         nextLiked,
         nextLikesCount,
+        language,
       );
       const updatedVideo = {
         ...currentVideo,
@@ -141,6 +142,7 @@ function VideoCard({ video }: { video: EducationVideo }) {
         currentVideo.slug,
         nextFavorite,
         nextFavoritesCount,
+        language,
       );
       const updatedVideo = {
         ...currentVideo,
@@ -251,7 +253,7 @@ export function VideoMaterialsPage() {
 
         <div className="mt-5 grid gap-4 min-[744px]:mt-8 min-[744px]:grid-cols-2 min-[744px]:gap-6 min-[1023px]:grid-cols-3 min-[1023px]:gap-7 min-[1420px]:mt-9 min-[1900px]:gap-10">
           {visibleVideos.map((video) => (
-            <VideoCard key={video.id} video={video} />
+            <VideoCard key={video.id} video={video} language={language} />
           ))}
         </div>
 
