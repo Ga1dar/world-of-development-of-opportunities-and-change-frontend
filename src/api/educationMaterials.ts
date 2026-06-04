@@ -389,6 +389,7 @@ const fetchJson = async (url: string, signal?: AbortSignal) => {
   const accessToken = getAccessToken();
   const response = await apiFetch(url, {
     signal,
+    cache: "no-store",
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
   });
 
@@ -397,6 +398,22 @@ const fetchJson = async (url: string, signal?: AbortSignal) => {
   }
 
   return response.json().catch(() => null);
+};
+
+const getFreshArticle = async (slug: string, language: "ua" | "en") => {
+  const detail = await getEducationArticle(slug, language).catch(() => null);
+  if (detail?.slug === slug) return detail;
+
+  const articles = await getEducationArticles(language).catch(() => []);
+  return articles.find((article) => article.slug === slug) ?? null;
+};
+
+const getFreshVideo = async (slug: string, language: "ua" | "en") => {
+  const detail = await getEducationVideo(slug, language).catch(() => null);
+  if (detail?.slug === slug) return detail;
+
+  const videos = await getEducationVideos(language).catch(() => []);
+  return videos.find((video) => video.slug === slug) ?? null;
 };
 
 const postJson = async (url: string, body?: unknown) => {
@@ -495,6 +512,7 @@ export async function toggleEducationArticleLike(
   slug: string,
   fallbackLiked = true,
   fallbackLikesCount = 0,
+  language: "ua" | "en" = "ua",
 ) {
   const data = await postJson(endpoints.educationArticleLike(slug));
   const record = asRecord(data);
@@ -512,6 +530,15 @@ export async function toggleEducationArticleLike(
     ),
   };
 
+  const freshArticle = await getFreshArticle(slug, language);
+  if (freshArticle) {
+    syncStoredMaterialReaction("article", slug, { isLiked: freshArticle.isLiked });
+    return {
+      likesCount: freshArticle.likesCount,
+      isLiked: freshArticle.isLiked,
+    };
+  }
+
   syncStoredMaterialReaction("article", slug, { isLiked: result.isLiked });
   return result;
 }
@@ -520,6 +547,7 @@ export async function toggleEducationArticleFavorite(
   slug: string,
   fallbackFavorite = true,
   fallbackFavoritesCount = 0,
+  language: "ua" | "en" = "ua",
 ) {
   const data = await postJson(endpoints.educationArticleFavorite(slug));
   const record = asRecord(data);
@@ -536,6 +564,15 @@ export async function toggleEducationArticleFavorite(
       ["unfavorite", "removed", "deleted"],
     ),
   };
+
+  const freshArticle = await getFreshArticle(slug, language);
+  if (freshArticle) {
+    syncStoredMaterialReaction("article", slug, { isFavorite: freshArticle.isFavorite });
+    return {
+      favoritesCount: freshArticle.favoritesCount,
+      isFavorite: freshArticle.isFavorite,
+    };
+  }
 
   syncStoredMaterialReaction("article", slug, { isFavorite: result.isFavorite });
   return result;
@@ -678,6 +715,7 @@ export async function toggleEducationVideoLike(
   slug: string,
   fallbackLiked = true,
   fallbackLikesCount = 0,
+  language: "ua" | "en" = "ua",
 ) {
   const data = await postJson(endpoints.educationVideoLike(slug));
   const record = asRecord(data);
@@ -695,6 +733,15 @@ export async function toggleEducationVideoLike(
     ),
   };
 
+  const freshVideo = await getFreshVideo(slug, language);
+  if (freshVideo) {
+    syncStoredMaterialReaction("video", slug, { isLiked: freshVideo.isLiked });
+    return {
+      likesCount: freshVideo.likesCount,
+      isLiked: freshVideo.isLiked,
+    };
+  }
+
   syncStoredMaterialReaction("video", slug, { isLiked: result.isLiked });
   return result;
 }
@@ -703,6 +750,7 @@ export async function toggleEducationVideoFavorite(
   slug: string,
   fallbackFavorite = true,
   fallbackFavoritesCount = 0,
+  language: "ua" | "en" = "ua",
 ) {
   const data = await postJson(endpoints.educationVideoFavorite(slug));
   const record = asRecord(data);
@@ -719,6 +767,15 @@ export async function toggleEducationVideoFavorite(
       ["unfavorite", "removed", "deleted"],
     ),
   };
+
+  const freshVideo = await getFreshVideo(slug, language);
+  if (freshVideo) {
+    syncStoredMaterialReaction("video", slug, { isFavorite: freshVideo.isFavorite });
+    return {
+      favoritesCount: freshVideo.favoritesCount,
+      isFavorite: freshVideo.isFavorite,
+    };
+  }
 
   syncStoredMaterialReaction("video", slug, { isFavorite: result.isFavorite });
   return result;

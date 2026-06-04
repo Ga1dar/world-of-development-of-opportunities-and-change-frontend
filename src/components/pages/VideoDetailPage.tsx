@@ -227,7 +227,12 @@ export function VideoDetailPage() {
     setVideo(optimisticVideo);
 
     try {
-      const result = await toggleEducationVideoLike(video.slug, nextLiked, nextLikesCount);
+      const result = await toggleEducationVideoLike(
+        video.slug,
+        nextLiked,
+        nextLikesCount,
+        language,
+      );
       const updatedVideo = {
         ...video,
         isLiked: result.isLiked,
@@ -268,6 +273,7 @@ export function VideoDetailPage() {
         video.slug,
         nextFavorite,
         nextFavoritesCount,
+        language,
       );
       const updatedVideo = {
         ...video,

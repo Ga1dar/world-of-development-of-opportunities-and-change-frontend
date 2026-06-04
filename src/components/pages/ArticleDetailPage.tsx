@@ -398,6 +398,7 @@ export function ArticleDetailPage() {
         article.slug,
         nextLiked,
         nextLikesCount,
+        language,
       );
       const updatedArticle = {
         ...article,
@@ -439,6 +440,7 @@ export function ArticleDetailPage() {
         article.slug,
         nextFavorite,
         nextFavoritesCount,
+        language,
       );
       const updatedArticle = {
         ...article,
