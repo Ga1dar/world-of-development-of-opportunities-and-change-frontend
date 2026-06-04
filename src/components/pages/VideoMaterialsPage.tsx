@@ -84,6 +84,10 @@ function VideoCard({ video }: { video: EducationVideo }) {
   };
 
   const handleLike = async () => {
+    if (currentVideo.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextLiked = !currentVideo.isLiked;
     const nextLikesCount = Math.max(0, currentVideo.likesCount + (nextLiked ? 1 : -1));
     const optimisticVideo = {
@@ -93,11 +97,6 @@ function VideoCard({ video }: { video: EducationVideo }) {
     };
 
     setCurrentVideo(optimisticVideo);
-
-    if (currentVideo.id.startsWith("fallback")) {
-      syncVideo(optimisticVideo);
-      return;
-    }
 
     try {
       const result = await toggleEducationVideoLike(
@@ -120,6 +119,10 @@ function VideoCard({ video }: { video: EducationVideo }) {
   };
 
   const handleFavorite = async () => {
+    if (currentVideo.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextFavorite = !currentVideo.isFavorite;
     const nextFavoritesCount = Math.max(
       0,
@@ -132,11 +135,6 @@ function VideoCard({ video }: { video: EducationVideo }) {
     };
 
     setCurrentVideo(optimisticVideo);
-
-    if (currentVideo.id.startsWith("fallback")) {
-      syncVideo(optimisticVideo);
-      return;
-    }
 
     try {
       const result = await toggleEducationVideoFavorite(

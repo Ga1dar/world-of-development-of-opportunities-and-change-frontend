@@ -213,6 +213,10 @@ function ArticleCard({
   };
 
   const handleLike = async () => {
+    if (currentArticle.placeholder || currentArticle.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextLiked = !currentArticle.isLiked;
     const nextLikesCount = Math.max(
       0,
@@ -225,11 +229,6 @@ function ArticleCard({
     };
 
     setCurrentArticle(optimisticArticle);
-
-    if (currentArticle.placeholder || currentArticle.id.startsWith("fallback")) {
-      syncArticle(optimisticArticle);
-      return;
-    }
 
     try {
       const result = await toggleEducationArticleLike(
@@ -252,6 +251,10 @@ function ArticleCard({
   };
 
   const handleFavorite = async () => {
+    if (currentArticle.placeholder || currentArticle.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextFavorite = !currentArticle.isFavorite;
     const nextFavoritesCount = Math.max(
       0,
@@ -264,11 +267,6 @@ function ArticleCard({
     };
 
     setCurrentArticle(optimisticArticle);
-
-    if (currentArticle.placeholder || currentArticle.id.startsWith("fallback")) {
-      syncArticle(optimisticArticle);
-      return;
-    }
 
     try {
       const result = await toggleEducationArticleFavorite(
@@ -342,6 +340,10 @@ function VideoCard({
   };
 
   const handleLike = async () => {
+    if (currentVideo.placeholder || currentVideo.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextLiked = !currentVideo.isLiked;
     const nextLikesCount = Math.max(0, currentVideo.likesCount + (nextLiked ? 1 : -1));
     const optimisticVideo = {
@@ -351,11 +353,6 @@ function VideoCard({
     };
 
     setCurrentVideo(optimisticVideo);
-
-    if (currentVideo.placeholder || currentVideo.id.startsWith("fallback")) {
-      syncVideo(optimisticVideo);
-      return;
-    }
 
     try {
       const result = await toggleEducationVideoLike(
@@ -378,6 +375,10 @@ function VideoCard({
   };
 
   const handleFavorite = async () => {
+    if (currentVideo.placeholder || currentVideo.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextFavorite = !currentVideo.isFavorite;
     const nextFavoritesCount = Math.max(
       0,
@@ -390,11 +391,6 @@ function VideoCard({
     };
 
     setCurrentVideo(optimisticVideo);
-
-    if (currentVideo.placeholder || currentVideo.id.startsWith("fallback")) {
-      syncVideo(optimisticVideo);
-      return;
-    }
 
     try {
       const result = await toggleEducationVideoFavorite(

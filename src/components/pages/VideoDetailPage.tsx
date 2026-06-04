@@ -212,6 +212,10 @@ export function VideoDetailPage() {
   }, []);
 
   const handleLike = async () => {
+    if (video.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextLiked = !video.isLiked;
     const nextLikesCount = Math.max(0, video.likesCount + (nextLiked ? 1 : -1));
     const optimisticVideo = {
@@ -221,14 +225,6 @@ export function VideoDetailPage() {
     };
 
     setVideo(optimisticVideo);
-
-    if (video.id.startsWith("fallback")) {
-      syncFavoriteContentItem(
-        videoToFavoriteContentItem(optimisticVideo),
-        optimisticVideo.isFavorite,
-      );
-      return;
-    }
 
     try {
       const result = await toggleEducationVideoLike(video.slug, nextLiked, nextLikesCount);
@@ -253,6 +249,10 @@ export function VideoDetailPage() {
   };
 
   const handleFavorite = async () => {
+    if (video.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextFavorite = !video.isFavorite;
     const nextFavoritesCount = Math.max(0, video.favoritesCount + (nextFavorite ? 1 : -1));
     const optimisticVideo = {
@@ -262,14 +262,6 @@ export function VideoDetailPage() {
     };
 
     setVideo(optimisticVideo);
-
-    if (video.id.startsWith("fallback")) {
-      syncFavoriteContentItem(
-        videoToFavoriteContentItem(optimisticVideo),
-        optimisticVideo.isFavorite,
-      );
-      return;
-    }
 
     try {
       const result = await toggleEducationVideoFavorite(

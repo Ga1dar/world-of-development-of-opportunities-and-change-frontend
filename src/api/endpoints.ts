@@ -1,6 +1,8 @@
 // src/api/endpoints.js
 import { API_URL } from './client.ts';
 
+const pathSegment = (value: string | number) => encodeURIComponent(String(value));
+
 export const endpoints = {
   login: `${API_URL}/users/login/`,
   logout: `${API_URL}/users/logout/`,
@@ -31,26 +33,26 @@ export const endpoints = {
   newsletterSubscribe: `${API_URL}/newsletter/subscribe`,
   educationArticles: `${API_URL}/education-materials/articles/`,
   educationArticle: (slug: string) =>
-    `${API_URL}/education-materials/articles/${slug}/`,
+    `${API_URL}/education-materials/articles/${pathSegment(slug)}/`,
   educationArticleLike: (slug: string) =>
-    `${API_URL}/education-materials/articles/${slug}/like/`,
+    `${API_URL}/education-materials/articles/${pathSegment(slug)}/like/`,
   educationArticleFavorite: (slug: string) =>
-    `${API_URL}/education-materials/articles/${slug}/favorite/`,
+    `${API_URL}/education-materials/articles/${pathSegment(slug)}/favorite/`,
   educationArticleComments: (slug: string) =>
-    `${API_URL}/education-materials/articles/${slug}/comments/`,
+    `${API_URL}/education-materials/articles/${pathSegment(slug)}/comments/`,
   educationArticleComment: (id: string | number) =>
     `${API_URL}/education-materials/article-comments/${id}/`,
   educationArticleCommentLike: (id: string | number) =>
     `${API_URL}/education-materials/article-comments/${id}/like/`,
   educationVideos: `${API_URL}/education-materials/videos/`,
   educationVideo: (slug: string) =>
-    `${API_URL}/education-materials/videos/${slug}/`,
+    `${API_URL}/education-materials/videos/${pathSegment(slug)}/`,
   educationVideoLike: (slug: string) =>
-    `${API_URL}/education-materials/videos/${slug}/like/`,
+    `${API_URL}/education-materials/videos/${pathSegment(slug)}/like/`,
   educationVideoFavorite: (slug: string) =>
-    `${API_URL}/education-materials/videos/${slug}/favorite/`,
+    `${API_URL}/education-materials/videos/${pathSegment(slug)}/favorite/`,
   educationVideoComments: (slug: string) =>
-    `${API_URL}/education-materials/videos/${slug}/comments/`,
+    `${API_URL}/education-materials/videos/${pathSegment(slug)}/comments/`,
   educationVideoComment: (id: string | number) =>
     `${API_URL}/education-materials/video-comments/${id}/`,
   educationVideoCommentLike: (id: string | number) =>

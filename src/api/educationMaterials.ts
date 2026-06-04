@@ -165,13 +165,47 @@ type StoredMaterialReaction = {
   isFavorite?: boolean;
 };
 
-const getCurrentUserKey = () => {
-  const user = getStoredCurrentUser();
-  const id = asString(user?.id ?? user?.pk ?? user?.user_id ?? user?.userId);
-  const email = asString(user?.email);
-  const username = asString(user?.username);
+const normalizeUserKey = (value: unknown) => asString(value).trim().toLowerCase();
 
-  return id || email || username || "";
+const uniqueKeys = (keys: string[]) =>
+  keys.filter((key, index) => key && keys.indexOf(key) === index);
+
+const readJwtPayload = () => {
+  const token = getAccessToken();
+  const [, payload] = token.split(".");
+  if (!payload) return null;
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      "=",
+    );
+
+    return asRecord(JSON.parse(atob(paddedPayload)));
+  } catch {
+    return null;
+  }
+};
+
+const getCurrentUserKeys = () => {
+  const user = getStoredCurrentUser();
+  const tokenPayload = readJwtPayload();
+
+  return uniqueKeys([
+    normalizeUserKey(user?.id),
+    normalizeUserKey(user?.pk),
+    normalizeUserKey(user?.user_id),
+    normalizeUserKey(user?.userId),
+    normalizeUserKey(user?.email),
+    normalizeUserKey(user?.username),
+    normalizeUserKey(tokenPayload?.user_id),
+    normalizeUserKey(tokenPayload?.userId),
+    normalizeUserKey(tokenPayload?.id),
+    normalizeUserKey(tokenPayload?.email),
+    normalizeUserKey(tokenPayload?.username),
+    normalizeUserKey(tokenPayload?.sub),
+  ]);
 };
 
 const readStoredMaterialReactions = () => {
@@ -189,16 +223,15 @@ const readStoredMaterialReactions = () => {
   }
 };
 
-const materialReactionKey = (kind: "article" | "video", slug: string) => {
-  const userKey = getCurrentUserKey();
-  return userKey && slug ? `${userKey}:${kind}:${slug}` : "";
-};
+const materialReactionKeys = (kind: "article" | "video", slug: string) =>
+  slug ? getCurrentUserKeys().map((userKey) => `${userKey}:${kind}:${slug}`) : [];
 
 const readStoredMaterialReaction = (kind: "article" | "video", slug: string) => {
-  const key = materialReactionKey(kind, slug);
-  if (!key) return null;
+  const keys = materialReactionKeys(kind, slug);
+  if (!keys.length) return null;
 
-  return readStoredMaterialReactions()[key] ?? null;
+  const reactions = readStoredMaterialReactions();
+  return keys.map((key) => reactions[key]).find(Boolean) ?? null;
 };
 
 const syncStoredMaterialReaction = (
@@ -208,11 +241,13 @@ const syncStoredMaterialReaction = (
 ) => {
   if (typeof window === "undefined") return;
 
-  const key = materialReactionKey(kind, slug);
-  if (!key) return;
+  const keys = materialReactionKeys(kind, slug);
+  if (!keys.length) return;
 
   const reactions = readStoredMaterialReactions();
-  reactions[key] = { ...reactions[key], ...state };
+  keys.forEach((key) => {
+    reactions[key] = { ...reactions[key], ...state };
+  });
   localStorage.setItem(MATERIAL_REACTIONS_STORAGE_KEY, JSON.stringify(reactions));
 };
 
