@@ -9,6 +9,11 @@ import {
   type EducationVideo,
 } from "../../api/educationMaterials";
 import {
+  applyLocalMaterialReaction,
+  toggleLocalMaterialFavorite,
+  toggleLocalMaterialLike,
+} from "../../api/localMaterialReactions";
+import {
   syncFavoriteContentItem,
   videoToFavoriteContentItem,
 } from "../../api/userFavorites";
@@ -24,11 +29,13 @@ const copy = {
   ua: {
     title: "Відео матеріали",
     loading: "Завантажуємо відео...",
+    empty: "Відео матеріали з'являться тут.",
     addVideo: "Додати Відео",
   },
   en: {
     title: "Video materials",
     loading: "Loading videos...",
+    empty: "Video materials will appear here.",
     addVideo: "Add video",
   },
 } as const;
@@ -85,6 +92,17 @@ function VideoCard({ video, language }: { video: EducationVideo; language: "ua" 
 
   const handleLike = async () => {
     if (currentVideo.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialLike(
+        "video",
+        currentVideo.slug,
+        currentVideo.isLiked,
+        currentVideo.likesCount,
+      );
+      setCurrentVideo({
+        ...currentVideo,
+        isLiked: result.isLiked,
+        likesCount: result.likesCount,
+      });
       return;
     }
 
@@ -121,6 +139,20 @@ function VideoCard({ video, language }: { video: EducationVideo; language: "ua" 
 
   const handleFavorite = async () => {
     if (currentVideo.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialFavorite(
+        "video",
+        currentVideo.slug,
+        currentVideo.isFavorite,
+        currentVideo.favoritesCount,
+      );
+      const updatedVideo = {
+        ...currentVideo,
+        isFavorite: result.isFavorite,
+        favoritesCount: result.favoritesCount,
+      };
+
+      setCurrentVideo(updatedVideo);
+      syncVideo(updatedVideo);
       return;
     }
 
@@ -235,7 +267,9 @@ export function VideoMaterialsPage() {
   }, [language]);
 
   const visibleVideos = !isLoading && videos.length === 0
-    ? createFallbackVideos(language)
+    ? createFallbackVideos(language).map((video) =>
+        applyLocalMaterialReaction("video", video),
+      )
     : videos;
 
   return (

@@ -284,7 +284,11 @@ export function EventDetailPage() {
     applyLikeState(nextLiked);
 
     try {
-      const result = await toggleEventLike(targetEvent.id, nextLiked);
+      const result = await toggleEventLike(
+        targetEvent.id,
+        nextLiked,
+        Boolean(targetEvent.isFallback),
+      );
       if (result.liked !== nextLiked) applyLikeState(result.liked);
     } catch (error) {
       console.error(error);
