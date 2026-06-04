@@ -22,6 +22,7 @@ import {
   videoToFavoriteContentItem,
 } from "../../api/userFavorites";
 import { getFallbackVideo } from "../../api/videoFallbacks";
+import { VideoPreviewLoader } from "../ui/VideoPreviewLoader";
 
 const pageMaxWidth =
   "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
@@ -95,7 +96,7 @@ function VideoFrame({ video }: { video: EducationVideo }) {
       <video
         controls
         poster={video.coverImage || undefined}
-        className="h-[244px] w-full rounded-[20px] bg-[#D9D9D9] object-cover min-[744px]:h-[462px] min-[1023px]:h-[412px] min-[1420px]:h-[365px] min-[1900px]:h-[450px]"
+        className="h-[244px] w-full rounded-[20px] bg-[#F7EEF4] object-cover min-[744px]:h-[462px] min-[1023px]:h-[412px] min-[1420px]:h-[365px] min-[1900px]:h-[450px]"
       >
         <source src={video.videoUrl} />
       </video>
@@ -107,13 +108,13 @@ function VideoFrame({ video }: { video: EducationVideo }) {
       <img
         src={video.coverImage}
         alt={video.title}
-        className="h-[244px] w-full rounded-[20px] bg-[#D9D9D9] object-cover min-[744px]:h-[462px] min-[1023px]:h-[412px] min-[1420px]:h-[365px] min-[1900px]:h-[450px]"
+        className="h-[244px] w-full rounded-[20px] bg-[#F7EEF4] object-cover min-[744px]:h-[462px] min-[1023px]:h-[412px] min-[1420px]:h-[365px] min-[1900px]:h-[450px]"
       />
     );
   }
 
   return (
-    <div className="h-[244px] w-full rounded-[20px] bg-[#D9D9D9] min-[744px]:h-[462px] min-[1023px]:h-[412px] min-[1420px]:h-[365px] min-[1900px]:h-[450px]" />
+    <VideoPreviewLoader className="h-[244px] w-full rounded-[20px] min-[744px]:h-[462px] min-[1023px]:h-[412px] min-[1420px]:h-[365px] min-[1900px]:h-[450px]" />
   );
 }
 

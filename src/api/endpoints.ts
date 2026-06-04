@@ -9,6 +9,7 @@ export const endpoints = {
   tokenRefresh: `${API_URL}/token/refresh/`,
   register: `${API_URL}/users/register/`,
   me: `${API_URL}/users/list/me/`,
+  userFavorites: `${API_URL}/users/list/favorites/`,
   specialists: `${API_URL}/profiles/specialist-profiles/`,
   specialistProfile: (id: string | number) =>
     `${API_URL}/profiles/specialist-profiles/${id}/`,

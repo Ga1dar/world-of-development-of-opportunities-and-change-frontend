@@ -10,17 +10,13 @@ import {
   type CabinetDocument,
   type CabinetProfile,
 } from "../../api/userCabinet";
-import { getEducationArticles, getEducationVideos } from "../../api/educationMaterials";
-import { getFavoriteEvents } from "../../api/events";
 import { logoutCurrentUser, notifyAuthChanged } from "../../api/auth";
 import {
   FAVORITES_CHANGED_EVENT,
-  articleToFavoriteContentItem,
-  eventToFavoriteContentItem,
+  getCurrentUserFavoriteContentItems,
   mergeFavoriteContentItems,
   readFavoriteContentItems,
   type FavoriteContentItem,
-  videoToFavoriteContentItem,
 } from "../../api/userFavorites";
 import {
   cancelConsultationAppointment,
@@ -1312,25 +1308,10 @@ export function UserCabinetPage() {
   const language = isEnglishLanguage(i18n.language) ? "en" : "ua";
 
   const loadFavoriteItems = async () => {
-    const [events, articles, videos] = await Promise.all([
-      getFavoriteEvents().catch(() => []),
-      getEducationArticles(language).catch(() => []),
-      getEducationVideos(language).catch(() => []),
+    const [serverItems, cachedFavoriteItems] = await Promise.all([
+      getCurrentUserFavoriteContentItems(language).catch(() => []),
+      Promise.resolve(readFavoriteContentItems()),
     ]);
-
-    const serverItems = [
-      ...events.map((event) => eventToFavoriteContentItem(event, language)),
-      ...articles
-        .filter((article) => article.isFavorite)
-        .map(articleToFavoriteContentItem),
-      ...videos
-        .filter((video) => video.isFavorite)
-        .map(videoToFavoriteContentItem),
-    ];
-
-    const cachedFavoriteItems = readFavoriteContentItems().filter(
-      (item) => item.kind === "event",
-    );
 
     return mergeFavoriteContentItems(cachedFavoriteItems, serverItems);
   };
