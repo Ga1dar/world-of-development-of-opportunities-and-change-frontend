@@ -142,8 +142,8 @@ export function SpecialistProfil() {
     <article
       className="bg-secondary pb-20 pt-2
        font-montserrat text-[#1C100E]
-        sm:pb-24 sm:pt-8 min-[1420px]:pb-20 min-[1420px]:pt-9
-         min-[1900px]:pb-40 min-[1900px]:pt-0">
+        sm:pb-24 sm:pt-8 min-[1420px]:pb-20 min-[1420px]:pt-[100px]
+         min-[1900px]:pb-40 min-[1900px]:pt-[120px]">
       <div className="mx-auto w-full max-w-295 px-5 sm:px-10 min-[1023px]:px-16 min-[1420px]:max-w-217 min-[1440px]:max-w-[calc(100vw-160px)] min-[1420px]:px-0 min-[1900px]:max-w-295 min-[1908px]:max-w-[calc(100vw-160px)]">
         {hasError && (
           <p className="mt-4 text-[14px] text-[#7A1E1E]">
@@ -154,7 +154,7 @@ export function SpecialistProfil() {
         <div
           className="grid gap-8 min-[1023px]:grid-cols-[1fr_460px] 
           min-[1023px]:items-start min-[1420px]:grid-cols-[398px_398px]
-          min-[1420px]:gap-18 min-[1900px]:grid-cols-[571px_585px]
+          min-[1420px]:justify-center min-[1420px]:gap-18 min-[1900px]:grid-cols-[571px_585px]
            min-[1900px]:gap-6">
           <div
             className="order-2 min-[1023px]:order-1 min-[1420px]:pt-0 min-[1900px]:pt-14.5">

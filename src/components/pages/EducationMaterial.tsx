@@ -208,7 +208,7 @@ function ArticleCard({
   const syncArticle = (item: DisplayArticle) => {
     syncFavoriteContentItem(
       articleToFavoriteContentItem(item),
-      item.isLiked || item.isFavorite,
+      item.isFavorite,
     );
   };
 
@@ -337,7 +337,7 @@ function VideoCard({
   const syncVideo = (item: DisplayVideo) => {
     syncFavoriteContentItem(
       videoToFavoriteContentItem(item),
-      item.isLiked || item.isFavorite,
+      item.isFavorite,
     );
   };
 
