@@ -379,6 +379,10 @@ export function ArticleDetailPage() {
   }, []);
 
   const handleLike = async () => {
+    if (article.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextLiked = !article.isLiked;
     const nextLikesCount = Math.max(0, article.likesCount + (nextLiked ? 1 : -1));
     const optimisticArticle = {
@@ -388,14 +392,6 @@ export function ArticleDetailPage() {
     };
 
     setArticle(optimisticArticle);
-
-    if (article.id.startsWith("fallback")) {
-      syncFavoriteContentItem(
-        articleToFavoriteContentItem(optimisticArticle),
-        optimisticArticle.isFavorite,
-      );
-      return;
-    }
 
     try {
       const result = await toggleEducationArticleLike(
@@ -424,6 +420,10 @@ export function ArticleDetailPage() {
   };
 
   const handleFavorite = async () => {
+    if (article.id.startsWith("fallback")) {
+      return;
+    }
+
     const nextFavorite = !article.isFavorite;
     const nextFavoritesCount = Math.max(0, article.favoritesCount + (nextFavorite ? 1 : -1));
     const optimisticArticle = {
@@ -433,14 +433,6 @@ export function ArticleDetailPage() {
     };
 
     setArticle(optimisticArticle);
-
-    if (article.id.startsWith("fallback")) {
-      syncFavoriteContentItem(
-        articleToFavoriteContentItem(optimisticArticle),
-        optimisticArticle.isFavorite,
-      );
-      return;
-    }
 
     try {
       const result = await toggleEducationArticleFavorite(

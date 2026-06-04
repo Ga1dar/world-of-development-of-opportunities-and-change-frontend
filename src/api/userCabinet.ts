@@ -126,6 +126,25 @@ const readString = (record: RawRecord | null, keys: string[]) => {
   return "";
 };
 
+const parseJsonResponse = (response: Response) => response.json().catch(() => null);
+
+const stringifyResponseDetails = (data: unknown) => {
+  const record = asRecord(data);
+  if (!record) return "";
+
+  return JSON.stringify(record);
+};
+
+const hasEducationOtherValidationError = (data: unknown) => {
+  const record = asRecord(data);
+  if (!record) return false;
+
+  return (
+    Object.prototype.hasOwnProperty.call(record, "education_other") ||
+    Object.prototype.hasOwnProperty.call(record, "educationOther")
+  );
+};
+
 const readReferenceId = (value: unknown): string => {
   const directValue = asString(value);
   if (directValue) return directValue;
@@ -349,17 +368,33 @@ const normalizeProfile = (
       profileKind === "specialist" ? SPECIALIST_FALLBACK_AVATAR : FALLBACK_AVATAR,
     ),
     profession,
-    phone: readString(source, ["phone", "telephone", "tel", "phone_number", "phoneNumber"]),
-    city: readString(source, ["city", "location", "town"]),
-    birthDate: readString(source, ["birth_date", "birthDate"]),
-    education: readString(source, ["education", "degree"]),
-    experience: readString(source, [
-      "work_experience",
-      "workExperience",
-      "experience",
-      "years_of_experience",
-      "yearsOfExperience",
-    ]),
+    phone:
+      readString(source, ["phone", "telephone", "tel", "phone_number", "phoneNumber"]) ||
+      readString(sourceUser, ["phone", "telephone", "tel", "phone_number", "phoneNumber"]),
+    city:
+      readString(source, ["city", "location", "town"]) ||
+      readString(sourceUser, ["city", "location", "town"]),
+    birthDate:
+      readString(source, ["birth_date", "birthDate", "date_of_birth", "dateOfBirth", "birthday", "dob"]) ||
+      readString(sourceUser, ["birth_date", "birthDate", "date_of_birth", "dateOfBirth", "birthday", "dob"]),
+    education:
+      readString(source, ["education", "education_other", "educationOther", "degree"]) ||
+      readString(sourceUser, ["education", "education_other", "educationOther", "degree"]),
+    experience:
+      readString(source, [
+        "work_experience",
+        "workExperience",
+        "experience",
+        "years_of_experience",
+        "yearsOfExperience",
+      ]) ||
+      readString(sourceUser, [
+        "work_experience",
+        "workExperience",
+        "experience",
+        "years_of_experience",
+        "yearsOfExperience",
+      ]),
     workHours: readString(source, [
       "work_hours",
       "workHours",
@@ -367,7 +402,9 @@ const normalizeProfile = (
       "working_hours",
       "workingHours",
     ]),
-    about: readString(source, ["about", "bio", "description"]),
+    about:
+      readString(source, ["about", "bio", "description"]) ||
+      readString(sourceUser, ["about", "bio", "description"]),
     isVerified:
       source.is_verified === true ||
       source.isVerified === true ||
@@ -639,9 +676,12 @@ export async function updateSpecialistProfile(
     body.append("phone", input.phone);
     body.append("city", input.city);
     body.append("specialisation", input.specialization);
+    body.append("specialization", input.specialization);
     body.append("education", input.education);
     body.append("experience", input.experience);
+    body.append("work_experience", input.experience);
     body.append("bio", input.about);
+    body.append("about", input.about);
 
     if (input.avatar) {
       body.append(avatarField, input.avatar);
@@ -688,9 +728,12 @@ export async function createSpecialistProfile(input: SpecialistProfileCreateInpu
   body.append("phone", input.phone);
   body.append("city", input.city);
   body.append("specialisation", input.specialization);
+  body.append("specialization", input.specialization);
   body.append("education", input.education);
   body.append("experience", input.experience);
+  body.append("work_experience", input.experience);
   body.append("bio", input.about);
+  body.append("about", input.about);
   body.append("accept_data_processing_consent", String(input.acceptDataProcessingConsent));
 
   if (input.avatar) {
@@ -719,24 +762,42 @@ export async function updateUserProfile(profileId: string, input: UserProfileUpd
     throw new Error("Authentication required");
   }
 
-  const body = new FormData();
-  body.append("first_name", input.firstName);
-  body.append("last_name", input.lastName);
-  body.append("phone", input.phone);
-  body.append("city", input.city);
-  body.append("birth_date", input.birthDate);
-  body.append("bio", input.about);
+  const createBody = (includeEducationOtherFallback = false) => {
+    const body = new FormData();
+    body.append("first_name", input.firstName);
+    body.append("last_name", input.lastName);
+    body.append("phone", input.phone);
+    body.append("city", input.city);
+    body.append("birth_date", input.birthDate);
+    body.append("bio", input.about);
 
-  const response = await apiFetch(endpoints.userProfile(profileId), {
+    if (includeEducationOtherFallback) {
+      body.append("education_other", "Not specified");
+    }
+
+    return body;
+  };
+
+  let response = await apiFetch(endpoints.userProfile(profileId), {
     method: "PATCH",
-    body,
+    body: createBody(),
   });
+  let errorData: unknown = null;
 
   if (!response.ok) {
-    const details = await response
-      .json()
-      .then((data) => JSON.stringify(data))
-      .catch(() => "");
+    errorData = await parseJsonResponse(response);
+
+    if (response.status === 400 && hasEducationOtherValidationError(errorData)) {
+      response = await apiFetch(endpoints.userProfile(profileId), {
+        method: "PATCH",
+        body: createBody(true),
+      });
+      errorData = response.ok ? null : await parseJsonResponse(response);
+    }
+  }
+
+  if (!response.ok) {
+    const details = stringifyResponseDetails(errorData);
     throw new Error(`Profile update failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 
@@ -795,9 +856,16 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
     throw new Error("User profile id is missing");
   }
 
-  const uploadWithField = (fieldName: "avatar" | "photo" | "image" | "picture") => {
+  const uploadWithField = (
+    fieldName: "avatar" | "photo" | "image" | "picture",
+    includeEducationOtherFallback = false,
+  ) => {
     const body = new FormData();
     body.append(fieldName, avatar);
+
+    if (includeEducationOtherFallback) {
+      body.append("education_other", "Not specified");
+    }
 
     return apiFetch(endpoint, {
       method: "PATCH",
@@ -806,19 +874,31 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
   };
 
   let response = await uploadWithField("avatar");
+  let errorData: unknown = null;
+
+  if (!response.ok && response.status === 400) {
+    errorData = await parseJsonResponse(response);
+    if (profile.profileKind !== "specialist" && hasEducationOtherValidationError(errorData)) {
+      response = await uploadWithField("avatar", true);
+      errorData = response.ok ? null : await parseJsonResponse(response);
+    }
+  }
 
   if (!response.ok && response.status === 400) {
     for (const fieldName of ["photo", "image", "picture"] as const) {
       response = await uploadWithField(fieldName);
       if (response.ok) break;
+      errorData = await parseJsonResponse(response);
+      if (profile.profileKind !== "specialist" && hasEducationOtherValidationError(errorData)) {
+        response = await uploadWithField(fieldName, true);
+        if (response.ok) break;
+        errorData = await parseJsonResponse(response);
+      }
     }
   }
 
   if (!response.ok) {
-    const details = await response
-      .json()
-      .then((data) => JSON.stringify(data))
-      .catch(() => "");
+    const details = stringifyResponseDetails(errorData);
     throw new Error(`Avatar update failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 

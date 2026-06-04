@@ -16,6 +16,7 @@ export type FavoriteContentItem = {
   favoritesCount?: number;
   date?: string;
   savedByFavorite?: boolean;
+  userKeys?: string[];
 };
 
 export const FAVORITES_CHANGED_EVENT = "svity-favorites-changed";
@@ -33,10 +34,66 @@ const asNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(numericValue) ? numericValue : fallback;
 };
 
+const normalizeUserKey = (value: unknown) => asString(value).trim().toLowerCase();
+
+const uniqueStrings = (values: string[]) =>
+  values.filter((value, index) => value && values.indexOf(value) === index);
+
+const parseJwtPayload = (token: string) => {
+  const [, payload] = token.split(".");
+  if (!payload) return null;
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      "=",
+    );
+
+    return asRecord(JSON.parse(atob(paddedPayload)));
+  } catch {
+    return null;
+  }
+};
+
+const getCurrentUserKeys = () => {
+  if (typeof window === "undefined") return [];
+
+  const currentUser = (() => {
+    try {
+      return asRecord(JSON.parse(localStorage.getItem("currentUser") || "null"));
+    } catch {
+      return null;
+    }
+  })();
+  const tokenPayload = parseJwtPayload(localStorage.getItem("accessToken") || "");
+
+  return uniqueStrings([
+    normalizeUserKey(currentUser?.id),
+    normalizeUserKey(currentUser?.pk),
+    normalizeUserKey(currentUser?.user_id),
+    normalizeUserKey(currentUser?.userId),
+    normalizeUserKey(currentUser?.email),
+    normalizeUserKey(currentUser?.username),
+    normalizeUserKey(tokenPayload?.user_id),
+    normalizeUserKey(tokenPayload?.userId),
+    normalizeUserKey(tokenPayload?.id),
+    normalizeUserKey(tokenPayload?.email),
+    normalizeUserKey(tokenPayload?.username),
+    normalizeUserKey(tokenPayload?.sub),
+  ]);
+};
+
+const asStringArray = (value: unknown) =>
+  Array.isArray(value) ? uniqueStrings(value.map(normalizeUserKey)) : [];
+
 const itemKey = (kind: FavoriteContentKind, id: string | number) => `${kind}:${id}`;
 
 const itemIdentity = (item: FavoriteContentItem) =>
   `${item.kind}:${item.href || item.slug || item.id}`.toLowerCase();
+
+const storedItemIdentity = (item: FavoriteContentItem) =>
+  `${itemIdentity(item)}:${item.userKeys?.join("|") || "legacy"}`;
 
 const notifyFavoritesChanged = () => {
   if (typeof window !== "undefined") {
@@ -44,15 +101,20 @@ const notifyFavoritesChanged = () => {
   }
 };
 
-export const readFavoriteContentItems = (): FavoriteContentItem[] => {
+const belongsToCurrentUser = (item: FavoriteContentItem, currentUserKeys: string[]) =>
+  !item.userKeys?.length ||
+  currentUserKeys.some((currentUserKey) => item.userKeys?.includes(currentUserKey));
+
+const readAllFavoriteContentItems = (): FavoriteContentItem[] => {
   if (typeof window === "undefined") return [];
 
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     if (!Array.isArray(value)) return [];
 
-    return mergeFavoriteContentItems(
-      value
+    const byIdentity = new Map<string, FavoriteContentItem>();
+
+    value
       .map<FavoriteContentItem | null>((item) => {
         const record = asRecord(item);
         if (!record) return null;
@@ -78,21 +140,34 @@ export const readFavoriteContentItems = (): FavoriteContentItem[] => {
           favoritesCount: asNumber(record.favoritesCount),
           date: asString(record.date),
           savedByFavorite: record.savedByFavorite === true,
+          userKeys: asStringArray(record.userKeys),
         };
 
         return favoriteItem;
       })
-      .filter((item): item is FavoriteContentItem => Boolean(item)),
-    );
+      .filter((item): item is FavoriteContentItem => Boolean(item))
+      .forEach((item) => {
+        byIdentity.set(storedItemIdentity(item), item);
+      });
+
+    return Array.from(byIdentity.values());
   } catch {
     return [];
   }
 };
 
+export const readFavoriteContentItems = (): FavoriteContentItem[] => {
+  const currentUserKeys = getCurrentUserKeys();
+
+  return readAllFavoriteContentItems().filter((item) =>
+    belongsToCurrentUser(item, currentUserKeys),
+  );
+};
+
 const writeFavoriteContentItems = (items: FavoriteContentItem[]) => {
   if (typeof window === "undefined") return;
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(mergeFavoriteContentItems(items)));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   notifyFavoritesChanged();
 };
 
@@ -107,12 +182,20 @@ export const syncFavoriteContentItem = (
   item: FavoriteContentItem,
   isFavorite: boolean,
 ) => {
-  const items = readFavoriteContentItems();
+  const items = readAllFavoriteContentItems();
   const key = item.key || itemKey(item.kind, item.id);
-  const nextItem = { ...item, key, savedByFavorite: isFavorite || item.savedByFavorite };
+  const currentUserKeys = getCurrentUserKeys();
+  const nextItem = {
+    ...item,
+    key,
+    savedByFavorite: isFavorite || item.savedByFavorite,
+    userKeys: uniqueStrings([...(item.userKeys ?? []), ...currentUserKeys]),
+  };
   const identity = itemIdentity(nextItem);
   const existingIndex = items.findIndex(
-    (current) => current.key === key || itemIdentity(current) === identity,
+    (current) =>
+      (current.key === key || itemIdentity(current) === identity) &&
+      belongsToCurrentUser(current, currentUserKeys),
   );
 
   if (isFavorite) {

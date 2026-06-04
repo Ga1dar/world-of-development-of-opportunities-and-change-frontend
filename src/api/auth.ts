@@ -1,5 +1,4 @@
 import { endpoints } from "./endpoints";
-import { clearFavoriteContentItems } from "./userFavorites";
 
 type CurrentUserRecord = Record<string, unknown>;
 
@@ -103,7 +102,6 @@ export const clearLocalSession = () => {
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("currentUser");
   localStorage.removeItem("svityLikedEventIds");
-  clearFavoriteContentItems();
 };
 
 const notifyAuthRequired = () => {

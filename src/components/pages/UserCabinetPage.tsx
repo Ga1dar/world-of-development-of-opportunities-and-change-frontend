@@ -1329,7 +1329,7 @@ export function UserCabinetPage() {
     ];
 
     const cachedFavoriteItems = readFavoriteContentItems().filter(
-      (item) => item.kind === "event" || item.savedByFavorite,
+      (item) => item.kind === "event",
     );
 
     return mergeFavoriteContentItems(cachedFavoriteItems, serverItems);
