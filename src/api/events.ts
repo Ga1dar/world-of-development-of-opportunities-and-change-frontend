@@ -39,6 +39,7 @@ export type EventItem = {
   eventDate?: string;
   location?: string;
   comments: EventComment[];
+  isFallback?: boolean;
 };
 
 export type EventRegistrationPayload = {
@@ -304,7 +305,7 @@ const fallbackEvents: EventItem[] = [
     location: "м. Покров",
     comments: [],
   },
-];
+].map((event) => ({ ...event, isFallback: true }));
 
 const LIKED_EVENT_IDS_STORAGE_KEY = "svityLikedEventIds";
 
@@ -974,7 +975,16 @@ export async function createEventComment(
   return normalizeComment(data, 0);
 }
 
-export async function toggleEventLike(eventId: string | number, fallbackLiked = true) {
+export async function toggleEventLike(
+  eventId: string | number,
+  fallbackLiked = true,
+  localOnly = false,
+) {
+  if (localOnly) {
+    syncStoredEventLike(eventId, fallbackLiked);
+    return { liked: fallbackLiked };
+  }
+
   if (!hasAccessToken()) {
     throw new Error("Authentication required");
   }

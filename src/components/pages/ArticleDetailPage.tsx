@@ -14,6 +14,11 @@ import {
   type EducationArticleSection,
 } from "../../api/educationMaterials";
 import {
+  applyLocalMaterialReaction,
+  toggleLocalMaterialFavorite,
+  toggleLocalMaterialLike,
+} from "../../api/localMaterialReactions";
+import {
   articleToFavoriteContentItem,
   syncFavoriteContentItem,
 } from "../../api/userFavorites";
@@ -78,24 +83,38 @@ function RichText({ content }: { content: string }) {
 
 function ArticleActions({
   article,
+  disabled = false,
   onLike,
   onFavorite,
 }: {
   article: EducationArticle;
+  disabled?: boolean;
   onLike: () => void;
   onFavorite: () => void;
 }) {
   return (
     <div className="flex items-center gap-3 text-[13px] min-[744px]:gap-4 min-[1023px]:text-[14px]">
       <span>{article.likesCount}</span>
-      <button type="button" onClick={onLike} aria-label="like article">
+      <button
+        type="button"
+        onClick={onLike}
+        disabled={disabled}
+        aria-label="like article"
+        className="disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Heart
           className={`size-5 stroke-[1.8] ${article.isLiked ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
         />
       </button>
       <span>{article.commentsCount}</span>
       <MessageSquare className="size-5 stroke-[1.8]" aria-hidden="true" />
-      <button type="button" onClick={onFavorite} aria-label="save article">
+      <button
+        type="button"
+        onClick={onFavorite}
+        disabled={disabled}
+        aria-label="save article"
+        className="disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Bookmark
           className={`size-5 stroke-[1.8] ${article.isFavorite ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
         />
@@ -195,7 +214,7 @@ export function ArticleDetailPage() {
   );
   const labels = copy[language];
   const [article, setArticle] = useState<EducationArticle>(() =>
-    getFallbackArticle(language, slug),
+    applyLocalMaterialReaction("article", getFallbackArticle(language, slug)),
   );
   const [comments, setComments] = useState<EducationArticleComment[]>([]);
   const [commentText, setCommentText] = useState("");
@@ -216,7 +235,9 @@ export function ArticleDetailPage() {
     const loadArticle = async () => {
       const item = await getEducationArticle(slug, language, controller.signal);
       if (!controller.signal.aborted) {
-        setArticle(item ?? getFallbackArticle(language, slug));
+        setArticle(
+          item ?? applyLocalMaterialReaction("article", getFallbackArticle(language, slug)),
+        );
       }
     };
 
@@ -380,6 +401,17 @@ export function ArticleDetailPage() {
 
   const handleLike = async () => {
     if (article.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialLike(
+        "article",
+        article.slug,
+        article.isLiked,
+        article.likesCount,
+      );
+      setArticle({
+        ...article,
+        isLiked: result.isLiked,
+        likesCount: result.likesCount,
+      });
       return;
     }
 
@@ -422,6 +454,20 @@ export function ArticleDetailPage() {
 
   const handleFavorite = async () => {
     if (article.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialFavorite(
+        "article",
+        article.slug,
+        article.isFavorite,
+        article.favoritesCount,
+      );
+      const updatedArticle = {
+        ...article,
+        isFavorite: result.isFavorite,
+        favoritesCount: result.favoritesCount,
+      };
+
+      setArticle(updatedArticle);
+      syncFavoriteContentItem(articleToFavoriteContentItem(updatedArticle), result.isFavorite);
       return;
     }
 
@@ -532,7 +578,11 @@ export function ArticleDetailPage() {
             <time className="text-[13px] text-[#1C100E]/70 min-[744px]:text-[14px]">
               {formatDate(article.publishedAt, language)}
             </time>
-            <ArticleActions article={article} onLike={handleLike} onFavorite={handleFavorite} />
+            <ArticleActions
+              article={article}
+              onLike={handleLike}
+              onFavorite={handleFavorite}
+            />
           </div>
 
           <div className="relative z-10 mt-7 space-y-8 text-[16px] leading-[1.42] text-[#2D302D] min-[744px]:text-[18px] min-[1023px]:text-[17px] min-[1900px]:text-[18px]">
