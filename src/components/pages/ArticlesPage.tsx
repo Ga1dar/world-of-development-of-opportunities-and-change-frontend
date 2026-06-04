@@ -9,6 +9,11 @@ import {
   type EducationArticle,
 } from "../../api/educationMaterials";
 import {
+  applyLocalMaterialReaction,
+  toggleLocalMaterialFavorite,
+  toggleLocalMaterialLike,
+} from "../../api/localMaterialReactions";
+import {
   articleToFavoriteContentItem,
   syncFavoriteContentItem,
 } from "../../api/userFavorites";
@@ -26,10 +31,12 @@ const isEnglishLanguage = (language: string) => language.toLowerCase().startsWit
 const copy = {
   ua: {
     title: "Статті",
+    empty: "Статті з'являться тут.",
     fallbackUser: "Користувач",
   },
   en: {
     title: "Articles",
+    empty: "Articles will appear here.",
     fallbackUser: "User",
   },
 };
@@ -62,10 +69,21 @@ function ArticleListCard({
   }, [article]);
 
   const handleLike = async () => {
-    if (article.id.startsWith("fallback")) return;
-
     const nextLiked = !isLiked;
     const nextLikesCount = Math.max(0, likesCount + (nextLiked ? 1 : -1));
+
+    if (article.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialLike(
+        "article",
+        article.slug,
+        isLiked,
+        likesCount,
+      );
+      setIsLiked(result.isLiked);
+      setLikesCount(result.likesCount);
+      return;
+    }
+
     setIsLiked(nextLiked);
     setLikesCount(nextLikesCount);
 
@@ -95,10 +113,31 @@ function ArticleListCard({
   };
 
   const handleFavorite = async () => {
-    if (article.id.startsWith("fallback")) return;
-
     const nextFavorite = !isFavorite;
     const nextFavoritesCount = Math.max(0, favoritesCount + (nextFavorite ? 1 : -1));
+
+    if (article.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialFavorite(
+        "article",
+        article.slug,
+        isFavorite,
+        favoritesCount,
+      );
+      setIsFavorite(result.isFavorite);
+      setFavoritesCount(result.favoritesCount);
+      syncFavoriteContentItem(
+        articleToFavoriteContentItem({
+          ...article,
+          isLiked,
+          isFavorite: result.isFavorite,
+          likesCount,
+          favoritesCount: result.favoritesCount,
+        }),
+        result.isFavorite,
+      );
+      return;
+    }
+
     setIsFavorite(nextFavorite);
     setFavoritesCount(nextFavoritesCount);
 
@@ -196,7 +235,9 @@ export function ArticlesPage() {
   }, [language]);
 
   const visibleArticles = !isLoading && articles.length === 0
-    ? getFallbackArticles(language)
+    ? getFallbackArticles(language).map((article) =>
+        applyLocalMaterialReaction("article", article),
+      )
     : articles;
 
   return (

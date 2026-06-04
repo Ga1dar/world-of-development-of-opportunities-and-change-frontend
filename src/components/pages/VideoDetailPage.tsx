@@ -13,6 +13,11 @@ import {
   type EducationVideo,
 } from "../../api/educationMaterials";
 import {
+  applyLocalMaterialReaction,
+  toggleLocalMaterialFavorite,
+  toggleLocalMaterialLike,
+} from "../../api/localMaterialReactions";
+import {
   syncFavoriteContentItem,
   videoToFavoriteContentItem,
 } from "../../api/userFavorites";
@@ -44,24 +49,38 @@ type VideoDetailCopy = (typeof copy)[keyof typeof copy];
 
 function VideoActions({
   video,
+  disabled = false,
   onLike,
   onFavorite,
 }: {
   video: EducationVideo;
+  disabled?: boolean;
   onLike: () => void;
   onFavorite: () => void;
 }) {
   return (
     <div className="flex items-center justify-end gap-3 text-[13px] min-[744px]:gap-4 min-[1023px]:text-[14px]">
       <span>{video.likesCount}</span>
-      <button type="button" onClick={onLike} aria-label="like video">
+      <button
+        type="button"
+        onClick={onLike}
+        disabled={disabled}
+        aria-label="like video"
+        className="disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Heart
           className={`size-5 stroke-[1.8] ${video.isLiked ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
         />
       </button>
       <span>{video.commentsCount}</span>
       <MessageSquare className="size-5 stroke-[1.8]" aria-hidden="true" />
-      <button type="button" onClick={onFavorite} aria-label="save video">
+      <button
+        type="button"
+        onClick={onFavorite}
+        disabled={disabled}
+        aria-label="save video"
+        className="disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Bookmark
           className={`size-5 stroke-[1.8] ${video.isFavorite ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
         />
@@ -164,7 +183,9 @@ export function VideoDetailPage() {
     [i18n.language],
   );
   const labels = copy[language];
-  const [video, setVideo] = useState<EducationVideo>(() => getFallbackVideo(language, slug));
+  const [video, setVideo] = useState<EducationVideo>(() =>
+    applyLocalMaterialReaction("video", getFallbackVideo(language, slug)),
+  );
   const [comments, setComments] = useState<EducationArticleComment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getAccessToken()));
@@ -175,7 +196,9 @@ export function VideoDetailPage() {
     const loadVideo = async () => {
       const item = await getEducationVideo(slug, language, controller.signal);
       if (!controller.signal.aborted) {
-        setVideo(item ?? getFallbackVideo(language, slug));
+        setVideo(
+          item ?? applyLocalMaterialReaction("video", getFallbackVideo(language, slug)),
+        );
       }
     };
 
@@ -213,6 +236,17 @@ export function VideoDetailPage() {
 
   const handleLike = async () => {
     if (video.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialLike(
+        "video",
+        video.slug,
+        video.isLiked,
+        video.likesCount,
+      );
+      setVideo({
+        ...video,
+        isLiked: result.isLiked,
+        likesCount: result.likesCount,
+      });
       return;
     }
 
@@ -255,6 +289,20 @@ export function VideoDetailPage() {
 
   const handleFavorite = async () => {
     if (video.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialFavorite(
+        "video",
+        video.slug,
+        video.isFavorite,
+        video.favoritesCount,
+      );
+      const updatedVideo = {
+        ...video,
+        isFavorite: result.isFavorite,
+        favoritesCount: result.favoritesCount,
+      };
+
+      setVideo(updatedVideo);
+      syncFavoriteContentItem(videoToFavoriteContentItem(updatedVideo), result.isFavorite);
       return;
     }
 
@@ -324,7 +372,11 @@ export function VideoDetailPage() {
         </div>
 
         <div className="mt-3 min-[744px]:mt-4">
-          <VideoActions video={video} onLike={handleLike} onFavorite={handleFavorite} />
+          <VideoActions
+            video={video}
+            onLike={handleLike}
+            onFavorite={handleFavorite}
+          />
         </div>
 
         <VideoCommentForm

@@ -94,7 +94,11 @@ export function EventCategoryPage() {
     applyLikeState(nextLiked);
 
     try {
-      const result = await toggleEventLike(eventId, nextLiked);
+      const result = await toggleEventLike(
+        eventId,
+        nextLiked,
+        Boolean(targetEvent.isFallback),
+      );
       if (result.liked !== nextLiked) applyLikeState(result.liked);
     } catch (error) {
       console.error(error);

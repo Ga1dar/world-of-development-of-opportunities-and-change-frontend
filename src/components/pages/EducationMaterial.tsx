@@ -13,6 +13,11 @@ import {
   type EducationVideo,
 } from "../../api/educationMaterials";
 import {
+  applyLocalMaterialReaction,
+  toggleLocalMaterialFavorite,
+  toggleLocalMaterialLike,
+} from "../../api/localMaterialReactions";
+import {
   articleToFavoriteContentItem,
   syncFavoriteContentItem,
   videoToFavoriteContentItem,
@@ -54,7 +59,7 @@ const fallbackArticles: Record<"ua" | "en", DisplayArticle[]> = {
   ua: [
     {
       id: "fallback-article-1",
-      slug: "articles",
+      slug: "svitlo-u-temriavi",
       title: "«Світло у темряві»",
       description: "Як троє жінок створили простір, що лікує душі",
       content: "",
@@ -70,7 +75,7 @@ const fallbackArticles: Record<"ua" | "en", DisplayArticle[]> = {
     },
     {
       id: "fallback-article-2",
-      slug: "articles",
+      slug: "travmapedahohika",
       title: "Травмапедагогіка",
       description: "Коли гра і підтримка стають рівними повітрям",
       content: "",
@@ -88,7 +93,7 @@ const fallbackArticles: Record<"ua" | "en", DisplayArticle[]> = {
   en: [
     {
       id: "fallback-article-1",
-      slug: "articles",
+      slug: "light-in-the-dark",
       title: "Light in the dark",
       description: "How support spaces help people recover and breathe again",
       content: "",
@@ -104,7 +109,7 @@ const fallbackArticles: Record<"ua" | "en", DisplayArticle[]> = {
     },
     {
       id: "fallback-article-2",
-      slug: "articles",
+      slug: "trauma-pedagogy",
       title: "Trauma pedagogy",
       description: "When play and support become as necessary as air",
       content: "",
@@ -156,6 +161,7 @@ function MaterialStats({
   favorites,
   isLiked,
   isFavorite,
+  disabled = false,
   onLike,
   onFavorite,
 }: {
@@ -164,13 +170,20 @@ function MaterialStats({
   favorites: number;
   isLiked: boolean;
   isFavorite: boolean;
+  disabled?: boolean;
   onLike: () => void;
   onFavorite: () => void;
 }) {
   return (
     <div className="flex items-center gap-2 font-montserrat text-[11px] leading-none text-[#1C100E] min-[744px]:gap-3 min-[1023px]:text-[12px]">
       <span>{likes}</span>
-      <button type="button" onClick={onLike} aria-label="like material">
+      <button
+        type="button"
+        onClick={onLike}
+        disabled={disabled}
+        aria-label="like material"
+        className="disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Heart
           className={`size-3.5 stroke-[1.8] ${isLiked ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
           aria-hidden="true"
@@ -178,7 +191,13 @@ function MaterialStats({
       </button>
       <span>{comments}</span>
       <MessageSquare className="size-3.5 stroke-[1.8]" aria-hidden="true" />
-      <button type="button" onClick={onFavorite} aria-label="save material">
+      <button
+        type="button"
+        onClick={onFavorite}
+        disabled={disabled}
+        aria-label="save material"
+        className="disabled:cursor-not-allowed disabled:opacity-40"
+      >
         <Bookmark
           className={`size-3.5 stroke-[1.8] ${isFavorite ? "fill-[#9A176B] stroke-[#9A176B]" : ""}`}
           aria-hidden="true"
@@ -214,6 +233,17 @@ function ArticleCard({
 
   const handleLike = async () => {
     if (currentArticle.placeholder || currentArticle.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialLike(
+        "article",
+        currentArticle.slug,
+        currentArticle.isLiked,
+        currentArticle.likesCount,
+      );
+      setCurrentArticle({
+        ...currentArticle,
+        isLiked: result.isLiked,
+        likesCount: result.likesCount,
+      });
       return;
     }
 
@@ -253,6 +283,20 @@ function ArticleCard({
 
   const handleFavorite = async () => {
     if (currentArticle.placeholder || currentArticle.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialFavorite(
+        "article",
+        currentArticle.slug,
+        currentArticle.isFavorite,
+        currentArticle.favoritesCount,
+      );
+      const updatedArticle = {
+        ...currentArticle,
+        isFavorite: result.isFavorite,
+        favoritesCount: result.favoritesCount,
+      };
+
+      setCurrentArticle(updatedArticle);
+      syncArticle(updatedArticle);
       return;
     }
 
@@ -345,6 +389,17 @@ function VideoCard({
 
   const handleLike = async () => {
     if (currentVideo.placeholder || currentVideo.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialLike(
+        "video",
+        currentVideo.slug,
+        currentVideo.isLiked,
+        currentVideo.likesCount,
+      );
+      setCurrentVideo({
+        ...currentVideo,
+        isLiked: result.isLiked,
+        likesCount: result.likesCount,
+      });
       return;
     }
 
@@ -381,6 +436,20 @@ function VideoCard({
 
   const handleFavorite = async () => {
     if (currentVideo.placeholder || currentVideo.id.startsWith("fallback")) {
+      const result = toggleLocalMaterialFavorite(
+        "video",
+        currentVideo.slug,
+        currentVideo.isFavorite,
+        currentVideo.favoritesCount,
+      );
+      const updatedVideo = {
+        ...currentVideo,
+        isFavorite: result.isFavorite,
+        favoritesCount: result.favoritesCount,
+      };
+
+      setCurrentVideo(updatedVideo);
+      syncVideo(updatedVideo);
       return;
     }
 
@@ -468,10 +537,14 @@ export function Edukationmaterial() {
   const [videos, setVideos] = useState<EducationVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const visibleArticles: DisplayArticle[] = !isLoading && articles.length === 0
-    ? fallbackArticles[language]
+    ? fallbackArticles[language].map((article) =>
+        applyLocalMaterialReaction("article", article),
+      )
     : articles;
   const visibleVideos: DisplayVideo[] = !isLoading && videos.length === 0
-    ? createFallbackVideos(language)
+    ? createFallbackVideos(language).map((video) =>
+        applyLocalMaterialReaction("video", video),
+      )
     : videos;
 
   useEffect(() => {
