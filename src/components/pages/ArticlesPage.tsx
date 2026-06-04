@@ -54,13 +54,20 @@ function ArticleListCard({
   const [isFavorite, setIsFavorite] = useState(article.isFavorite);
   const [favoritesCount, setFavoritesCount] = useState(article.favoritesCount);
 
+  useEffect(() => {
+    setLikesCount(article.likesCount);
+    setIsLiked(article.isLiked);
+    setIsFavorite(article.isFavorite);
+    setFavoritesCount(article.favoritesCount);
+  }, [article]);
+
   const handleLike = async () => {
+    if (article.id.startsWith("fallback")) return;
+
     const nextLiked = !isLiked;
     const nextLikesCount = Math.max(0, likesCount + (nextLiked ? 1 : -1));
     setIsLiked(nextLiked);
     setLikesCount(nextLikesCount);
-
-    if (article.id.startsWith("fallback")) return;
 
     try {
       const result = await toggleEducationArticleLike(
@@ -87,12 +94,12 @@ function ArticleListCard({
   };
 
   const handleFavorite = async () => {
+    if (article.id.startsWith("fallback")) return;
+
     const nextFavorite = !isFavorite;
     const nextFavoritesCount = Math.max(0, favoritesCount + (nextFavorite ? 1 : -1));
     setIsFavorite(nextFavorite);
     setFavoritesCount(nextFavoritesCount);
-
-    if (article.id.startsWith("fallback")) return;
 
     try {
       const result = await toggleEducationArticleFavorite(
