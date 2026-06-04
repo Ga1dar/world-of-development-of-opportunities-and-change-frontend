@@ -79,7 +79,7 @@ function VideoCard({ video }: { video: EducationVideo }) {
   const syncVideo = (item: EducationVideo) => {
     syncFavoriteContentItem(
       videoToFavoriteContentItem(item),
-      item.isLiked || item.isFavorite,
+      item.isFavorite,
     );
   };
 

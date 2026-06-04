@@ -1,6 +1,6 @@
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
-import { apiFetch, getAccessToken } from "./auth";
+import { apiFetch, getAccessToken, getStoredCurrentUser } from "./auth";
 
 type RawRecord = Record<string, unknown>;
 
@@ -83,9 +83,137 @@ const asNumber = (value: unknown, fallback = 0) => {
 const asBoolean = (value: unknown) =>
   value === true || value === "true" || value === 1 || value === "1";
 
-const asOptionalBoolean = (value: unknown, fallback: boolean) => {
-  if (value === undefined || value === null || value === "") return fallback;
-  return asBoolean(value);
+const likedStateKeys = [
+  "liked",
+  "is_liked",
+  "isLiked",
+  "liked_by_user",
+  "likedByUser",
+  "current_user_liked",
+  "currentUserLiked",
+  "liked_by_current_user",
+  "likedByCurrentUser",
+  "user_liked",
+  "userLiked",
+  "is_user_liked",
+  "isUserLiked",
+  "user_has_liked",
+  "userHasLiked",
+];
+
+const favoriteStateKeys = [
+  "favorite",
+  "is_favorite",
+  "isFavorite",
+  "is_favorited",
+  "isFavorited",
+  "favorited",
+  "favorite_by_user",
+  "favoriteByUser",
+  "favorited_by_user",
+  "favoritedByUser",
+  "current_user_favorite",
+  "currentUserFavorite",
+  "current_user_favorited",
+  "currentUserFavorited",
+  "user_has_favorite",
+  "userHasFavorite",
+  "user_has_favorited",
+  "userHasFavorited",
+];
+
+const readOptionalBoolean = (record: RawRecord, keys: string[]) => {
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && value !== "") {
+      return asBoolean(value);
+    }
+  }
+
+  return undefined;
+};
+
+const readToggleState = (
+  record: RawRecord | null,
+  keys: string[],
+  fallback: boolean,
+  enabledWords: string[],
+  disabledWords: string[],
+) => {
+  if (!record) return fallback;
+
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && value !== "") {
+      return asBoolean(value);
+    }
+  }
+
+  const detail = asString(record.detail ?? record.message).toLowerCase();
+  if (!detail) return fallback;
+
+  if (disabledWords.some((word) => detail.includes(word))) return false;
+  if (enabledWords.some((word) => detail.includes(word))) return true;
+
+  return fallback;
+};
+
+const MATERIAL_REACTIONS_STORAGE_KEY = "svityMaterialReactions";
+
+type StoredMaterialReaction = {
+  isLiked?: boolean;
+  isFavorite?: boolean;
+};
+
+const getCurrentUserKey = () => {
+  const user = getStoredCurrentUser();
+  const id = asString(user?.id ?? user?.pk ?? user?.user_id ?? user?.userId);
+  const email = asString(user?.email);
+  const username = asString(user?.username);
+
+  return id || email || username || "";
+};
+
+const readStoredMaterialReactions = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(MATERIAL_REACTIONS_STORAGE_KEY) || "{}",
+    );
+    return value && typeof value === "object"
+      ? (value as Record<string, StoredMaterialReaction>)
+      : {};
+  } catch {
+    return {};
+  }
+};
+
+const materialReactionKey = (kind: "article" | "video", slug: string) => {
+  const userKey = getCurrentUserKey();
+  return userKey && slug ? `${userKey}:${kind}:${slug}` : "";
+};
+
+const readStoredMaterialReaction = (kind: "article" | "video", slug: string) => {
+  const key = materialReactionKey(kind, slug);
+  if (!key) return null;
+
+  return readStoredMaterialReactions()[key] ?? null;
+};
+
+const syncStoredMaterialReaction = (
+  kind: "article" | "video",
+  slug: string,
+  state: StoredMaterialReaction,
+) => {
+  if (typeof window === "undefined") return;
+
+  const key = materialReactionKey(kind, slug);
+  if (!key) return;
+
+  const reactions = readStoredMaterialReactions();
+  reactions[key] = { ...reactions[key], ...state };
+  localStorage.setItem(MATERIAL_REACTIONS_STORAGE_KEY, JSON.stringify(reactions));
 };
 
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -166,8 +294,12 @@ const normalizeSections = (raw: RawRecord, language: "ua" | "en") => {
 
 const normalizeArticle = (raw: RawRecord, language: "ua" | "en", index: number): EducationArticle => {
   const title = readLocalizedString(raw, "title", language) || `Article ${index + 1}`;
+  const slug = asString(raw.slug, asString(raw.id, String(index + 1)));
   const content = readLocalizedString(raw, "content", language);
   const sections = normalizeSections(raw, language);
+  const storedReaction = readStoredMaterialReaction("article", slug);
+  const explicitLiked = readOptionalBoolean(raw, likedStateKeys);
+  const explicitFavorite = readOptionalBoolean(raw, favoriteStateKeys);
   const description =
     readLocalizedString(raw, "short_description", language) ||
     readLocalizedString(raw, "description", language) ||
@@ -176,7 +308,7 @@ const normalizeArticle = (raw: RawRecord, language: "ua" | "en", index: number):
 
   return {
     id: asString(raw.id, String(index + 1)),
-    slug: asString(raw.slug, asString(raw.id, String(index + 1))),
+    slug,
     title,
     description,
     content,
@@ -186,13 +318,17 @@ const normalizeArticle = (raw: RawRecord, language: "ua" | "en", index: number):
     likesCount: asNumber(raw.likes_count ?? raw.likesCount),
     commentsCount: asNumber(raw.comments_count ?? raw.commentsCount),
     favoritesCount: asNumber(raw.favorites_count ?? raw.favoritesCount),
-    isLiked: asBoolean(raw.is_liked ?? raw.isLiked ?? raw.liked),
-    isFavorite: asBoolean(raw.is_favorite ?? raw.isFavorite ?? raw.favorite),
+    isLiked: explicitLiked ?? storedReaction?.isLiked ?? false,
+    isFavorite: explicitFavorite ?? storedReaction?.isFavorite ?? false,
   };
 };
 
 const normalizeVideo = (raw: RawRecord, language: "ua" | "en", index: number): EducationVideo => {
   const title = readLocalizedString(raw, "title", language) || `Video ${index + 1}`;
+  const slug = asString(raw.slug, asString(raw.id, String(index + 1)));
+  const storedReaction = readStoredMaterialReaction("video", slug);
+  const explicitLiked = readOptionalBoolean(raw, likedStateKeys);
+  const explicitFavorite = readOptionalBoolean(raw, favoriteStateKeys);
   const description =
     readLocalizedString(raw, "short_description", language) ||
     readLocalizedString(raw, "description", language) ||
@@ -200,7 +336,7 @@ const normalizeVideo = (raw: RawRecord, language: "ua" | "en", index: number): E
 
   return {
     id: asString(raw.id, String(index + 1)),
-    slug: asString(raw.slug, asString(raw.id, String(index + 1))),
+    slug,
     title,
     description,
     videoUrl: resolveMediaUrl(raw.video_file ?? raw.videoFile ?? raw.video ?? raw.file),
@@ -209,8 +345,8 @@ const normalizeVideo = (raw: RawRecord, language: "ua" | "en", index: number): E
     likesCount: asNumber(raw.likes_count ?? raw.likesCount),
     commentsCount: asNumber(raw.comments_count ?? raw.commentsCount),
     favoritesCount: asNumber(raw.favorites_count ?? raw.favoritesCount),
-    isLiked: asBoolean(raw.is_liked ?? raw.isLiked ?? raw.liked),
-    isFavorite: asBoolean(raw.is_favorite ?? raw.isFavorite ?? raw.favorite),
+    isLiked: explicitLiked ?? storedReaction?.isLiked ?? false,
+    isFavorite: explicitFavorite ?? storedReaction?.isFavorite ?? false,
   };
 };
 
@@ -328,14 +464,21 @@ export async function toggleEducationArticleLike(
   const data = await postJson(endpoints.educationArticleLike(slug));
   const record = asRecord(data);
 
-  return {
+  const result = {
     likesCount: record
       ? asNumber(record.likes_count ?? record.likesCount, fallbackLikesCount)
       : fallbackLikesCount,
-    isLiked: record
-      ? asOptionalBoolean(record.liked ?? record.is_liked ?? record.isLiked, fallbackLiked)
-      : fallbackLiked,
+    isLiked: readToggleState(
+      record,
+      likedStateKeys,
+      fallbackLiked,
+      ["liked"],
+      ["unliked", "disliked", "removed"],
+    ),
   };
+
+  syncStoredMaterialReaction("article", slug, { isLiked: result.isLiked });
+  return result;
 }
 
 export async function toggleEducationArticleFavorite(
@@ -346,17 +489,21 @@ export async function toggleEducationArticleFavorite(
   const data = await postJson(endpoints.educationArticleFavorite(slug));
   const record = asRecord(data);
 
-  return {
+  const result = {
     favoritesCount: record
       ? asNumber(record.favorites_count ?? record.favoritesCount, fallbackFavoritesCount)
       : fallbackFavoritesCount,
-    isFavorite: record
-      ? asOptionalBoolean(
-          record.favorite ?? record.is_favorite ?? record.isFavorite,
-          fallbackFavorite,
-        )
-      : fallbackFavorite,
+    isFavorite: readToggleState(
+      record,
+      favoriteStateKeys,
+      fallbackFavorite,
+      ["favorite", "added"],
+      ["unfavorite", "removed", "deleted"],
+    ),
   };
+
+  syncStoredMaterialReaction("article", slug, { isFavorite: result.isFavorite });
+  return result;
 }
 
 const normalizeArticleComment = (raw: RawRecord, index: number): EducationArticleComment => {
@@ -500,14 +647,21 @@ export async function toggleEducationVideoLike(
   const data = await postJson(endpoints.educationVideoLike(slug));
   const record = asRecord(data);
 
-  return {
+  const result = {
     likesCount: record
       ? asNumber(record.likes_count ?? record.likesCount, fallbackLikesCount)
       : fallbackLikesCount,
-    isLiked: record
-      ? asOptionalBoolean(record.liked ?? record.is_liked ?? record.isLiked, fallbackLiked)
-      : fallbackLiked,
+    isLiked: readToggleState(
+      record,
+      likedStateKeys,
+      fallbackLiked,
+      ["liked"],
+      ["unliked", "disliked", "removed"],
+    ),
   };
+
+  syncStoredMaterialReaction("video", slug, { isLiked: result.isLiked });
+  return result;
 }
 
 export async function toggleEducationVideoFavorite(
@@ -518,17 +672,21 @@ export async function toggleEducationVideoFavorite(
   const data = await postJson(endpoints.educationVideoFavorite(slug));
   const record = asRecord(data);
 
-  return {
+  const result = {
     favoritesCount: record
       ? asNumber(record.favorites_count ?? record.favoritesCount, fallbackFavoritesCount)
       : fallbackFavoritesCount,
-    isFavorite: record
-      ? asOptionalBoolean(
-          record.favorite ?? record.is_favorite ?? record.isFavorite,
-          fallbackFavorite,
-        )
-      : fallbackFavorite,
+    isFavorite: readToggleState(
+      record,
+      favoriteStateKeys,
+      fallbackFavorite,
+      ["favorite", "added"],
+      ["unfavorite", "removed", "deleted"],
+    ),
   };
+
+  syncStoredMaterialReaction("video", slug, { isFavorite: result.isFavorite });
+  return result;
 }
 
 export async function getEducationVideoComments(slug: string, signal?: AbortSignal) {

@@ -78,7 +78,7 @@ function ArticleListCard({
           likesCount: result.likesCount,
           favoritesCount,
         }),
-        result.isLiked || isFavorite,
+        isFavorite,
       );
     } catch {
       setIsLiked(article.isLiked);
@@ -110,7 +110,7 @@ function ArticleListCard({
           likesCount,
           favoritesCount: result.favoritesCount,
         }),
-        isLiked || result.isFavorite,
+        result.isFavorite,
       );
     } catch {
       setIsFavorite(article.isFavorite);
