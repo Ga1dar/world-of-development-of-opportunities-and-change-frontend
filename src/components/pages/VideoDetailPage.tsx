@@ -195,6 +195,11 @@ export function VideoDetailPage() {
     const controller = new AbortController();
 
     const loadVideo = async () => {
+      if (slug.startsWith("fallback-video")) {
+        setVideo(applyLocalMaterialReaction("video", getFallbackVideo(language, slug)));
+        return;
+      }
+
       const item = await getEducationVideo(slug, language, controller.signal);
       if (!controller.signal.aborted) {
         setVideo(

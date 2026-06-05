@@ -253,6 +253,22 @@ const syncStoredMaterialReaction = (
 
 const stripHtml = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
+const extractRecordArray = (value: unknown): RawRecord[] => {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is RawRecord => Boolean(asRecord(item)));
+  }
+
+  const record = asRecord(value);
+  if (!record) return [];
+
+  for (const key of ["results", "data", "items", "records", "articles", "videos"]) {
+    const nestedItems = extractRecordArray(record[key]);
+    if (nestedItems.length) return nestedItems;
+  }
+
+  return [];
+};
+
 const extractList = (data: unknown): RawRecord[] => {
   if (Array.isArray(data)) {
     return data.filter((item): item is RawRecord => Boolean(asRecord(item)));
@@ -261,10 +277,7 @@ const extractList = (data: unknown): RawRecord[] => {
   const record = asRecord(data);
   if (!record) return [];
 
-  const items = record.results ?? record.data ?? record.articles ?? record.videos;
-  return Array.isArray(items)
-    ? items.filter((item): item is RawRecord => Boolean(asRecord(item)))
-    : [];
+  return extractRecordArray(record);
 };
 
 const getApiOrigin = () => {
