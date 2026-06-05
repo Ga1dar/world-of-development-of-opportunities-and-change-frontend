@@ -6,7 +6,6 @@ export type ConsultationSlot = {
   date: string;
   time: string;
   startsAt: string;
-  isVirtual?: boolean;
   specialistId?: number;
 };
 
@@ -88,31 +87,6 @@ const isPastSlot = (date: string, time: string) => {
   const startsAt = new Date(`${date}T${time}:00`);
 
   return !Number.isNaN(startsAt.getTime()) && startsAt.getTime() <= Date.now();
-};
-
-const buildFallbackSlots = (specialistId: number): ConsultationSlot[] => {
-  const today = new Date();
-  const slots: ConsultationSlot[] = [];
-
-  for (let dayOffset = 0; dayOffset < 62; dayOffset += 1) {
-    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + dayOffset);
-    const dateValue = formatDateValue(date);
-
-    CONSULTATION_TIME_OPTIONS.forEach((time, timeIndex) => {
-      if (isPastSlot(dateValue, time)) return;
-
-      slots.push({
-        id: -((dayOffset + 1) * 100 + timeIndex + 1),
-        date: dateValue,
-        time,
-        startsAt: `${dateValue}T${time}:00`,
-        isVirtual: true,
-        specialistId,
-      });
-    });
-  }
-
-  return slots;
 };
 
 const normalizeSlot = (raw: unknown): ConsultationSlot | null => {
@@ -197,14 +171,14 @@ export async function getConsultationSlots(
       .filter((slot) => !isPastSlot(slot.date, slot.time))
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 
-    return slots.length > 0 ? slots : buildFallbackSlots(specialistId);
+    return slots;
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw error;
     }
 
     console.error(error);
-    return buildFallbackSlots(specialistId);
+    throw error;
   }
 }
 
@@ -213,32 +187,18 @@ export async function bookConsultation(
   signal?: AbortSignal,
 ): Promise<ConsultationBookingResult> {
   const hasRealSlot = Number.isInteger(payload.slot) && Number(payload.slot) > 0;
-  const hasFallbackSlot =
-    Number.isInteger(payload.specialist) &&
-    Number(payload.specialist) > 0 &&
-    Boolean(payload.date) &&
-    Boolean(payload.time);
 
-  if (!hasRealSlot && !hasFallbackSlot) {
+  if (!hasRealSlot) {
     return { status: "error" };
   }
 
   try {
-    const body = hasRealSlot
-      ? { slot: payload.slot }
-      : {
-          specialist: payload.specialist,
-          date: payload.date,
-          time: payload.time,
-          start_time: payload.start_time || `${payload.date}T${payload.time}:00`,
-        };
-
     const response = await apiFetch(endpoints.consultationAppointments, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ slot: payload.slot }),
       signal,
     });
 
