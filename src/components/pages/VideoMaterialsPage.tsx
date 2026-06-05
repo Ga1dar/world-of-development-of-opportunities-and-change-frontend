@@ -44,7 +44,8 @@ const copy = {
 const yellowButton =
   "rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat font-medium text-[#1C100E] shadow-btn transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]";
 
-const formatVideoHref = (video: EducationVideo) => `/materials/videos/${video.slug}`;
+const formatVideoHref = (video: EducationVideo) =>
+  video.id.startsWith("fallback") ? "/materials/videos" : `/materials/videos/${video.slug}`;
 
 function VideoStats({
   video,
