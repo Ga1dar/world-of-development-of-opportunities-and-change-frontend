@@ -3,7 +3,36 @@ import { endpoints } from "./endpoints";
 type CurrentUserRecord = Record<string, unknown>;
 
 const asRecord = (value: unknown): CurrentUserRecord | null =>
-  value && typeof value === "object" ? (value as CurrentUserRecord) : null;
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as CurrentUserRecord)
+    : null;
+
+export const normalizeCurrentUserResponse = (value: unknown): CurrentUserRecord | null => {
+  if (Array.isArray(value)) {
+    return asRecord(value[0]);
+  }
+
+  const record = asRecord(value);
+  if (!record) return null;
+
+  if (
+    record.id !== undefined ||
+    record.email !== undefined ||
+    record.role !== undefined ||
+    record.specialist_profile !== undefined ||
+    record.user_profile !== undefined
+  ) {
+    return record;
+  }
+
+  for (const key of ["results", "data", "user", "current_user", "currentUser"]) {
+    const nested = record[key];
+    const normalized = normalizeCurrentUserResponse(nested);
+    if (normalized) return normalized;
+  }
+
+  return null;
+};
 
 const readBoolean = (record: CurrentUserRecord | null, keys: string[]) => {
   if (!record) return false;
@@ -70,14 +99,16 @@ export const getStoredCurrentUser = () => {
   if (typeof window === "undefined") return null;
 
   try {
-    return asRecord(JSON.parse(localStorage.getItem("currentUser") || "null"));
+    return normalizeCurrentUserResponse(
+      JSON.parse(localStorage.getItem("currentUser") || "null"),
+    );
   } catch {
     return null;
   }
 };
 
 export const storeCurrentUser = (user: unknown) => {
-  const record = asRecord(user);
+  const record = normalizeCurrentUserResponse(user);
   if (!record || typeof window === "undefined") return;
 
   localStorage.setItem("currentUser", JSON.stringify(record));
@@ -259,7 +290,7 @@ export async function canCurrentUserCreateEvents() {
 
     const data = await response.json().catch(() => null);
     storeCurrentUser(data);
-    return canCreateEventsFromRecord(asRecord(data));
+    return canCreateEventsFromRecord(normalizeCurrentUserResponse(data));
   } catch {
     return canCreateEventsFromStoredToken();
   }

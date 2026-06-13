@@ -1,4 +1,11 @@
-import { apiFetch, getAccessToken, getRefreshToken, getStoredCurrentUser, storeCurrentUser } from "./auth";
+import {
+  apiFetch,
+  getAccessToken,
+  getRefreshToken,
+  getStoredCurrentUser,
+  normalizeCurrentUserResponse,
+  storeCurrentUser,
+} from "./auth";
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
 
@@ -88,7 +95,9 @@ const SPECIALIST_FALLBACK_AVATAR = "/lashenko2.png";
 let profileAvatarVersion = "";
 
 const asRecord = (value: unknown): RawRecord | null =>
-  value && typeof value === "object" ? (value as RawRecord) : null;
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as RawRecord)
+    : null;
 
 const asString = (value: unknown, fallback = "") => {
   if (typeof value === "string") return value.trim();
@@ -153,8 +162,20 @@ const readReferenceId = (value: unknown): string => {
   if (!record) return "";
 
   return (
-    readString(record, ["id", "pk", "uuid"]) ||
+    readString(record, [
+      "id",
+      "pk",
+      "uuid",
+      "profile_id",
+      "profileId",
+      "user_profile_id",
+      "userProfileId",
+      "specialist_profile_id",
+      "specialistProfileId",
+    ]) ||
     readReferenceId(record.profile) ||
+    readReferenceId(record.user_profile) ||
+    readReferenceId(record.userProfile) ||
     readReferenceId(record.specialist_profile) ||
     readReferenceId(record.specialistProfile)
   );
@@ -300,9 +321,13 @@ const normalizeProfile = (
   const source = sourceProfile || currentUser || {};
   const sourceUser = userFromProfile || asRecord(source.user) || currentUser;
   const specialistProfileId =
-    profileKind === "specialist" ? readString(sourceProfile, ["id"]) || readSpecialistProfileId(currentUser) : "";
+    profileKind === "specialist"
+      ? readReferenceId(sourceProfile) || readSpecialistProfileId(currentUser)
+      : "";
   const userProfileId =
-    profileKind !== "specialist" ? readString(userProfile, ["id"]) || readUserProfileId(currentUser) : "";
+    profileKind !== "specialist"
+      ? readReferenceId(userProfile) || readUserProfileId(currentUser)
+      : "";
 
   const firstName =
     readString(source, ["first_name", "firstName"]) ||
@@ -572,7 +597,9 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
   let specialistProfile: RawRecord | null = null;
 
   try {
-    currentUser = asRecord(await fetchJson(endpoints.me, signal)) || storedUser;
+    currentUser =
+      normalizeCurrentUserResponse(await fetchJson(endpoints.me, signal)) ||
+      storedUser;
     if (currentUser) storeCurrentUser(currentUser);
   } catch {
     currentUser = getStoredCurrentUser();

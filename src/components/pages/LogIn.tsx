@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Check, Eye, EyeOff } from "lucide-react"
 import { type FormEvent, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { PasswordRecoveryDialog } from "./PasswordRecoveryDialog"
 import { endpoints } from "../../api/endpoints"
 import {
@@ -20,10 +20,10 @@ import {
   clearLocalSession,
   clearStoredCurrentUser,
   getAccessToken,
+  logoutCurrentUser,
   notifyAuthChanged,
   storeCurrentUser,
 } from "../../api/auth"
-import { getUserCabinetData } from "../../api/userCabinet"
 
 type LogInProps = {
   variant?: "header" | "footer" | "menu"
@@ -80,6 +80,7 @@ type GoogleWindow = Window &
   }
 
 export function LogIn({ variant = "header", text }: LogInProps) {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [recoveryOpen, setRecoveryOpen] = useState(false)
 
@@ -100,8 +101,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => Boolean(getAccessToken())
   )
-  const [authVersion, setAuthVersion] = useState(0)
-  const [profileAvatar, setProfileAvatar] = useState("")
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const { t, i18n } = useTranslation()
 
@@ -141,7 +141,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
   useEffect(() => {
     const updateAuthState = () => {
       setIsAuthenticated(Boolean(getAccessToken()))
-      setAuthVersion((current) => current + 1)
     }
 
     updateAuthState()
@@ -153,38 +152,6 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       window.removeEventListener("storage", updateAuthState)
     }
   }, [])
-
-  useEffect(() => {
-    let isMounted = true
-
-    if (!isAuthenticated) {
-      setProfileAvatar("")
-      return () => {
-        isMounted = false
-      }
-    }
-
-    void getUserCabinetData()
-      .then((data) => {
-        if (!isMounted) return
-
-        const avatar = data.profile?.avatar || ""
-        const isFallbackAvatar =
-          avatar.endsWith("/user.jpg") ||
-          avatar.endsWith("/lashenko2.png") ||
-          avatar === "/user.jpg" ||
-          avatar === "/lashenko2.png"
-
-        setProfileAvatar(isFallbackAvatar ? "" : avatar)
-      })
-      .catch(() => {
-        if (isMounted) setProfileAvatar("")
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [authVersion, isAuthenticated])
 
   const getResponseError = (
     data: Record<string, string[] | string> | null,
@@ -437,6 +404,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       resetForm()
       setMode("login")
       setOpen(false)
+      if (selectedRole === "specialist") {
+        navigate("/specialist-onboarding")
+      }
     } catch (err) {
       if (!getAccessToken()) {
         clearLocalSession()
@@ -680,6 +650,18 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     setOpen(false)
   }
 
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    setIsLoggingOut(true)
+    try {
+      await logoutCurrentUser()
+      navigate("/")
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
+
   const buttonText =
     text ||
     (isAuthenticated
@@ -720,19 +702,16 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         : t("registerSavePassword")
 
   if (isAuthenticated) {
-    if (variant === "header" && profileAvatar) {
+    if (variant === "header") {
       return (
-        <Link
-          to="/profile"
-          aria-label={buttonText}
-          className="my-auto inline-flex h-[57px] w-[57px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-0 min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:w-14.25"
+        <button
+          type="button"
+          disabled={isLoggingOut}
+          onClick={() => void handleLogout()}
+          className={`inline-flex cursor-pointer items-center justify-center ${triggerClassName} disabled:cursor-wait disabled:opacity-70`}
         >
-          <img
-            src={profileAvatar}
-            alt={buttonText}
-            className="h-full w-full object-cover"
-          />
-        </Link>
+          {isEnglishLanguage(i18n.language) ? "Logout" : "Вихід"}
+        </button>
       )
     }
 
