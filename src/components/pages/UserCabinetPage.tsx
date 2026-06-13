@@ -10,7 +10,7 @@ import {
   type CabinetDocument,
   type CabinetProfile,
 } from "../../api/userCabinet";
-import { notifyAuthChanged } from "../../api/auth";
+import { logoutCurrentUser, notifyAuthChanged } from "../../api/auth";
 import {
   FAVORITES_CHANGED_EVENT,
   getCurrentUserFavoriteContentItems,
@@ -382,6 +382,8 @@ function CabinetTabs({
   onTabChange: (tab: CabinetTab) => void;
   isSpecialist: boolean;
 }) {
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const tabs: Array<{ id: CabinetTab; label: string }> = isSpecialist
     ? [
         { id: "appointments", label: labels.myAppointments },
@@ -409,6 +411,18 @@ function CabinetTabs({
     ? "min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1180px]"
     : "min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[742px] min-[1900px]:max-w-[1028px]";
 
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      await logoutCurrentUser();
+      navigate("/");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <section
       className={`mx-auto mt-8 flex w-full flex-col gap-3 rounded-[22px] bg-[#F8F8F8] p-3
@@ -424,6 +438,15 @@ function CabinetTabs({
           {tab.label}
         </button>
       ))}
+      <button
+        type="button"
+        disabled={isLoggingOut}
+        aria-busy={isLoggingOut}
+        onClick={() => void handleLogout()}
+        className="h-12 rounded-[30px] bg-[#1C100E] px-5 font-montserrat text-[13px] font-medium text-white transition-opacity disabled:cursor-wait disabled:opacity-70 min-[744px]:h-11 min-[744px]:text-[14px]"
+      >
+        {labels.logout}
+      </button>
     </section>
   );
 }
