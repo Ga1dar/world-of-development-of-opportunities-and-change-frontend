@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
 import { LogIn } from "./pages/LogIn";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { HeaderProfileAvatar } from "./HeaderProfileAvatar";
 import { useTranslation } from "react-i18next";
 
 type HeaderProps = {
@@ -72,12 +73,12 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       justify-end gap-7 pr-4 sm:gap-5
       sm:pr-2.5 min-[1023px]:pr-9! min-[743px]:mr-8
       min-[1420px]:contents">
+
       <div
-        className=" flex my-auto 
-        z-100 sm:static min-[1420px]:order-2
-        min-[1420px]:mt-5.75"
+        className="z-100 my-auto flex sm:static
+         min-[1420px]:mt-10 min-[1420px]:text-[12px]"
       >
-        {!isOpen && <LogIn variant="header" />}
+        <LanguageSwitcher />
       </div>
 
       <Link
@@ -86,19 +87,19 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         className="relative flex my-auto z-100 hidden h-14.25 w-41 items-center rounded-[30px]
         border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8]
         px-4 text-center font-montserrat text-[18px] font-medium text-[sidebar]
-        shadow-btn sm:flex sm:items-center sm:justify-center min-[1420px]:order-3 
+        shadow-btn sm:flex sm:items-center sm:justify-center
         min-[1420px]:mt-5.75 min-[1420px]:h-14.25 min-[1420px]:w-41.25 min-[1420px]:text-[18px]"
       >
         {t("support")}
       </Link>
 
       <div
-        className="flex my-auto
-        z-100 sm:static min-[1420px]:order-1
-         min-[1420px]:mt-10 min-[1420px]:text-[12px]">
-        <LanguageSwitcher />
+        className="z-100 my-auto hidden min-[744px]:flex min-[1420px]:mt-5.75"
+      >
+        {!isOpen && <LogIn variant="header" />}
       </div>
-     
+
+      {!isOpen && <HeaderProfileAvatar />}
 
       <button
         type="button"

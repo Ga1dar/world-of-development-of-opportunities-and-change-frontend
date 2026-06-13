@@ -702,7 +702,7 @@ export function LogIn({ variant = "header", text }: LogInProps) {
         : t("registerSavePassword")
 
   if (isAuthenticated) {
-    if (variant === "header") {
+    if (variant === "header" || variant === "menu") {
       return (
         <button
           type="button"
