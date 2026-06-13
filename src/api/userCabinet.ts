@@ -579,17 +579,12 @@ const normalizeAppointment = (
   };
 };
 
-export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetData> {
+export async function getCurrentCabinetProfile(
+  signal?: AbortSignal,
+): Promise<CabinetProfile | null> {
   const token = getAccessToken();
   const refreshToken = getRefreshToken();
-  if (!token && !refreshToken) {
-    return {
-      profile: null,
-      appointments: [],
-      completedAppointments: [],
-      documents: [],
-    };
-  }
+  if (!token && !refreshToken) return null;
 
   const storedUser = getStoredCurrentUser();
   let currentUser = storedUser;
@@ -663,6 +658,16 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
   }
 
   if (!getAccessToken() && !currentUser && !userProfile && !specialistProfile) {
+    return null;
+  }
+
+  return normalizeProfile(currentUser, userProfile, specialistProfile);
+}
+
+export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetData> {
+  const profile = await getCurrentCabinetProfile(signal);
+
+  if (!profile) {
     return {
       profile: null,
       appointments: [],
@@ -684,7 +689,7 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
   ]);
 
   return {
-    profile: normalizeProfile(currentUser, userProfile, specialistProfile),
+    profile,
     appointments,
     completedAppointments,
     documents,
