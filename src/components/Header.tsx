@@ -3,6 +3,8 @@ import { LogIn } from "./pages/LogIn";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { HeaderProfileAvatar } from "./HeaderProfileAvatar";
 import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
+import { getAccessToken } from "../api/auth";
 
 type HeaderProps = {
   isOpen: boolean;
@@ -11,6 +13,23 @@ type HeaderProps = {
 
 export function Header({ isOpen, setIsOpen }: HeaderProps) {
   const { t } = useTranslation();
+  const [isAuthenticated, setIsAuthenticated] = useState(() =>
+    Boolean(getAccessToken()),
+  );
+
+  useEffect(() => {
+    const updateAuthState = () => {
+      setIsAuthenticated(Boolean(getAccessToken()));
+    };
+
+    window.addEventListener("auth-changed", updateAuthState);
+    window.addEventListener("storage", updateAuthState);
+
+    return () => {
+      window.removeEventListener("auth-changed", updateAuthState);
+      window.removeEventListener("storage", updateAuthState);
+    };
+  }, []);
 
   const closeMenu = () => setIsOpen(false);
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -18,6 +37,11 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
     px-4 font-montserrat text-[18px] font-medium text-[#1C100E] min-[1420px]:h-14.25 
     min-[1420px]:px-3 min-[1420px]:text-[18px]
   ${isActive ? "border border-[#83105F] bg-[#83105F33] text-[#83105F]" : ""}`;
+  const authButton = (
+    <div className="z-100 my-auto hidden min-[744px]:flex min-[1420px]:mt-5.75">
+      {!isOpen && <LogIn variant="header" />}
+    </div>
+  );
 
   return (
     <header
@@ -81,6 +105,8 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         <LanguageSwitcher />
       </div>
 
+      {!isAuthenticated && authButton}
+
       <Link
         to="/"
         onClick={closeMenu}
@@ -93,11 +119,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         {t("support")}
       </Link>
 
-      <div
-        className="z-100 my-auto hidden min-[744px]:flex min-[1420px]:mt-5.75"
-      >
-        {!isOpen && <LogIn variant="header" />}
-      </div>
+      {isAuthenticated && authButton}
 
       {!isOpen && <HeaderProfileAvatar />}
 

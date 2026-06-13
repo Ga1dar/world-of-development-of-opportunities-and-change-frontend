@@ -678,11 +678,13 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     variant === "footer"
       ? "footerGrig order-[6] cursor-pointer justify-start rounded-none p-0 text-left"
       : variant === "menu"
-        ? "mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] bg-[#FFFFFF] px-2 py-4 font-montserrat text-[18px] font-[500] text-black sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px]"
-        : `my-auto h-[57px] rounded-[30px] bg-[#FFFFFF] px-3 font-montserrat font-[500] text-black sm:w-auto min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:text-[18px] ${
+        ? `mx-auto h-[57px] w-full max-w-[358px] rounded-[30px] px-2 py-4 font-montserrat text-[18px] font-[500] sm:h-8 sm:w-full sm:px-2 sm:py-0 sm:text-[11px] ${
+            isAuthenticated ? "bg-[#1C100E] text-white" : "bg-[#FFFFFF] text-black"
+          }`
+        : `my-auto h-[57px] rounded-[30px] px-3 font-montserrat font-[500] sm:w-auto min-[1420px]:z-51 min-[1420px]:h-14.25 min-[1420px]:text-[18px] ${
             isAuthenticated
-              ? "w-24 text-[15px] min-[1420px]:!w-24"
-              : "w-[57px] text-[18px] sm:w-18.25 min-[1420px]:!w-14.25"
+              ? "w-24 bg-[#1C100E] text-[15px] text-white min-[1420px]:!w-24"
+              : "w-[57px] bg-[#FFFFFF] text-[18px] text-black sm:w-18.25 min-[1420px]:!w-14.25"
           }`
 
   const modalTitle =
