@@ -10,7 +10,9 @@ import {
   updateUserProfile,
   type CabinetProfile,
 } from "../../api/userCabinet";
+import { getFriendlyProfileError } from "../../utils/friendlyErrors";
 import { LogIn } from "./LogIn";
+import { PhoneCountryField } from "./PhoneCountryField";
 
 type FormState = {
   firstName: string;
@@ -165,8 +167,7 @@ export function UserProfileEditPage() {
         setAvatarPreview(profile?.avatar || "");
       } catch (error) {
         console.error(error);
-        const details = error instanceof Error && error.message ? ` (${error.message})` : "";
-        setError(`${labels.saveError}${details}`);
+        setError(getFriendlyProfileError(error, i18n.language, labels.saveError));
       } finally {
         setIsLoading(false);
       }
@@ -215,8 +216,7 @@ export function UserProfileEditPage() {
       navigate("/profile");
     } catch (error) {
       console.error(error);
-      const details = error instanceof Error && error.message ? ` (${error.message})` : "";
-      setError(`${labels.saveError}${details}`);
+      setError(getFriendlyProfileError(error, i18n.language, labels.saveError));
     } finally {
       setIsSaving(false);
     }
@@ -303,11 +303,12 @@ export function UserProfileEditPage() {
             onChange={updateField("lastName")}
             required
           />
-          <Field
+          <PhoneCountryField
             label={labels.phone}
             placeholder={labels.phonePlaceholder}
             value={form.phone}
             onChange={updateField("phone")}
+            language={i18n.language}
             required
           />
           <Field

@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   bookConsultation,
-  CONSULTATION_TIME_OPTIONS,
   getConsultationSlots,
   type ConsultationSlot,
   type ConsultationBookingResult,
@@ -229,10 +228,6 @@ export function ConsultationDialog({
     try {
       const result = await bookConsultation({
         slot: selectedSlot.id,
-        specialist: specialistId,
-        date: selectedSlot.date,
-        time: selectedSlot.time,
-        start_time: selectedSlot.startsAt,
       });
 
       setStep(result.status);
@@ -440,9 +435,9 @@ export function ConsultationDialog({
 
                 {monthDays.map(({ date, currentMonth }) => {
                   const value = toDateInputValue(date);
-                  const isSelected = value === selectedDate;
                   const hasSlot = availableDates.has(value);
                   const isDisabled = value < minDate || !hasSlot || isSlotsLoading;
+                  const isSelected = value === selectedDate && hasSlot;
 
                   return (
                     <button
@@ -486,49 +481,45 @@ export function ConsultationDialog({
                 {t("consultationDialog.noSlots")}
               </p>
             )}
-            <div
-              ref={timeScrollerRef}
-              onPointerDown={handleTimePointerDown}
-              onPointerMove={handleTimePointerMove}
-              onPointerUp={finishTimeDrag}
-              onPointerCancel={finishTimeDrag}
-              onClickCapture={handleTimeClickCapture}
-              className="mt-3 flex min-h-14 w-full cursor-grab select-none items-center
-              gap-2 overflow-x-auto overflow-y-hidden pb-2 pl-2 active:cursor-grabbing
-              [scrollbar-color:#402940_#F0E8F0] [scrollbar-width:thin]
-              [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
-              [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full
-              [&::-webkit-scrollbar-track]:bg-[#F0E8F0]
-              sm:max-w-[340px] min-[1023px]:max-w-[340px] min-[1420px]:max-w-[340px]
-              min-[1900px]:max-w-[520px]">
-              {CONSULTATION_TIME_OPTIONS.map((time) => {
-                const slot = selectedDaySlotByTime.get(time);
-                const isAvailable = Boolean(slot);
-                const isSelected = selectedTime === time && isAvailable;
+            {selectedDaySlots.length > 0 && (
+              <div
+                ref={timeScrollerRef}
+                onPointerDown={handleTimePointerDown}
+                onPointerMove={handleTimePointerMove}
+                onPointerUp={finishTimeDrag}
+                onPointerCancel={finishTimeDrag}
+                onClickCapture={handleTimeClickCapture}
+                className="mt-3 flex min-h-14 w-full cursor-grab select-none items-center
+                gap-2 overflow-x-auto overflow-y-hidden pb-2 pl-2 active:cursor-grabbing
+                [scrollbar-color:#402940_#F0E8F0] [scrollbar-width:thin]
+                [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full
+                [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full
+                [&::-webkit-scrollbar-track]:bg-[#F0E8F0]
+                sm:max-w-[340px] min-[1023px]:max-w-[340px] min-[1420px]:max-w-[340px]
+                min-[1900px]:max-w-[520px]">
+                {selectedDaySlots.map((slot) => {
+                  const isSelected = selectedTime === slot.time;
 
-                return (
-                  <button
-                    key={time}
-                    type="button"
-                    disabled={!isAvailable || isSlotsLoading}
-                    aria-pressed={isSelected}
-                    onClick={() => {
-                      if (slot) setSelectedTime(slot.time);
-                    }}
-                    className={`flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full
-                       select-none px-0 text-center font-montserrat text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
-                      isAvailable
-                        ? isSelected
+                  return (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      disabled={isSlotsLoading}
+                      aria-pressed={isSelected}
+                      onClick={() => setSelectedTime(slot.time)}
+                      className={`flex h-8 min-w-[52px] shrink-0 items-center justify-center rounded-full
+                         select-none px-0 text-center font-montserrat text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
+                        isSelected
                           ? "bg-[#402940] text-white"
                           : "bg-white text-[#1C100E] hover:bg-[#F0E8F0]"
-                        : "cursor-not-allowed bg-[#C8C8C8] text-[#1C100E]/45"
-                    }`}
-                  >
-                    {time}
-                  </button>
-                );
-              })}
-            </div>
+                      }`}
+                    >
+                      {slot.time}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <p className="mt-4 max-w-full font-montserrat text-[11px] leading-[1.35] text-[#1C100E]/65 sm:max-w-[340px]">
               {t("consultationDialog.afterConfirmation")}

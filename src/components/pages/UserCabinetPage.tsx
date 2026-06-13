@@ -21,6 +21,9 @@ import {
 import {
   cancelConsultationAppointment,
   CONSULTATION_TIME_OPTIONS,
+  createConsultationSlots,
+  deleteConsultationSlot,
+  getConsultationSlots,
 } from "../../api/consultations";
 import type { ConsultationSlot } from "../../api/consultations";
 import { RescheduleAppointmentDialog } from "./RescheduleAppointmentDialog";
@@ -80,6 +83,8 @@ const copy = {
     phoneMissing: "Відсутній",
     cityLabel: "Місто:",
     cityMissing: "Відсутнє",
+    birthDateLabel: "Дата народження:",
+    birthDateMissing: "Відсутня",
     educationLabel: "Освіта вища:",
     educationMissing: "Інформація відсутня",
     specializationLabel: "Спеціальність:",
@@ -92,6 +97,14 @@ const copy = {
     previousMonth: "Попередній місяць",
     nextMonth: "Наступний місяць",
     busyTime: "Зайнятий час",
+    freeTime: "Вільний час",
+    addSlots: "Додати слоти",
+    addingSlots: "Додаємо...",
+    slotsSaved: "Слоти додано.",
+    slotsError: "Не вдалося оновити календар. Перевірте дату та спробуйте ще раз.",
+    availableSlots: "Вільні слоти",
+    noAvailableSlots: "На цю дату вільних слотів немає.",
+    deleteSlot: "Видалити слот",
   },
   en: {
     title: "Personal account",
@@ -143,6 +156,8 @@ const copy = {
     phoneMissing: "Missing",
     cityLabel: "City:",
     cityMissing: "Missing",
+    birthDateLabel: "Birth date:",
+    birthDateMissing: "Missing",
     educationLabel: "Higher education:",
     educationMissing: "Information is missing",
     specializationLabel: "Specialization:",
@@ -155,6 +170,14 @@ const copy = {
     previousMonth: "Previous month",
     nextMonth: "Next month",
     busyTime: "Busy time",
+    freeTime: "Free time",
+    addSlots: "Add slots",
+    addingSlots: "Adding...",
+    slotsSaved: "Slots added.",
+    slotsError: "Could not update the calendar. Check the date and try again.",
+    availableSlots: "Available slots",
+    noAvailableSlots: "No free slots for this date.",
+    deleteSlot: "Delete slot",
   },
 };
 
@@ -784,10 +807,12 @@ function SpecialistCalendarView({
   appointments,
   labels,
   language,
+  specialistId,
 }: {
   appointments: CabinetAppointment[];
   labels: typeof copy.ua;
   language: string;
+  specialistId: number;
 }) {
   const locale = isEnglishLanguage(language) ? "en-US" : "uk-UA";
   const today = useMemo(() => new Date(), []);
@@ -823,23 +848,115 @@ function SpecialistCalendarView({
   const weekDays = useMemo(() => getWeekDays(locale), [locale]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
   const selectedBusyTimes = busyMap.get(selectedDate) || new Set<string>();
+  const [availableSlots, setAvailableSlots] = useState<ConsultationSlot[]>([]);
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
+  const [isSlotsLoading, setIsSlotsLoading] = useState(false);
+  const [isSlotsSaving, setIsSlotsSaving] = useState(false);
+  const [slotsNotice, setSlotsNotice] = useState("");
+  const [slotsError, setSlotsError] = useState("");
+  const availableMap = useMemo(() => {
+    const map = new Map<string, ConsultationSlot[]>();
+
+    availableSlots.forEach((slot) => {
+      const list = map.get(slot.date) || [];
+      list.push(slot);
+      map.set(slot.date, list);
+    });
+
+    map.forEach((list) => list.sort((a, b) => a.time.localeCompare(b.time)));
+
+    return map;
+  }, [availableSlots]);
+  const selectedAvailableSlots = availableMap.get(selectedDate) || [];
+  const selectedAvailableTimes = useMemo(
+    () => new Set(selectedAvailableSlots.map((slot) => slot.time)),
+    [selectedAvailableSlots],
+  );
+
+  const loadAvailableSlots = async (signal?: AbortSignal) => {
+    if (!Number.isInteger(specialistId) || specialistId <= 0) return;
+
+    setIsSlotsLoading(true);
+    setSlotsError("");
+
+    try {
+      const slots = await getConsultationSlots(specialistId, signal);
+      setAvailableSlots(slots);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setSlotsError(labels.slotsError);
+    } finally {
+      setIsSlotsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (busyMap.has(selectedDate)) return;
+    const controller = new AbortController();
+    void loadAvailableSlots(controller.signal);
+    return () => controller.abort();
+  }, [specialistId]);
 
-    const nextDate = busyDates.find((date) => date >= todayValue) || busyDates[0] || todayValue;
-    setSelectedDate(nextDate);
-
-    const parsed = new Date(nextDate);
-    if (!Number.isNaN(parsed.getTime())) {
-      setVisibleMonth(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
-    }
-  }, [busyDates, busyMap, selectedDate, todayValue]);
+  useEffect(() => {
+    setSelectedTimes([]);
+    setSlotsNotice("");
+    setSlotsError("");
+  }, [selectedDate]);
 
   const moveMonth = (direction: -1 | 1) => {
     setVisibleMonth(
       (current) => new Date(current.getFullYear(), current.getMonth() + direction, 1),
     );
+  };
+
+  const toggleTime = (time: string) => {
+    if (selectedBusyTimes.has(time) || selectedAvailableTimes.has(time)) return;
+
+    setSelectedTimes((current) =>
+      current.includes(time)
+        ? current.filter((item) => item !== time)
+        : [...current, time].sort((a, b) => a.localeCompare(b)),
+    );
+  };
+
+  const handleCreateSlots = async () => {
+    if (!selectedTimes.length || isSlotsSaving) return;
+
+    setIsSlotsSaving(true);
+    setSlotsError("");
+    setSlotsNotice("");
+
+    const startTimes = selectedTimes.map((time) =>
+      new Date(`${selectedDate}T${time}:00`).toISOString(),
+    );
+    const result = await createConsultationSlots(startTimes);
+
+    if (result.status === "success") {
+      setSelectedTimes([]);
+      setSlotsNotice(labels.slotsSaved);
+      await loadAvailableSlots();
+    } else {
+      setSlotsError(labels.slotsError);
+    }
+
+    setIsSlotsSaving(false);
+  };
+
+  const handleDeleteSlot = async (slotId: number) => {
+    if (isSlotsSaving) return;
+
+    setIsSlotsSaving(true);
+    setSlotsError("");
+    setSlotsNotice("");
+
+    const result = await deleteConsultationSlot(slotId);
+
+    if (result.status === "success") {
+      setAvailableSlots((current) => current.filter((slot) => slot.id !== slotId));
+    } else {
+      setSlotsError(labels.slotsError);
+    }
+
+    setIsSlotsSaving(false);
   };
 
   return (
@@ -880,6 +997,7 @@ function SpecialistCalendarView({
             {monthDays.map(({ date, currentMonth }) => {
               const value = toDateInputValue(date);
               const isBusy = busyMap.has(value);
+              const hasAvailable = availableMap.has(value);
               const isSelected = value === selectedDate;
 
               return (
@@ -891,6 +1009,8 @@ function SpecialistCalendarView({
                   className={`flex aspect-square min-h-8 items-center justify-center rounded-full text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:text-[13px] ${
                     isBusy
                       ? "bg-[#83105F] text-white"
+                      : hasAvailable
+                        ? "border border-[#83105F] bg-white text-[#83105F]"
                       : isSelected
                         ? "ring-1 ring-[#83105F] text-[#1C100E]"
                         : currentMonth
@@ -917,21 +1037,69 @@ function SpecialistCalendarView({
           <div className="mt-3 flex gap-2 overflow-x-auto pb-2 min-[744px]:max-h-[330px] min-[744px]:flex-col min-[744px]:overflow-y-auto min-[744px]:overflow-x-hidden min-[744px]:pr-2">
             {CONSULTATION_TIME_OPTIONS.map((time) => {
               const isBusy = selectedBusyTimes.has(time);
+              const isAvailable = selectedAvailableTimes.has(time);
+              const isSelected = selectedTimes.includes(time);
 
               return (
-                <span
+                <button
                   key={time}
-                  title={isBusy ? labels.busyTime : undefined}
+                  type="button"
+                  disabled={isBusy || isAvailable}
+                  onClick={() => toggleTime(time)}
+                  title={isBusy ? labels.busyTime : isAvailable ? labels.freeTime : undefined}
                   className={`flex h-8 min-w-[64px] shrink-0 items-center justify-center rounded-[30px] px-4 text-[12px] font-medium min-[744px]:w-full ${
                     isBusy
                       ? "bg-[#83105F] text-white"
+                      : isAvailable
+                        ? "border border-[#83105F] bg-white text-[#83105F]"
+                        : isSelected
+                          ? "bg-[#40213F] text-white"
                       : "bg-white text-[#1C100E]"
                   }`}
                 >
                   {time}
-                </span>
+                </button>
               );
             })}
+          </div>
+
+          <button
+            type="button"
+            disabled={!selectedTimes.length || isSlotsSaving}
+            onClick={() => void handleCreateSlots()}
+            className={`${yellowButton} mt-4 flex h-10 w-full items-center justify-center px-4 text-[12px] disabled:cursor-not-allowed disabled:opacity-60`}
+          >
+            {isSlotsSaving ? labels.addingSlots : labels.addSlots}
+          </button>
+          {isSlotsLoading ? (
+            <p className="mt-3 text-[11px] text-[#1C100E]/55">{labels.loading}</p>
+          ) : null}
+          {slotsNotice ? (
+            <p className="mt-3 text-[11px] text-[#37A357]">{slotsNotice}</p>
+          ) : null}
+          {slotsError ? (
+            <p className="mt-3 text-[11px] text-[#83105F]">{slotsError}</p>
+          ) : null}
+          <div className="mt-5 rounded-[18px] bg-white p-3 text-[12px]">
+            <p className="font-medium">{labels.availableSlots}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedAvailableSlots.length ? (
+                selectedAvailableSlots.map((slot) => (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    onClick={() => void handleDeleteSlot(slot.id)}
+                    disabled={isSlotsSaving}
+                    className="rounded-[30px] border border-[#83105F] px-3 py-1 text-[#83105F] disabled:opacity-60"
+                    aria-label={`${labels.deleteSlot} ${slot.time}`}
+                  >
+                    {slot.time} ×
+                  </button>
+                ))
+              ) : (
+                <span className="text-[#1C100E]/55">{labels.noAvailableSlots}</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1269,12 +1437,34 @@ function SpecialistAboutView({
 }
 
 function AboutView({ profile, labels }: { profile: CabinetProfile; labels: typeof copy.ua }) {
+  const personalDetails = [
+    { label: labels.emailLabel, value: profile.email || labels.emailMissing },
+    { label: labels.phoneLabel, value: profile.phone || labels.phoneMissing },
+    { label: labels.cityLabel, value: profile.city || labels.cityMissing },
+    {
+      label: labels.birthDateLabel,
+      value: profile.birthDate ? normalizeDate(profile.birthDate) : labels.birthDateMissing,
+    },
+  ];
+
   return (
     <section className="mx-auto mt-10 w-full rounded-[22px] bg-[#F8F8F8] px-6 py-8 font-montserrat text-[#1C100E] min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[742px] min-[1900px]:max-w-[1028px]">
       <h2 className="text-[18px] font-medium">{labels.about}</h2>
-      <p className="mt-4 text-[14px] leading-[1.55] text-[#1C100E]/75">
-        {profile.about || labels.empty}
-      </p>
+      <div className="mt-5 grid gap-3 text-[13px] leading-[1.35] text-[#1C100E]/75 min-[744px]:grid-cols-2">
+        {personalDetails.map((item) => (
+          <SpecialistDetailLine
+            key={item.label}
+            label={item.label}
+            value={item.value}
+          />
+        ))}
+      </div>
+      <div className="mt-4">
+        <SpecialistDetailLine
+          label={`${labels.about}:`}
+          value={profile.about || labels.aboutMissing}
+        />
+      </div>
     </section>
   );
 }
@@ -1405,7 +1595,7 @@ export function UserCabinetPage() {
     }
   };
   const isSpecialist = profile.profileKind === "specialist";
-  const specialistId = Number(profile.id);
+  const specialistId = Number(profile.specialistProfileId || profile.id);
   const isSpecialistAbout = isSpecialist && activeTab === "about";
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1529,6 +1719,7 @@ export function UserCabinetPage() {
           appointments={appointments}
           labels={labels}
           language={i18n.language}
+          specialistId={Number.isFinite(specialistId) ? specialistId : 0}
         />
       ) : activeTab === "history" ? (
         <SpecialistPlaceholderView text={labels.historyEmpty} />

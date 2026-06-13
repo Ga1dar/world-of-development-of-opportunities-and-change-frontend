@@ -167,7 +167,6 @@ export async function getConsultationSlots(
     const slots = extractList(data)
       .map(normalizeSlot)
       .filter((slot): slot is ConsultationSlot => Boolean(slot))
-      .filter((slot) => isConsultationBusinessTime(slot.time))
       .filter((slot) => !isPastSlot(slot.date, slot.time))
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 
@@ -179,6 +178,52 @@ export async function getConsultationSlots(
 
     console.error(error);
     throw error;
+  }
+}
+
+export async function createConsultationSlots(
+  startTimes: string[],
+): Promise<ConsultationMutationResult> {
+  const normalizedStartTimes = startTimes
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (!normalizedStartTimes.length) {
+    return { status: "error" };
+  }
+
+  try {
+    const response = await apiFetch(endpoints.consultationSlotBulkCreate, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ start_times: normalizedStartTimes }),
+    });
+
+    return response.ok ? { status: "success" } : { status: "error" };
+  } catch {
+    return { status: "error" };
+  }
+}
+
+export async function deleteConsultationSlot(
+  slotId: string | number,
+): Promise<ConsultationMutationResult> {
+  if (!slotId) {
+    return { status: "error" };
+  }
+
+  try {
+    const response = await apiFetch(endpoints.consultationSlot(slotId), {
+      method: "DELETE",
+    });
+
+    return response.ok || response.status === 204
+      ? { status: "success" }
+      : { status: "error" };
+  } catch {
+    return { status: "error" };
   }
 }
 
