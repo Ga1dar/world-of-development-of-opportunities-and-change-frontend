@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  CONSULTATION_TIME_OPTIONS,
   getConsultationSlots,
   rescheduleConsultationAppointment,
   type ConsultationMutationResult,
@@ -469,29 +468,23 @@ export function RescheduleAppointmentDialog({
               onClickCapture={handleTimeClickCapture}
               className="mt-3 flex min-h-14 w-full cursor-grab select-none items-center gap-2 overflow-x-auto overflow-y-hidden pb-2 pl-2 active:cursor-grabbing [scrollbar-color:#402940_#F0E8F0] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#402940]/70 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#F0E8F0] sm:max-w-[340px] min-[1900px]:max-w-[520px]"
             >
-              {CONSULTATION_TIME_OPTIONS.map((time) => {
-                const slot = selectedDaySlotByTime.get(time);
-                const isAvailable = Boolean(slot);
-                const isSelected = selectedTime === time && isAvailable;
+              {selectedDaySlots.map((slot) => {
+                const isSelected = selectedTime === slot.time;
 
                 return (
                   <button
-                    key={time}
+                    key={slot.id}
                     type="button"
-                    disabled={!isAvailable || isSlotsLoading}
+                    disabled={isSlotsLoading}
                     aria-pressed={isSelected}
-                    onClick={() => {
-                      if (slot) setSelectedTime(slot.time);
-                    }}
+                    onClick={() => setSelectedTime(slot.time)}
                     className={`flex h-8 min-w-[52px] shrink-0 select-none items-center justify-center rounded-full px-0 text-center font-montserrat text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] ${
-                      isAvailable
-                        ? isSelected
-                          ? "bg-[#402940] text-white"
-                          : "bg-white text-[#1C100E] hover:bg-[#F0E8F0]"
-                        : "cursor-not-allowed bg-[#C8C8C8] text-[#1C100E]/45"
+                      isSelected
+                        ? "bg-[#402940] text-white"
+                        : "bg-white text-[#1C100E] hover:bg-[#F0E8F0]"
                     }`}
                   >
-                    {time}
+                    {slot.time}
                   </button>
                 );
               })}

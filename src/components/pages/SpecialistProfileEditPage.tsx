@@ -1,5 +1,5 @@
 import { Camera, Upload } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { notifyAuthChanged } from "../../api/auth";
@@ -11,7 +11,9 @@ import {
   uploadSpecialistDocuments,
   type CabinetProfile,
 } from "../../api/userCabinet";
+import { getFriendlyProfileError } from "../../utils/friendlyErrors";
 import { LogIn } from "./LogIn";
+import { PhoneCountryField } from "./PhoneCountryField";
 
 type FormState = {
   firstName: string;
@@ -173,6 +175,7 @@ export function SpecialistProfileEditPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const documentsInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -214,6 +217,7 @@ export function SpecialistProfileEditPage() {
 
   const handleDocumentsChange = (event: ChangeEvent<HTMLInputElement>) => {
     setDocuments(Array.from(event.target.files || []).slice(0, 3));
+    event.target.value = "";
   };
 
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -255,8 +259,7 @@ export function SpecialistProfileEditPage() {
       navigate("/profile");
     } catch (error) {
       console.error(error);
-      const details = error instanceof Error && error.message ? ` (${error.message})` : "";
-      setError(`${labels.saveError}${details}`);
+      setError(getFriendlyProfileError(error, i18n.language, labels.saveError));
     } finally {
       setIsSaving(false);
     }
@@ -340,11 +343,12 @@ export function SpecialistProfileEditPage() {
             onChange={updateField("lastName")}
             required
           />
-          <Field
+          <PhoneCountryField
             label={labels.phone}
             placeholder={labels.phonePlaceholder}
             value={form.phone}
             onChange={updateField("phone")}
+            language={i18n.language}
             required
           />
           <Field
@@ -400,17 +404,22 @@ export function SpecialistProfileEditPage() {
             </label>
           ) : null}
 
-          <label className={`${darkButton} flex h-12 cursor-pointer items-center justify-center gap-2 text-[13px] min-[744px]:h-11 min-[744px]:text-[14px]`}>
+          <button
+            type="button"
+            onClick={() => documentsInputRef.current?.click()}
+            className={`${darkButton} flex h-12 cursor-pointer items-center justify-center gap-2 text-[13px] min-[744px]:h-11 min-[744px]:text-[14px]`}
+          >
             <Upload className="h-4 w-4" aria-hidden="true" />
             {labels.uploadDocs}
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              className="sr-only"
-              onChange={handleDocumentsChange}
-            />
-          </label>
+          </button>
+          <input
+            ref={documentsInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            className="sr-only"
+            onChange={handleDocumentsChange}
+          />
 
           {documents.length ? (
             <p className="text-center text-[11px] leading-[1.25] text-[#1C100E]/60">

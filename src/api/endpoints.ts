@@ -60,6 +60,8 @@ export const endpoints = {
     `${API_URL}/education-materials/video-comments/${id}/like/`,
   consultationSlots: (specialistId: string | number) =>
     `${API_URL}/scheduling/slots/?specialist=${specialistId}`,
+  consultationSlotBulkCreate: `${API_URL}/scheduling/slots/bulk_create/`,
+  consultationSlot: (id: string | number) => `${API_URL}/scheduling/slots/${id}/`,
   consultationAppointments: `${API_URL}/scheduling/appointments/`,
   consultationCompletedAppointments: `${API_URL}/scheduling/appointments/completed/`,
   consultationAppointment: (id: string | number) =>
