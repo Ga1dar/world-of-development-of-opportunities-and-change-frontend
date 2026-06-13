@@ -188,8 +188,12 @@ const readSpecialistProfileId = (currentUser: RawRecord | null) => {
     readReferenceId(currentUser.specialist_profile) ||
     readReferenceId(currentUser.specialistProfile) ||
     readReferenceId(currentUser.specialist) ||
+    readReferenceId(currentUser.specialist_profile_id) ||
     readReferenceId(currentUser.specialist_id) ||
-    readReferenceId(currentUser.specialistProfileId)
+    readReferenceId(currentUser.specialistProfileId) ||
+    (readString(currentUser, ["role"]).toLowerCase().includes("specialist")
+      ? readReferenceId(currentUser.profile_id) || readReferenceId(currentUser.profileId)
+      : "")
   );
 };
 
@@ -477,19 +481,48 @@ const normalizeDocument = (raw: RawRecord): CabinetDocument => {
 const matchesCurrentUser = (profile: RawRecord, currentUser: RawRecord | null) => {
   if (!currentUser) return true;
 
-  const currentId = readString(currentUser, ["id"]);
-  const currentEmail = readString(currentUser, ["email"]);
-  const profileUser = asRecord(profile.user);
+  const currentId = readString(currentUser, ["id", "user_id", "userId"]);
+  const currentEmail = readString(currentUser, ["email", "user_email", "userEmail"]);
+  const currentUsername = readString(currentUser, ["username"]);
+  const profileUser =
+    asRecord(profile.user) ||
+    asRecord(profile.owner) ||
+    asRecord(profile.account) ||
+    asRecord(profile.user_details) ||
+    asRecord(profile.userDetails);
   const currentSpecialistId = readSpecialistProfileId(currentUser);
+  const profileUserId =
+    readString(profile, [
+      "user",
+      "user_id",
+      "userId",
+      "owner",
+      "owner_id",
+      "ownerId",
+      "account",
+      "account_id",
+      "accountId",
+    ]) || readString(profileUser, ["id", "user_id", "userId"]);
+  const profileEmail =
+    readString(profile, [
+      "user_email",
+      "userEmail",
+      "email",
+      "owner_email",
+      "ownerEmail",
+      "account_email",
+      "accountEmail",
+    ]) || readString(profileUser, ["email", "user_email", "userEmail"]);
+  const profileUsername =
+    readString(profile, ["username", "user_username", "userUsername"]) ||
+    readString(profileUser, ["username"]);
 
   return (
     !currentId ||
     (!!currentSpecialistId && readString(profile, ["id"]) === currentSpecialistId) ||
-    readString(profile, ["user", "user_id", "userId"]) === currentId ||
-    readString(profileUser, ["id"]) === currentId ||
-    (!!currentEmail &&
-      (readString(profile, ["user", "user_email", "userEmail", "email"]) === currentEmail ||
-        readString(profileUser, ["email"]) === currentEmail))
+    profileUserId === currentId ||
+    (!!currentEmail && profileEmail.toLowerCase() === currentEmail.toLowerCase()) ||
+    (!!currentUsername && profileUsername === currentUsername)
   );
 };
 
@@ -628,9 +661,10 @@ export async function getCurrentCabinetProfile(
   }
 
   try {
-    const directSpecialist = asRecord(
-      currentUser?.specialist_profile ?? currentUser?.specialistProfile,
-    );
+    const currentRole = readString(currentUser, ["role"]).toLowerCase();
+    const directSpecialist =
+      asRecord(currentUser?.specialist_profile ?? currentUser?.specialistProfile) ||
+      (currentRole.includes("specialist") ? asRecord(currentUser?.profile) : null);
     const directSpecialistId = readSpecialistProfileId(currentUser);
 
     if (directSpecialistId) {
