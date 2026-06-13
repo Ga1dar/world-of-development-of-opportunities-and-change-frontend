@@ -267,6 +267,8 @@ export async function logoutCurrentUser() {
         body: JSON.stringify({ refresh }),
       });
     }
+  } catch {
+    // Logging out locally must still work when the API is unavailable.
   } finally {
     clearLocalSession();
     notifyAuthChanged();

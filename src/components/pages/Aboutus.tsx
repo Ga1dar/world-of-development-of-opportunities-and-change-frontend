@@ -39,20 +39,20 @@ export function Aboutus() {
           <img
             src="/rectangle 2.png"
             alt={imageAlt}
-            className="mt-4 h-[257px] w-full rounded-[20px] object-cover "
+            className="mt-4 h-64.25 w-full rounded-[20px] object-cover "
           />
           {renderParagraphs(paragraphs.slice(1), "mt-4")}
         </article>
 
         <article className="about-tablet sm:grid-cols-[320px_320px] sm:gap-x-6 min-[744px]:grid-cols-[320px_320px]">
-          <h1 className="col-span-2 mb-8 font-montserrat text-[32px] font-medium leading-[45px] text-[#1C100E]">
+          <h1 className="col-span-2 mb-8 font-montserrat text-[32px] font-medium leading-11.25 text-[#1C100E]">
             {t("homeTopTitle")}
           </h1>
           {renderParagraphs(paragraphs.slice(0, 3), "col-start-1")}
           <img
             src="/rectangle 2.png"
             alt={imageAlt}
-            className="col-start-2 row-start-2 h-[257px] w-[320px] rounded-[20px] object-cover"
+            className="col-start-2 row-start-2 h-64.25 w-[320px] rounded-[20px] object-cover"
           />
           {renderParagraphs(paragraphs.slice(3), "col-span-2 mt-4")}
         </article>
@@ -78,21 +78,21 @@ export function Aboutus() {
         </article>
 
         <article className="about-desktop min-[1420px]:grid-cols-[635px_635px] min-[1420px]:gap-x-12">
-          <h1 className="font-montserrat text-[32px] font-medium leading-[45px] text-[#1C100E]">
+          <h1 className="font-montserrat text-[32px] font-medium leading-11.25 text-[#1C100E]">
             {t("homeTopTitle")}
           </h1>
           <img
             src="/rectangle 2.png"
             alt={imageAlt}
-            className="col-start-2 row-span-2 row-start-1 h-[327px] w-[628px] rounded-[20px] object-cover"
+            className="col-start-2 row-span-2 row-start-1 h-[327px] w-157 rounded-[20px] object-cover"
           />
           {renderParagraphs(paragraphs.slice(0, 2), "mt-9")}
           {renderParagraphs(paragraphs.slice(2), "col-span-2 mt-6")}
         </article>
 
-        <article className="about-big min-[1900px]:grid-cols-[910px_860px] min-[1900px]:gap-x-[43px]">
-          <div className="flex h-[540px] flex-col justify-start">
-            <h1 className="mb-8 max-w-[720px] font-montserrat text-[32px] font-medium leading-[45px] text-[#1C100E]">
+        <article className="about-big min-[1900px]:grid-cols-[910px_860px] min-[1900px]:gap-x-10.75">
+          <div className="flex h-135 flex-col justify-start">
+            <h1 className="mb-8 max-w-180 font-montserrat text-[32px] font-medium leading-11.25 text-[#1C100E]">
               {t("homeTopTitle")}
             </h1>
             {renderParagraphs(paragraphs, "max-w-[820px]")}
@@ -100,16 +100,16 @@ export function Aboutus() {
           <img
             src="/rectangle 2.png"
             alt={imageAlt}
-            className="h-[540px] w-[894px] rounded-[20px] object-cover"
+            className="h-135 w-223.5 rounded-[20px] object-cover"
           />
         </article>
       </section>
 
-      <section className="mx-auto mt-16 flex w-full max-w-[1280px] 
+      <section className="mx-auto mt-16 flex w-full max-w-7xl 
       flex-col items-center justify-center px-4 sm:mt-20 sm:px-10
-      min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20
-      min-[1900px]:mt-[100px] min-[1900px]:max-w-[1870px] min-[1900px]:px-30">
-        <h2 className="w-full text-center font-montserrat text-3xl font-medium leading-[140%] text-[#1C100E] sm:text-4xl min-[1420px]:text-[56px] min-[1420px]:leading-[100px] min-[1900px]:mt-5">
+      min-[1023px]:px-16 min-[1420px]:max-w-360 min-[1420px]:px-20
+      min-[1900px]:mt-25 min-[1900px]:max-w-467.5 min-[1900px]:px-30">
+        <h2 className="w-full text-center font-montserrat text-3xl font-medium leading-[140%] text-[#1C100E] sm:text-4xl min-[1420px]:text-[56px] min-[1420px]:leading-25 min-[1900px]:mt-5">
           {t("specialistsTitle")}
         </h2>
 
@@ -121,8 +121,8 @@ export function Aboutus() {
           rounded-[30px] border-2 border-yellow
           bg-[linear-gradient(180deg,#FFC401_0%,#FFC021_45%,#FEFA8B_100%)]
           font-montserrat text-lg font-medium text-[#1C100E] no-underline
-          shadow-btn sm:ml-auto sm:w-[320px] min-[1420px]:w-[411px]
-          min-[1900px]:w-[584px]"
+          shadow-btn sm:ml-auto sm:w-[320px] min-[1420px]:w-102.75
+          min-[1900px]:w-146"
         >
           {t("homeSpecialistsLink")}
         </Link>
