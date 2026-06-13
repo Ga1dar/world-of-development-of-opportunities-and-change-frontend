@@ -10,7 +10,7 @@ import {
   type CabinetDocument,
   type CabinetProfile,
 } from "../../api/userCabinet";
-import { logoutCurrentUser, notifyAuthChanged } from "../../api/auth";
+import { notifyAuthChanged } from "../../api/auth";
 import {
   FAVORITES_CHANGED_EVENT,
   getCurrentUserFavoriteContentItems,
@@ -188,9 +188,6 @@ const yellowButton =
 
 const whiteButton =
   "rounded-[30px] bg-white font-montserrat font-medium text-[#1C100E]";
-
-const darkButton =
-  "rounded-[30px] bg-[#1C100E] font-montserrat font-medium text-white";
 
 const normalizeDate = (value: string) => {
   if (!value) return "";
@@ -378,13 +375,11 @@ function CabinetTabs({
   labels,
   activeTab,
   onTabChange,
-  onLogout,
   isSpecialist,
 }: {
   labels: typeof copy.ua;
   activeTab: CabinetTab;
   onTabChange: (tab: CabinetTab) => void;
-  onLogout: () => void;
   isSpecialist: boolean;
 }) {
   const tabs: Array<{ id: CabinetTab; label: string }> = isSpecialist
@@ -429,99 +424,7 @@ function CabinetTabs({
           {tab.label}
         </button>
       ))}
-      <button
-        type="button"
-        onClick={onLogout}
-        className={`${darkButton} h-12 text-[13px] min-[744px]:h-11 min-[744px]:text-[14px]`}
-      >
-        {labels.logout}
-      </button>
     </section>
-  );
-}
-
-function LogoutDialog({
-  open,
-  labels,
-  isSubmitting,
-  error,
-  onClose,
-  onConfirm,
-}: {
-  open: boolean;
-  labels: typeof copy.ua;
-  isSubmitting: boolean;
-  error: string;
-  onClose: () => void;
-  onConfirm: () => void;
-}) {
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-[260] flex items-start justify-center bg-[#1C100E]/35 px-4 pt-[334px] backdrop-blur-[1px]
-      min-[744px]:px-10 min-[744px]:pt-[96px] min-[1023px]:pt-[108px] min-[1420px]:pt-[110px] min-[1900px]:pt-[114px]"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-label={labels.logout}
-        className="relative flex min-h-[347px] w-full max-w-[358px] flex-col items-center rounded-[18px] bg-[#F0E8F0] px-7 py-10 text-center shadow-xl
-        min-[744px]:min-h-[432px] min-[744px]:max-w-[664px] min-[744px]:rounded-[22px] min-[744px]:px-24 min-[744px]:py-16
-        min-[1023px]:min-h-[512px] min-[1023px]:max-w-[600px] min-[1023px]:py-19
-        min-[1420px]:min-h-[512px] min-[1900px]:min-h-[521px] min-[1900px]:max-w-[825px] min-[1900px]:px-42"
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 flex h-6 w-6 items-center justify-center font-montserrat text-[18px] leading-none text-[#1C100E]/35"
-          aria-label={labels.close}
-        >
-          ×
-        </button>
-
-        <img
-          src="/Logout.png"
-          alt=""
-          aria-hidden="true"
-          className="mt-5 h-[52px] w-[52px] object-contain min-[744px]:mt-3 min-[744px]:h-[60px] min-[744px]:w-[60px] min-[1023px]:mt-7"
-        />
-
-        <h2 className="mt-8 whitespace-pre-line font-montserrat text-[20px] font-medium leading-[1.2] text-[#1C100E] min-[744px]:mt-8 min-[744px]:text-[24px] min-[1900px]:text-[26px]">
-          {labels.logoutConfirmTitle}
-        </h2>
-
-        {error ? (
-          <p className="mt-4 max-w-[300px] font-montserrat text-[12px] leading-[1.3] text-[#83105F]">
-            {error}
-          </p>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={isSubmitting}
-          className={`${yellowButton} mt-8 h-12 w-full max-w-[290px] text-[14px] disabled:cursor-wait disabled:opacity-70 min-[744px]:mt-9 min-[744px]:max-w-[380px] min-[1023px]:max-w-[408px] min-[1900px]:max-w-[576px]`}
-        >
-          {labels.logout}
-        </button>
-      </section>
-    </div>
   );
 }
 
@@ -1489,9 +1392,6 @@ export function UserCabinetPage() {
   const [rescheduleAppointment, setRescheduleAppointment] = useState<CabinetAppointment | null>(null);
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState("");
   const [appointmentMutationError, setAppointmentMutationError] = useState("");
-  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState("");
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1580,20 +1480,6 @@ export function UserCabinetPage() {
     );
   }
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    setLogoutError("");
-
-    try {
-      await logoutCurrentUser();
-    } catch {
-      setLogoutError(labels.logoutError);
-    } finally {
-      setIsLoggingOut(false);
-      setIsLogoutOpen(false);
-      navigate("/");
-    }
-  };
   const isSpecialist = profile.profileKind === "specialist";
   const specialistId = Number(profile.specialistProfileId || profile.id);
   const isSpecialistAbout = isSpecialist && activeTab === "about";
@@ -1689,7 +1575,6 @@ export function UserCabinetPage() {
         labels={labels}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onLogout={() => setIsLogoutOpen(true)}
         isSpecialist={isSpecialist}
       />
 
@@ -1747,15 +1632,6 @@ export function UserCabinetPage() {
         onOpenChange={(open) => {
           if (!open) setPreviewDocument(null);
         }}
-      />
-
-      <LogoutDialog
-        open={isLogoutOpen}
-        labels={labels}
-        isSubmitting={isLoggingOut}
-        error={logoutError}
-        onClose={() => setIsLogoutOpen(false)}
-        onConfirm={() => void handleLogout()}
       />
 
       <RescheduleAppointmentDialog
