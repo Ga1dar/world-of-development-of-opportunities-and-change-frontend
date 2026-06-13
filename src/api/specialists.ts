@@ -207,35 +207,41 @@ const normalizeSpecialist = (
   const nameUa =
     readString(raw, ["name_ua", "full_name_ua", "full_name", "name", "user.name"]) ||
     [lastNameUa, firstNameUa].filter(Boolean).join(" ") ||
+    readString(raw, ["user_email", "email", "user.email"]) ||
     fallback.nameUa;
   const nameEn =
     readString(raw, ["name_en", "full_name_en", "full_name", "name", "user.name"]) ||
     [firstNameEn, lastNameEn].filter(Boolean).join(" ") ||
+    readString(raw, ["user_email", "email", "user.email"]) ||
     fallback.nameEn;
   const roleUa =
     readString(raw, [
       "role_ua",
       "position_ua",
+      "specialisation_ua",
       "specialization_ua",
       "speciality_ua",
       "profession_ua",
-    ]) || fallback.roleUa;
+    ]) ||
+    readString(raw, ["role", "position", "specialisation", "specialization", "speciality", "profession"]) ||
+    "";
   const roleEn =
     readString(raw, [
       "role_en",
       "position_en",
+      "specialisation_en",
       "specialization_en",
       "speciality_en",
       "profession_en",
     ]) ||
-    readString(raw, ["role", "position", "specialization", "speciality", "profession"]) ||
-    fallback.roleEn;
+    readString(raw, ["role", "position", "specialisation", "specialization", "speciality", "profession"]) ||
+    "";
 
   return {
     id: asNumber(raw.id, fallback.id || index + 1),
     photo: resolveImageUrl(
       raw.photo ?? raw.avatar ?? raw.image ?? raw.picture ?? raw.photo_url,
-      fallback.photo,
+      "/user.jpg",
     ),
     nameUa,
     nameEn,
@@ -243,28 +249,38 @@ const normalizeSpecialist = (
     roleEn,
     aboutUa: asParagraphs(
       raw.about_ua ?? raw.bio_ua ?? raw.description_ua ?? raw.about ?? raw.bio,
-      fallback.aboutUa,
+      [],
     ),
     aboutEn: asParagraphs(
       raw.about_en ?? raw.bio_en ?? raw.description_en ?? raw.about ?? raw.bio,
-      fallback.aboutEn,
+      [],
     ),
-    educationUa: asParagraphs(raw.education_ua ?? raw.education, fallback.educationUa),
-    educationEn: asParagraphs(raw.education_en ?? raw.education, fallback.educationEn),
-    experienceUa: asParagraphs(raw.experience_ua ?? raw.experience, fallback.experienceUa),
-    experienceEn: asParagraphs(raw.experience_en ?? raw.experience, fallback.experienceEn),
+    educationUa: asParagraphs(raw.education_ua ?? raw.education, []),
+    educationEn: asParagraphs(raw.education_en ?? raw.education, []),
+    experienceUa: asParagraphs(raw.experience_ua ?? raw.experience, []),
+    experienceEn: asParagraphs(raw.experience_en ?? raw.experience, []),
     specializationsUa: asParagraphs(
-      raw.specializations_ua ?? raw.services_ua ?? raw.specializations ?? raw.services,
-      fallback.specializationsUa,
+      raw.specializations_ua ??
+        raw.services_ua ??
+        raw.specialisations ??
+        raw.specialisation ??
+        raw.specializations ??
+        raw.services,
+      [],
     ),
     specializationsEn: asParagraphs(
-      raw.specializations_en ?? raw.services_en ?? raw.specializations ?? raw.services,
-      fallback.specializationsEn,
+      raw.specializations_en ??
+        raw.services_en ??
+        raw.specialisations ??
+        raw.specialisation ??
+        raw.specializations ??
+        raw.services,
+      [],
     ),
     phone:
       readString(raw, ["phone", "phone_number", "user.phone", "user.phone_number"]) ||
       undefined,
-    email: readString(raw, ["email", "user.email"]) || undefined,
+    email: readString(raw, ["email", "user_email", "userEmail", "user.email"]) || undefined,
   };
 };
 

@@ -314,8 +314,8 @@ const normalizeProfile = (
     readString(source, ["full_name", "fullName", "name"]) ||
     readString(sourceUser, ["full_name", "fullName", "name"]);
   const email =
-    readString(source, ["email", "user.email"]) ||
-    readString(sourceUser, ["email"]) ||
+    readString(source, ["email", "user_email", "userEmail", "user.email"]) ||
+    readString(sourceUser, ["email", "user_email", "userEmail"]) ||
     readString(currentUser, ["email"]);
   const role =
     readString(currentUser, ["role"]) ||
@@ -385,6 +385,8 @@ const normalizeProfile = (
         "work_experience",
         "workExperience",
         "experience",
+        "experience_ua",
+        "experience_en",
         "years_of_experience",
         "yearsOfExperience",
       ]) ||
@@ -392,6 +394,8 @@ const normalizeProfile = (
         "work_experience",
         "workExperience",
         "experience",
+        "experience_ua",
+        "experience_en",
         "years_of_experience",
         "yearsOfExperience",
       ]),
@@ -810,29 +814,47 @@ export async function createUserProfile(input: UserProfileCreateInput) {
     throw new Error("Authentication required");
   }
 
-  const body = new FormData();
-  body.append("first_name", input.firstName);
-  body.append("last_name", input.lastName);
-  body.append("phone", input.phone);
-  body.append("city", input.city);
-  body.append("birth_date", input.birthDate);
-  body.append("bio", input.about);
-  body.append("accept_data_processing_consent", String(input.acceptDataProcessingConsent));
+  const createBody = (includeEducationOtherFallback = false) => {
+    const body = new FormData();
+    body.append("first_name", input.firstName);
+    body.append("last_name", input.lastName);
+    body.append("phone", input.phone);
+    body.append("city", input.city);
+    body.append("birth_date", input.birthDate);
+    body.append("bio", input.about);
+    body.append("accept_data_processing_consent", String(input.acceptDataProcessingConsent));
 
-  if (input.avatar) {
-    body.append("avatar", input.avatar);
-  }
+    if (includeEducationOtherFallback) {
+      body.append("education_other", "Not specified");
+    }
 
-  const response = await apiFetch(endpoints.userProfiles, {
+    if (input.avatar) {
+      body.append("avatar", input.avatar);
+    }
+
+    return body;
+  };
+
+  let response = await apiFetch(endpoints.userProfiles, {
     method: "POST",
-    body,
+    body: createBody(),
   });
+  let errorData: unknown = null;
 
   if (!response.ok) {
-    const details = await response
-      .json()
-      .then((data) => JSON.stringify(data))
-      .catch(() => "");
+    errorData = await parseJsonResponse(response);
+
+    if (response.status === 400 && hasEducationOtherValidationError(errorData)) {
+      response = await apiFetch(endpoints.userProfiles, {
+        method: "POST",
+        body: createBody(true),
+      });
+      errorData = response.ok ? null : await parseJsonResponse(response);
+    }
+  }
+
+  if (!response.ok) {
+    const details = stringifyResponseDetails(errorData);
     throw new Error(`Profile creation failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 

@@ -41,6 +41,7 @@ type AuthErrorKey =
   | "registerPasswordMismatch"
 
 const PASSWORD_MIN_LENGTH = 8
+const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en")
 const COMMON_PASSWORDS = new Set([
   "password",
   "password1",
@@ -205,6 +206,18 @@ export function LogIn({ variant = "header", text }: LogInProps) {
 
     if (!message) {
       return fallback
+    }
+
+    const normalizedMessage = message.toLowerCase()
+
+    if (
+      normalizedMessage.includes("already") ||
+      normalizedMessage.includes("exists") ||
+      normalizedMessage.includes("unique")
+    ) {
+      return isEnglishLanguage(i18n.language)
+        ? "A user with this email already exists."
+        : "Користувач із таким email уже існує."
     }
 
     const errorKey = getAuthErrorKey(message)
