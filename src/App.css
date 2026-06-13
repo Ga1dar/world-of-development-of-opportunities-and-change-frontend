@@ -21,3 +21,21 @@ body,
   padding: 0;
   min-height: 100%;
 }
+.specialist-onboarding-form,
+.specialist-application-review {
+  box-sizing: border-box;
+}
+
+@media (min-width: 744px) {
+  .specialist-onboarding-form {
+    width: clamp(402px, calc(33.495vw + 152.8px), 816px);
+    max-width: none;
+    padding-inline: clamp(48px, calc(9.061vw - 19.4px), 160px);
+  }
+
+  .specialist-application-review {
+    width: clamp(410px, calc(32.848vw + 165.6px), 816px);
+    max-width: none;
+    padding-inline: clamp(48px, calc(8.252vw - 13.4px), 150px);
+  }
+}
