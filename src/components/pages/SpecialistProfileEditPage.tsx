@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { notifyAuthChanged } from "../../api/auth";
 import {
-  createSpecialistProfile,
+  getCurrentCabinetProfile,
   getUserCabinetData,
   updateProfileAvatar,
   updateSpecialistProfile,
@@ -239,19 +239,24 @@ export function SpecialistProfileEditPage() {
     setNotice("");
 
     try {
-      if (profile.specialistProfileId) {
-        await updateSpecialistProfile(profile.specialistProfileId, {
-          ...form,
-        });
-        if (avatarFile) {
-          await updateProfileAvatar(profile, avatarFile);
-        }
-      } else {
-        await createSpecialistProfile({
-          ...form,
-          avatar: avatarFile,
-          acceptDataProcessingConsent: hasConsent,
-        });
+      const currentProfile = profile.specialistProfileId
+        ? profile
+        : await getCurrentCabinetProfile();
+      const specialistProfileId =
+        currentProfile?.specialistProfileId ||
+        (currentProfile?.profileKind === "specialist" && currentProfile.id !== "me"
+          ? currentProfile.id
+          : "");
+
+      if (!specialistProfileId) {
+        throw new Error("Specialist profile id is missing");
+      }
+
+      await updateSpecialistProfile(specialistProfileId, {
+        ...form,
+      });
+      if (avatarFile) {
+        await updateProfileAvatar(currentProfile || profile, avatarFile);
       }
       await uploadSpecialistDocuments(documents);
       notifyAuthChanged();
