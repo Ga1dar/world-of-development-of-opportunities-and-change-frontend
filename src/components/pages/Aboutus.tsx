@@ -29,10 +29,10 @@ export function Aboutus() {
   return (
     <>
       <section className="about-shell mx-auto flex w-full 
-      max-w-[1280px] flex-col px-4 sm:px-10 min-[1023px]:px-16
-      min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1900px] min-[1900px]:px-21">
+      max-w-7xl flex-col px-4 sm:px-10 min-[1023px]:px-16
+      min-[1420px]:max-w-360 min-[1420px]:px-20 min-[1900px]:max-w-475 min-[1900px]:px-21">
         <article className="about-mobile">
-          <h1 className="mb-5 font-montserrat text-[24px] font-medium leading-[1.25] text-[#1C100E]">
+          <h1 className="mb-5 font-montserrat text-[24px] font-medium leading-tight text-[#1C100E]">
             {t("homeTopTitle")}
           </h1>
           {renderParagraphs(paragraphs.slice(0, 1), "gap-0")}
@@ -72,7 +72,7 @@ export function Aboutus() {
             <img
               src="/rectangle 2.png"
               alt={imageAlt}
-              className="h-[311px] w-[440px] rounded-[8px] object-cover"
+              className="h-77.75 w-110 rounded-lg object-cover"
             />
           </div>
         </article>
@@ -84,7 +84,7 @@ export function Aboutus() {
           <img
             src="/rectangle 2.png"
             alt={imageAlt}
-            className="col-start-2 row-span-2 row-start-1 h-[327px] w-157 rounded-[20px] object-cover"
+            className="col-start-2 row-span-2 row-start-1 h-81.75 w-157 rounded-[20px] object-cover"
           />
           {renderParagraphs(paragraphs.slice(0, 2), "mt-9")}
           {renderParagraphs(paragraphs.slice(2), "col-span-2 mt-6")}
@@ -117,7 +117,7 @@ export function Aboutus() {
 
         <Link
           to="/specialists"
-          className="mt-6 mb-16 flex h-[57px] w-full items-center justify-center
+          className="mt-6 mb-16 flex h-14.25 w-full items-center justify-center
           rounded-[30px] border-2 border-yellow
           bg-[linear-gradient(180deg,#FFC401_0%,#FFC021_45%,#FEFA8B_100%)]
           font-montserrat text-lg font-medium text-[#1C100E] no-underline

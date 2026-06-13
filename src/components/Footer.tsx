@@ -44,8 +44,8 @@ export function Footer() {
   };
   return (
     <footer className="mb-0 box-border flex w-full flex-col gap-x-6 rounded-t-[30px] bg-primary px-4 pt-4 pb-0 text-[#F0E8F0] min-[1023px]:mb-0 min-[1023px]:px-16 min-[1023px]:pb-0 min-[1420px]:px-16 min-[1420px]:pt-6 min-[1420px]:pb-0">
-      <div className="mb-6 flex flex-col min-[1420px]:mb-[5px] min-[1420px]:grid min-[1420px]:grid-cols-[636px_146px_411px] min-[1420px]:justify-between min-[1900px]:mb-[7px] min-[1900px]:grid-cols-[886px_146px_411px]">
-        <Field className="flex flex-col min-[1420px]:w-[636px] min-[1900px]:w-[886px]">
+      <div className="mb-6 flex flex-col min-[1420px]:mb-1.25 min-[1420px]:grid min-[1420px]:grid-cols-[636px_146px_411px] min-[1420px]:justify-between min-[1900px]:mb-1.75 min-[1900px]:grid-cols-[886px_146px_411px]">
+        <Field className="flex flex-col min-[1420px]:w-159 min-[1900px]:w-221.5">
           <form onSubmit={handleSubscribe} className="flex flex-col gap-y-4 mb-6">
             <Label htmlFor="footer-email" className="flex flex-col items-start font-montserrat text-lg font-medium text-[#F0E8F0] min-[1420px]:text-2xl">
               {t("footerLabel")}
@@ -188,7 +188,7 @@ export function Footer() {
               alt="Logo" 
               className="hidden h-30 w-30 sm:col-start-3 
               sm:row-start-1 sm:row-end-4 sm:inline-block
-              min-[1420px]:h-27.25 min-[1420px]:w-[108px]"
+              min-[1420px]:h-27.25 min-[1420px]:w-27"
             />
             </Link>
           </div>
