@@ -321,6 +321,10 @@ function ProfileCard({
             src={profile.avatar}
             alt={displayName}
             className="h-full w-full rounded-full object-cover"
+            onError={(event) => {
+              event.currentTarget.src =
+                profile.profileKind === "specialist" ? "/lashenko2.png" : "/user.jpg";
+            }}
           />
           <label className="absolute right-1 bottom-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[#E8DCE8] transition hover:bg-[#E0D0E0]">
             <Camera className="h-4 w-4 text-[#1C100E]" />
