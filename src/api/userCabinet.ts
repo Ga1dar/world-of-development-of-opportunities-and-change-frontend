@@ -92,6 +92,7 @@ export type CabinetData = {
 
 const FALLBACK_AVATAR = "/user.jpg";
 const SPECIALIST_FALLBACK_AVATAR = "/lashenko2.png";
+export const PROFILE_AVATAR_CHANGED_EVENT = "profile-avatar-changed";
 let profileAvatarVersion = "";
 
 const asRecord = (value: unknown): RawRecord | null =>
@@ -244,6 +245,36 @@ const withAvatarVersion = (url: string) => {
 const resolveProfileAvatar = (value: unknown, fallback: string) =>
   withAvatarVersion(resolveMediaUrl(value, fallback));
 
+const readAvatarValue = (profile: RawRecord | null, user: RawRecord | null = null) =>
+  profile?.avatar ??
+  profile?.photo ??
+  profile?.image ??
+  profile?.picture ??
+  profile?.avatar_url ??
+  profile?.avatarUrl ??
+  profile?.photo_url ??
+  profile?.photoUrl ??
+  profile?.image_url ??
+  profile?.imageUrl ??
+  profile?.profile_photo ??
+  profile?.profilePhoto ??
+  profile?.profile_image ??
+  profile?.profileImage ??
+  user?.avatar ??
+  user?.photo ??
+  user?.image ??
+  user?.picture ??
+  user?.avatar_url ??
+  user?.avatarUrl ??
+  user?.photo_url ??
+  user?.photoUrl ??
+  user?.image_url ??
+  user?.imageUrl ??
+  user?.profile_photo ??
+  user?.profilePhoto ??
+  user?.profile_image ??
+  user?.profileImage;
+
 const readAvatarFromResponse = (data: unknown) => {
   const response = asRecord(data);
   const profile =
@@ -254,15 +285,7 @@ const readAvatarFromResponse = (data: unknown) => {
     response;
   const user = asRecord(profile?.user);
 
-  return resolveProfileAvatar(
-    profile?.avatar ??
-      profile?.photo ??
-      profile?.image ??
-      profile?.picture ??
-      profile?.avatar_url ??
-      user?.avatar,
-    "",
-  );
+  return resolveProfileAvatar(readAvatarValue(profile, user), "");
 };
 
 const fetchJson = async (url: string, signal?: AbortSignal) => {
@@ -388,12 +411,7 @@ const normalizeProfile = (
     role,
     profileKind,
     avatar: resolveProfileAvatar(
-      source.avatar ??
-        source.photo ??
-        source.image ??
-        source.picture ??
-        source.avatar_url ??
-        sourceUser?.avatar,
+      readAvatarValue(source, sourceUser),
       profileKind === "specialist" ? SPECIALIST_FALLBACK_AVATAR : FALLBACK_AVATAR,
     ),
     profession,
@@ -992,8 +1010,15 @@ export async function updateProfileAvatar(profile: CabinetProfile, avatar: File)
 
   const data = await response.json().catch(() => null);
   profileAvatarVersion = String(Date.now());
+  const updatedAvatar = readAvatarFromResponse(data) || withAvatarVersion(profile.avatar);
 
-  return readAvatarFromResponse(data) || withAvatarVersion(profile.avatar);
+  window.dispatchEvent(
+    new CustomEvent(PROFILE_AVATAR_CHANGED_EVENT, {
+      detail: { avatar: updatedAvatar },
+    }),
+  );
+
+  return updatedAvatar;
 }
 
 export async function uploadSpecialistDocuments(files: File[]) {

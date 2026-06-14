@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAccessToken } from "../api/auth";
-import { getCurrentCabinetProfile } from "../api/userCabinet";
+import {
+  getCurrentCabinetProfile,
+  PROFILE_AVATAR_CHANGED_EVENT,
+} from "../api/userCabinet";
 
 const FALLBACK_AVATAR = "/user.jpg";
 
@@ -37,11 +40,18 @@ export function HeaderProfileAvatar() {
     updateProfile();
     window.addEventListener("auth-changed", updateProfile);
     window.addEventListener("storage", updateProfile);
+    const updateAvatar = (event: Event) => {
+      const nextAvatar = (event as CustomEvent<{ avatar?: string }>).detail?.avatar;
+      if (nextAvatar) setAvatar(nextAvatar);
+      updateProfile();
+    };
+    window.addEventListener(PROFILE_AVATAR_CHANGED_EVENT, updateAvatar);
 
     return () => {
       controller?.abort();
       window.removeEventListener("auth-changed", updateProfile);
       window.removeEventListener("storage", updateProfile);
+      window.removeEventListener(PROFILE_AVATAR_CHANGED_EVENT, updateAvatar);
     };
   }, []);
 

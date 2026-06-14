@@ -221,7 +221,9 @@ export function SpecialistProfileEditPage() {
   };
 
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setAvatarFile(event.target.files?.[0] || null);
+    const file = event.currentTarget.files?.[0] || null;
+    event.currentTarget.value = "";
+    setAvatarFile(file);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
