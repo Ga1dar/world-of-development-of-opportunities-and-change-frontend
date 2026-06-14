@@ -1025,32 +1025,25 @@ export async function uploadSpecialistDocuments(files: File[]) {
   const token = getAccessToken();
   if ((!token && !getRefreshToken()) || files.length === 0) return [];
   const filesToUpload = files.slice(0, 3);
-
-  const uploadWithField = async (file: File, fieldName: "file" | "document") => {
-    const body = new FormData();
-    body.append(fieldName, file);
-    body.append("title", file.name);
-
-    return apiFetch(endpoints.documents, {
-      method: "POST",
-      body,
-    });
-  };
-
   const results = [];
 
   for (const file of filesToUpload) {
-    let response = await uploadWithField(file, "file");
-
-    if (!response.ok && response.status === 400) {
-      response = await uploadWithField(file, "document");
-    }
+    const body = new FormData();
+    body.append("file", file);
+    const response = await apiFetch(endpoints.documents, {
+      method: "POST",
+      body,
+    });
+    const data = await parseJsonResponse(response);
 
     if (!response.ok) {
-      throw new Error(`Document upload failed: ${response.status}`);
+      const details = stringifyResponseDetails(data);
+      throw new Error(
+        `Document upload failed: ${response.status}${details ? ` ${details}` : ""}`,
+      );
     }
 
-    results.push(await response.json().catch(() => null));
+    results.push(data);
   }
 
   return results;
