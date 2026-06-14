@@ -58,6 +58,7 @@ const copy = {
     consentError: "Підтвердіть згоду на обробку персональних даних.",
     saveError: "Не вдалося зберегти зміни. Перевірте поля та спробуйте ще раз.",
     selectedDocs: "Обрано документів:",
+    invalidDocumentType: "Підтримуються лише документи у форматі PDF, JPG та PNG.",
   },
   en: {
     loading: "Loading profile...",
@@ -90,6 +91,7 @@ const copy = {
     consentError: "Confirm personal data processing consent.",
     saveError: "Could not save changes. Check the fields and try again.",
     selectedDocs: "Selected documents:",
+    invalidDocumentType: "Only PDF, JPG and PNG documents are supported.",
   },
 };
 
@@ -216,7 +218,19 @@ export function SpecialistProfileEditPage() {
   };
 
   const handleDocumentsChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setDocuments(Array.from(event.target.files || []).slice(0, 3));
+    const selectedFiles = Array.from(event.target.files || []).slice(0, 3);
+    const supportedExtensions = /\.(pdf|jpe?g|png)$/i;
+    const unsupportedFile = selectedFiles.find((file) => !supportedExtensions.test(file.name));
+
+    if (unsupportedFile) {
+      setDocuments([]);
+      setError(labels.invalidDocumentType);
+      event.target.value = "";
+      return;
+    }
+
+    setError("");
+    setDocuments(selectedFiles);
     event.target.value = "";
   };
 
@@ -423,7 +437,7 @@ export function SpecialistProfileEditPage() {
             ref={documentsInputRef}
             type="file"
             multiple
-            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
             className="sr-only"
             onChange={handleDocumentsChange}
           />

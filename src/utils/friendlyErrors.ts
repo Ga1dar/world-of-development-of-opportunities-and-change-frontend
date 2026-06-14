@@ -11,6 +11,18 @@ export function getFriendlyProfileError(error: unknown, language: Language, fall
 
   if (!message) return fallback;
 
+  if (/document upload failed|unsupported.*(file|extension)|invalid.*(file|extension)/.test(message)) {
+    if (/too large|file size|maximum size|max.*size/.test(message)) {
+      return isEnglish
+        ? "The document is too large. Choose a smaller PDF, JPG or PNG file."
+        : "Документ завеликий. Оберіть менший файл у форматі PDF, JPG або PNG.";
+    }
+
+    return isEnglish
+      ? "The document could not be uploaded. Use a valid PDF, JPG or PNG file."
+      : "Не вдалося завантажити документ. Оберіть коректний файл у форматі PDF, JPG або PNG.";
+  }
+
   if (/phone|telephone|phone_number|format|valid phone|phonenumber/.test(message)) {
     return isEnglish
       ? "The phone number has an invalid format. Check the country code and number."
