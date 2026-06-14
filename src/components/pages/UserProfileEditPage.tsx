@@ -189,6 +189,12 @@ export function UserProfileEditPage() {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0] || null;
+    event.currentTarget.value = "";
+    setAvatarFile(file);
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!profile || profile.profileKind === "specialist") return;
@@ -278,9 +284,7 @@ export function UserProfileEditPage() {
               type="file"
               accept="image/*"
               className="sr-only"
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                setAvatarFile(event.target.files?.[0] || null)
-              }
+              onChange={handleAvatarChange}
             />
           </label>
           <h1 className="mt-5 text-[18px] font-medium leading-[1.2] min-[744px]:text-[20px]">
