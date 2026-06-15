@@ -27,6 +27,15 @@ body,
   box-sizing: border-box;
 }
 
+.google-auth-button img {
+  transition: filter 150ms ease;
+}
+
+.google-auth-button:hover img {
+  filter: brightness(0) saturate(100%) invert(13%) sepia(68%) saturate(3244%)
+    hue-rotate(303deg) brightness(78%) contrast(98%);
+}
+
 @media (min-width: 744px) {
   .specialist-onboarding-form {
     width: clamp(402px, calc(33.495vw + 152.8px), 816px);

@@ -1,7 +1,7 @@
 import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { LogIn } from "./LogIn";
 import {
   getUserCabinetData,
@@ -32,6 +32,16 @@ import { CancelConsultationDialog } from "./CancelConsultationDialog";
 import { DocumentPreviewDialog } from "./DocumentPreviewDialog";
 
 type CabinetTab = "appointments" | "favorites" | "about" | "calendar" | "history";
+const cabinetTabs = new Set<CabinetTab>([
+  "appointments",
+  "favorites",
+  "about",
+  "calendar",
+  "history",
+]);
+
+const isCabinetTab = (value: string | null): value is CabinetTab =>
+  Boolean(value && cabinetTabs.has(value as CabinetTab));
 
 const copy = {
   ua: {
@@ -1396,6 +1406,7 @@ function AboutView({ profile, labels }: { profile: CabinetProfile; labels: typeo
 export function UserCabinetPage() {
   const { i18n } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const labels = useMemo(
     () => (isEnglishLanguage(i18n.language) ? copy.en : copy.ua),
     [i18n.language],
@@ -1417,6 +1428,25 @@ export function UserCabinetPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const language = isEnglishLanguage(i18n.language) ? "en" : "ua";
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (!isCabinetTab(requestedTab)) return;
+
+    const specialistOnlyTab =
+      requestedTab === "calendar" || requestedTab === "history";
+    if (profile && profile.profileKind !== "specialist" && specialistOnlyTab) {
+      setActiveTab("appointments");
+      return;
+    }
+
+    setActiveTab(requestedTab);
+  }, [profile, searchParams]);
+
+  const handleTabChange = (tab: CabinetTab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   const loadFavoriteItems = async () => {
     const [serverItems, cachedFavoriteItems] = await Promise.all([
@@ -1586,7 +1616,7 @@ export function UserCabinetPage() {
           profile={profile}
           labels={labels}
           activeTab={activeTab}
-          onAbout={() => setActiveTab("about")}
+          onAbout={() => handleTabChange("about")}
           onAvatarChange={handleAvatarChange}
           isAvatarSaving={isAvatarSaving}
         />
@@ -1595,7 +1625,7 @@ export function UserCabinetPage() {
       <CabinetTabs
         labels={labels}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         isSpecialist={isSpecialist}
       />
 
