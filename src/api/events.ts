@@ -1026,8 +1026,13 @@ export async function getEventsByCategory(categorySlug: string) {
   );
 
   try {
-    const categories = await getEventCategories();
-    const category = categories.find((item) => item.slug === categorySlug);
+    let category = fallbackCategories.find((item) => item.slug === categorySlug);
+
+    if (!category) {
+      const categories = await getEventCategories();
+      category = categories.find((item) => item.slug === categorySlug);
+    }
+
     const url = createEndpointUrl(endpoints.events);
     url.searchParams.set("category", String(category?.id ?? categorySlug));
 

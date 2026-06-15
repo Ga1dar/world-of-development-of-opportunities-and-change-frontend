@@ -19,7 +19,7 @@ import {
 } from "../../api/userFavorites";
 import { createFallbackVideos } from "../../api/videoFallbacks";
 import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
-import { VideoPreviewLoader } from "../ui/VideoPreviewLoader";
+import { VideoPreview } from "../ui/VideoPreview";
 
 const pageMaxWidth =
   "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
@@ -198,15 +198,12 @@ function VideoCard({ video, language }: { video: EducationVideo; language: "ua" 
         to={formatVideoHref(currentVideo)}
         className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]"
       >
-        {currentVideo.coverImage ? (
-          <img
-            src={currentVideo.coverImage}
-            alt={currentVideo.title}
-            className="h-[153px] w-full rounded-[14px] object-cover min-[744px]:h-[178px] min-[1023px]:h-[206px] min-[1420px]:h-[188px] min-[1900px]:h-[210px]"
-          />
-        ) : (
-          <VideoPreviewLoader className="h-[153px] w-full rounded-[14px] min-[744px]:h-[178px] min-[1023px]:h-[206px] min-[1420px]:h-[188px] min-[1900px]:h-[210px]" />
-        )}
+        <VideoPreview
+          title={currentVideo.title}
+          videoUrl={currentVideo.videoUrl}
+          coverImage={currentVideo.coverImage}
+          className="h-[153px] w-full rounded-[14px] min-[744px]:h-[178px] min-[1023px]:h-[206px] min-[1420px]:h-[188px] min-[1900px]:h-[210px]"
+        />
       </Link>
 
       <div className="mt-2 grid grid-cols-[1fr_40px] items-end gap-2">

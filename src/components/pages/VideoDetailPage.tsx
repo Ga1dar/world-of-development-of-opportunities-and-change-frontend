@@ -95,6 +95,7 @@ function VideoFrame({ video }: { video: EducationVideo }) {
     return (
       <video
         controls
+        preload="auto"
         poster={video.coverImage || undefined}
         className="h-[244px] w-full rounded-[20px] bg-[#F7EEF4] object-cover min-[744px]:h-[462px] min-[1023px]:h-[412px] min-[1420px]:h-[365px] min-[1900px]:h-[450px]"
       >
