@@ -406,6 +406,8 @@ export function LogIn({ variant = "header", text }: LogInProps) {
       setOpen(false)
       if (selectedRole === "specialist") {
         navigate("/specialist-onboarding")
+      } else {
+        navigate("/user-onboarding")
       }
     } catch (err) {
       if (!getAccessToken()) {
@@ -564,7 +566,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
     notifyAuthChanged()
 
     if (authMode === "register") {
-      setRegisterStep("success")
+      resetForm()
+      setMode("login")
+      setOpen(false)
+      navigate("/user-onboarding")
     } else {
       resetForm()
       setMode("login")
