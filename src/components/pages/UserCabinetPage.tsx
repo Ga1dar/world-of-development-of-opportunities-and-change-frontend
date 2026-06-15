@@ -1,5 +1,5 @@
 import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare } from "lucide-react";
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn } from "./LogIn";
@@ -21,6 +21,7 @@ import {
 import {
   cancelConsultationAppointment,
   CONSULTATION_TIME_OPTIONS,
+  consultationLocalTimeToIso,
   createConsultationSlots,
   deleteConsultationSlot,
   getConsultationSlots,
@@ -799,13 +800,16 @@ function SpecialistCalendarView({
 
     return map;
   }, [availableSlots]);
-  const selectedAvailableSlots = availableMap.get(selectedDate) || [];
+  const selectedAvailableSlots = useMemo(
+    () => availableMap.get(selectedDate) || [],
+    [availableMap, selectedDate],
+  );
   const selectedAvailableTimes = useMemo(
     () => new Set(selectedAvailableSlots.map((slot) => slot.time)),
     [selectedAvailableSlots],
   );
 
-  const loadAvailableSlots = async (signal?: AbortSignal) => {
+  const loadAvailableSlots = useCallback(async (signal?: AbortSignal) => {
     if (!Number.isInteger(specialistId) || specialistId <= 0) return;
 
     setIsSlotsLoading(true);
@@ -820,13 +824,13 @@ function SpecialistCalendarView({
     } finally {
       setIsSlotsLoading(false);
     }
-  };
+  }, [labels.slotsError, specialistId]);
 
   useEffect(() => {
     const controller = new AbortController();
     void loadAvailableSlots(controller.signal);
     return () => controller.abort();
-  }, [specialistId]);
+  }, [loadAvailableSlots]);
 
   useEffect(() => {
     setSelectedTimes([]);
@@ -857,9 +861,9 @@ function SpecialistCalendarView({
     setSlotsError("");
     setSlotsNotice("");
 
-    const startTimes = selectedTimes.map((time) =>
-      new Date(`${selectedDate}T${time}:00`).toISOString(),
-    );
+    const startTimes = selectedTimes
+      .map((time) => consultationLocalTimeToIso(selectedDate, time))
+      .filter(Boolean);
     const result = await createConsultationSlots(startTimes);
 
     if (result.status === "success") {
