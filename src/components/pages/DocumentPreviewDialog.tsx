@@ -12,11 +12,13 @@ const copy = {
     title: "Перегляд документа",
     close: "Закрити",
     alt: "Документ спеціаліста",
+    open: "Відкрити документ",
   },
   en: {
     title: "Document preview",
     close: "Close",
     alt: "Specialist document",
+    open: "Open document",
   },
 };
 
@@ -46,6 +48,9 @@ export function DocumentPreviewDialog({
 
   if (!document) return null;
 
+  const isImage = /\.(?:png|jpe?g|webp|gif)(?:$|[?#])/i.test(document.fileUrl);
+  const isPdf = /\.pdf(?:$|[?#])/i.test(document.fileUrl);
+
   return (
     <div
       className="fixed inset-0 z-[280] flex items-start justify-center bg-[#1C100E]/35 px-4 pt-12 backdrop-blur-[1px]
@@ -74,11 +79,35 @@ export function DocumentPreviewDialog({
           ×
         </button>
 
-        <img
-          src="/document.png"
-          alt={document.title || labels.alt}
-          className="h-auto w-[240px] object-contain drop-shadow-sm min-[744px]:w-[430px] min-[1023px]:w-[560px] min-[1420px]:w-[560px] min-[1900px]:w-[760px]"
-        />
+        {isImage ? (
+          <img
+            src={document.fileUrl}
+            alt={document.title || labels.alt}
+            className="max-h-[75vh] max-w-full rounded-[8px] object-contain drop-shadow-sm"
+          />
+        ) : isPdf ? (
+          <iframe
+            src={document.fileUrl}
+            title={document.title || labels.alt}
+            className="h-[72vh] w-full rounded-[8px] border-0 bg-white"
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-6">
+            <img
+              src="/document.png"
+              alt={document.title || labels.alt}
+              className="h-auto w-[240px] object-contain drop-shadow-sm min-[744px]:w-[430px]"
+            />
+            <a
+              href={document.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full bg-[#1C100E] px-8 py-3 font-montserrat text-[13px] text-white"
+            >
+              {labels.open}
+            </a>
+          </div>
+        )}
       </section>
     </div>
   );

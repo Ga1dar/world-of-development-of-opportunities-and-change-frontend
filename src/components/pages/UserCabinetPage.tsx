@@ -94,6 +94,7 @@ const copy = {
     aboutMissing: "Інформація відсутня",
     documentsLabel: "Документи:",
     documentAlt: "Документ спеціаліста",
+    documentsEmpty: "Завантажені документи з'являться тут.",
     previousMonth: "Попередній місяць",
     nextMonth: "Наступний місяць",
     busyTime: "Зайнятий час",
@@ -167,6 +168,7 @@ const copy = {
     aboutMissing: "Information is missing",
     documentsLabel: "Documents:",
     documentAlt: "Specialist document",
+    documentsEmpty: "Uploaded documents will appear here.",
     previousMonth: "Previous month",
     nextMonth: "Next month",
     busyTime: "Busy time",
@@ -1227,27 +1229,18 @@ function SpecialistDetailLine({
 
 function SpecialistDocumentCard({
   document,
-  index,
-  labels,
   onPreview,
 }: {
-  document?: CabinetDocument;
-  index: number;
-  labels: typeof copy.ua;
+  document: CabinetDocument;
   onPreview: (document: CabinetDocument) => void;
 }) {
-  const previewDocument =
-    document || {
-      id: `fallback-document-${index}`,
-      title: `${labels.documentAlt} ${index + 1}`,
-      fileUrl: "",
-    };
+  const isImage = /\.(?:png|jpe?g|webp|gif)(?:$|[?#])/i.test(document.fileUrl);
   const content = (
     <span className="flex h-[116px] w-[96px] shrink-0 snap-start items-center justify-center rounded-[14px] border border-[#B34D8D] bg-[#F8F8F8] p-3 transition-transform hover:-translate-y-0.5 min-[744px]:h-[132px] min-[744px]:w-[112px] min-[1023px]:h-[140px] min-[1023px]:w-[120px] min-[1900px]:h-[148px] min-[1900px]:w-[126px]">
       <img
-        src="/document.png"
-        alt={previewDocument.title}
-        className="h-full w-full object-contain"
+        src={isImage ? document.fileUrl : "/document.png"}
+        alt={document.title}
+        className={`h-full w-full ${isImage ? "rounded-[8px] object-cover" : "object-contain"}`}
       />
     </span>
   );
@@ -1255,9 +1248,9 @@ function SpecialistDocumentCard({
   return (
     <button
       type="button"
-      onClick={() => onPreview(previewDocument)}
+      onClick={() => onPreview(document)}
       className="shrink-0 snap-start rounded-[16px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]"
-      aria-label={previewDocument.title}
+      aria-label={document.title}
     >
       {content}
     </button>
@@ -1276,14 +1269,7 @@ function SpecialistAboutView({
   onPreviewDocument: (document: CabinetDocument) => void;
 }) {
   const displayName = profile.fullName || labels.fallbackName;
-  const displayDocuments =
-    documents.length > 0
-      ? documents.slice(0, 3)
-      : Array.from({ length: 3 }, (_, index) => ({
-          id: `fallback-document-${index}`,
-          title: `${labels.documentAlt} ${index + 1}`,
-          fileUrl: "",
-        }));
+  const displayDocuments = documents.slice(0, 3);
 
   return (
     <section className="mx-auto flex w-full flex-col items-center rounded-[22px] bg-[#F8F8F8] px-4 py-7 font-montserrat text-[#1C100E] min-[744px]:max-w-[640px] min-[744px]:px-14 min-[744px]:py-9 min-[1023px]:max-w-[720px] min-[1420px]:max-w-[760px] min-[1900px]:max-w-[880px] min-[1900px]:px-22">
@@ -1340,19 +1326,23 @@ function SpecialistAboutView({
           <p className="text-[12px] font-medium leading-[1.28] min-[744px]:text-[13px]">
             {labels.documentsLabel}
           </p>
-          <div className="mt-3 w-full max-w-[252px] overflow-hidden min-[744px]:max-w-[290px] min-[1023px]:max-w-[360px] min-[1420px]:max-w-none">
-            <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 min-[744px]:gap-5 min-[1420px]:overflow-visible">
-            {displayDocuments.map((document, index) => (
-              <SpecialistDocumentCard
-                key={document.id || index}
-                document={document}
-                index={index}
-                labels={labels}
-                onPreview={onPreviewDocument}
-              />
-            ))}
+          {displayDocuments.length ? (
+            <div className="mt-3 w-full max-w-[252px] overflow-hidden min-[744px]:max-w-[290px] min-[1023px]:max-w-[360px] min-[1420px]:max-w-none">
+              <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 min-[744px]:gap-5 min-[1420px]:overflow-visible">
+                {displayDocuments.map((document) => (
+                  <SpecialistDocumentCard
+                    key={document.id}
+                    document={document}
+                    onPreview={onPreviewDocument}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="mt-2 text-[12px] text-[#1C100E]/60">
+              {labels.documentsEmpty}
+            </p>
+          )}
         </div>
       </div>
 
