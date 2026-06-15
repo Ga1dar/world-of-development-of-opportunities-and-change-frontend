@@ -247,8 +247,6 @@ export function ConsultationDialog({
       startScrollLeft: scroller.scrollLeft,
       startX: event.clientX,
     };
-
-    scroller.setPointerCapture(event.pointerId);
   };
 
   const handleTimePointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -259,11 +257,14 @@ export function ConsultationDialog({
 
     const deltaX = event.clientX - drag.startX;
 
-    if (Math.abs(deltaX) > 4) {
+    if (Math.abs(deltaX) > 4 && !drag.hasMoved) {
       drag.hasMoved = true;
+      scroller.setPointerCapture(event.pointerId);
     }
 
-    scroller.scrollLeft = drag.startScrollLeft - deltaX;
+    if (drag.hasMoved) {
+      scroller.scrollLeft = drag.startScrollLeft - deltaX;
+    }
   };
 
   const finishTimeDrag = (event: PointerEvent<HTMLDivElement>) => {
