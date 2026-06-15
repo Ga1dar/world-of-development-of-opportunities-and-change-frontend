@@ -466,10 +466,6 @@ const normalizeProfile = (
 
 const normalizeDocument = (raw: RawRecord): CabinetDocument => {
   const fileRecord = asRecord(raw.file) || asRecord(raw.document);
-  const title =
-    readString(raw, ["title", "name", "filename", "file_name", "fileName"]) ||
-    readString(fileRecord, ["title", "name", "filename", "file_name", "fileName"]) ||
-    "Document";
   const nestedFileValue = readString(fileRecord, [
     "url",
     "file",
@@ -488,11 +484,27 @@ const normalizeDocument = (raw: RawRecord): CabinetDocument => {
     raw.document_url ||
     raw.documentUrl ||
     raw.path;
+  const fileUrl = resolveMediaUrl(fileValue, "");
+  const fileNameFromUrl = (() => {
+    if (!fileUrl) return "";
+
+    try {
+      const pathname = new URL(fileUrl, window.location.origin).pathname;
+      return decodeURIComponent(pathname.split("/").filter(Boolean).pop() || "");
+    } catch {
+      return "";
+    }
+  })();
+  const title =
+    readString(raw, ["title", "name", "filename", "file_name", "fileName"]) ||
+    readString(fileRecord, ["title", "name", "filename", "file_name", "fileName"]) ||
+    fileNameFromUrl ||
+    "Document";
 
   return {
     id: readString(raw, ["id"]) || title,
     title,
-    fileUrl: resolveMediaUrl(fileValue, ""),
+    fileUrl,
   };
 };
 

@@ -1,30 +1,12 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  fallbackCategories,
-  getEventCategories,
-  type EventCategory,
-} from "../../api/events";
+import { fallbackCategories, type EventCategory } from "../../api/events";
 import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
 
 export function Events() {
   const { i18n, t } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "ua";
-  const [categories, setCategories] = useState<EventCategory[]>(fallbackCategories);
   const canCreateEvents = useCanCreateEvents();
-
-  useEffect(() => {
-    let isMounted = true;
-
-    getEventCategories().then((items) => {
-      if (isMounted) setCategories(items);
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const getTitle = (category: EventCategory) =>
     lang === "en" ? category.title_en : category.title_ua;
@@ -41,7 +23,7 @@ export function Events() {
 
         <div className="grid grid-cols-1 gap-4 min-[744px]:grid-cols-2 min-[744px]:gap-5 min-[1023px]:gap-6 min-[1420px]:grid-cols-2 
         min-[1420px]:gap-12 min-[1900px]:grid-cols-3 min-[1900px]:gap-16 min-[1420px]:justify-between">
-          {categories.map((category) => (
+          {fallbackCategories.map((category) => (
             <Link
               key={category.slug}
               to={`/events/${category.slug}`}

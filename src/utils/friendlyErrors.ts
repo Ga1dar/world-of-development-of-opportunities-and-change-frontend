@@ -12,6 +12,12 @@ export function getFriendlyProfileError(error: unknown, language: Language, fall
   if (!message) return fallback;
 
   if (/document upload failed|unsupported.*(file|extension)|invalid.*(file|extension)/.test(message)) {
+    if (/valid image|not an image|corrupted image/.test(message)) {
+      return isEnglish
+        ? "The server currently accepts only JPG or PNG images in this field. PDF support must be fixed on the backend."
+        : "Сервер зараз приймає в цьому полі лише зображення JPG або PNG. Підтримку PDF потрібно виправити на backend.";
+    }
+
     if (/too large|file size|maximum size|max.*size/.test(message)) {
       return isEnglish
         ? "The document is too large. Choose a smaller PDF, JPG or PNG file."
