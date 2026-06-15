@@ -7,6 +7,7 @@ import {
   type PointerEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -95,6 +96,7 @@ export function ConsultationDialog({
   specialistId,
 }: ConsultationDialogProps) {
   const { i18n, t } = useTranslation();
+  const navigate = useNavigate();
   const today = useMemo(() => new Date(), []);
   const [step, setStep] = useState<DialogStep>("intro");
   const [selectedDate, setSelectedDate] = useState(() => toDateInputValue(today));
@@ -317,6 +319,15 @@ export function ConsultationDialog({
       : step === "busy"
         ? t("consultationDialog.chooseAnotherTime")
         : t("consultationDialog.tryAgain");
+    const handleStatusAction = () => {
+      if (isSuccess) {
+        handleOpenChange(false);
+        navigate("/profile?tab=appointments");
+        return;
+      }
+
+      setStep("calendar");
+    };
 
     return (
       <div
@@ -337,7 +348,7 @@ export function ConsultationDialog({
         </DialogDescription>
         <Button
           type="button"
-          onClick={() => (isSuccess ? handleOpenChange(false) : setStep("calendar"))}
+          onClick={handleStatusAction}
           className="mt-6 h-10 w-full max-w-84 rounded-[30px] 
           border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B]
            to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] 

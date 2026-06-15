@@ -808,9 +808,9 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                       type="button"
                       variant="outline"
                       disabled={isLoading}
-                        className="h-10 w-full items-center rounded-[30px] bg-[#1C100E] 
+                        className="google-auth-button h-10 w-full items-center rounded-[30px] bg-[#1C100E]
                         px-5 text-center font-montserrat text-[12px] leading-10 
-                        text-[#F3F2F3] xl:h-12 xl:text-[14px]"
+                        text-[#F3F2F3] hover:!bg-[#1C100E] hover:!text-[#83105F] xl:h-12 xl:text-[14px]"
                       onClick={handleGoogleRegistration}
                     >
                       <img src="/google.png" alt="Google" className="h-4 w-4" />
@@ -827,9 +827,10 @@ export function LogIn({ variant = "header", text }: LogInProps) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-4 h-10 w-full items-center 
+                    className="google-auth-button mt-4 h-10 w-full items-center
                       rounded-[30px] bg-[#1C100E] px-5 text-center 
-                      font-montserrat text-[12px] leading-10 text-[#F3F2F3] 
+                      font-montserrat text-[12px] leading-10 text-[#F3F2F3]
+                      hover:!bg-[#1C100E] hover:!text-[#83105F]
                       xl:h-12 xl:text-[14px]"
                     onClick={handleGoogleLogin}
                   >
