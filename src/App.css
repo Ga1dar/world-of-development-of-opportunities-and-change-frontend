@@ -22,7 +22,8 @@ body,
   min-height: 100%;
 }
 .specialist-onboarding-form,
-.specialist-application-review {
+.specialist-application-review,
+.user-onboarding-form {
   box-sizing: border-box;
 }
 
@@ -37,5 +38,10 @@ body,
     width: clamp(410px, calc(32.848vw + 165.6px), 816px);
     max-width: none;
     padding-inline: clamp(48px, calc(8.252vw - 13.4px), 150px);
+  }
+
+  .user-onboarding-form {
+    width: clamp(460px, calc(29.126vw + 243.3px), 816px);
+    padding-inline: clamp(76px, calc(4.854vw + 39.9px), 136px);
   }
 }

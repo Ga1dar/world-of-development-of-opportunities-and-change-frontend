@@ -28,6 +28,7 @@ import { SpecialistProfileEditPage } from "./components/pages/SpecialistProfileE
 import { UserProfileEditPage } from "./components/pages/UserProfileEditPage.tsx";
 import { DevelopersPage } from "./components/pages/DevelopersPage.tsx";
 import { SpecialistOnboardingPage } from "./components/pages/SpecialistOnboardingPage.tsx";
+import { UserOnboardingPage } from "./components/pages/UserOnboardingPage.tsx";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,6 +69,7 @@ function App() {
             <Route path="/profile/edit" element={<UserProfileEditPage />} />
             <Route path="/profile/specialist/edit" element={<SpecialistProfileEditPage />} />
             <Route path="/specialist-onboarding" element={<SpecialistOnboardingPage />} />
+            <Route path="/user-onboarding" element={<UserOnboardingPage />} />
             <Route
               path="/password-reset/confirm"
               element={<PasswordResetConfirm />}
