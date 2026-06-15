@@ -28,6 +28,8 @@ type RawRecord = Record<string, unknown>;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^\d{2}:\d{2}$/;
+const CONSULTATION_TIME_ZONE = "Europe/Kyiv";
+const MAX_SLOT_PAGES = 100;
 
 export const CONSULTATION_TIME_OPTIONS = Array.from({ length: 11 }, (_, index) => {
   const totalMinutes = 9 * 60 + index * 30;
@@ -70,23 +72,75 @@ const extractList = (data: unknown) => {
   return [];
 };
 
+const getNextPage = (data: unknown) => {
+  const record = asRecord(data);
+  return record ? asString(record.next) : "";
+};
+
+const getZonedDateTimeParts = (date: Date) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CONSULTATION_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return {
+    year: values.year,
+    month: values.month,
+    day: values.day,
+    hour: values.hour,
+    minute: values.minute,
+    second: values.second,
+  };
+};
+
 const formatDateValue = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const parts = getZonedDateTimeParts(date);
+  return `${parts.year}-${parts.month}-${parts.day}`;
 };
 
 const formatTimeValue = (date: Date) => {
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
+  const parts = getZonedDateTimeParts(date);
+  return `${parts.hour}:${parts.minute}`;
 };
 
-const isPastSlot = (date: string, time: string) => {
-  const startsAt = new Date(`${date}T${time}:00`);
+export const consultationLocalTimeToIso = (date: string, time: string) => {
+  if (!DATE_PATTERN.test(date) || !TIME_PATTERN.test(time)) return "";
 
-  return !Number.isNaN(startsAt.getTime()) && startsAt.getTime() <= Date.now();
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const targetWallClock = Date.UTC(year, month - 1, day, hour, minute);
+  let instant = targetWallClock;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = getZonedDateTimeParts(new Date(instant));
+    const representedWallClock = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second),
+    );
+    const correction = targetWallClock - representedWallClock;
+
+    if (correction === 0) break;
+    instant += correction;
+  }
+
+  return new Date(instant).toISOString();
+};
+
+const isPastSlot = (startsAt: string) => {
+  const startsAtDate = new Date(startsAt);
+
+  return !Number.isNaN(startsAtDate.getTime()) && startsAtDate.getTime() <= Date.now();
 };
 
 const normalizeSlot = (raw: unknown): ConsultationSlot | null => {
@@ -118,7 +172,7 @@ const normalizeSlot = (raw: unknown): ConsultationSlot | null => {
   }
 
   if (!startsAt && date && time) {
-    startsAt = `${date}T${time}:00`;
+    startsAt = consultationLocalTimeToIso(date, time);
   }
 
   if (!id || !date || !time) return null;
@@ -155,19 +209,27 @@ export async function getConsultationSlots(
   }
 
   try {
-    const response = await fetch(endpoints.consultationSlots(specialistId), {
-      signal,
-    });
+    const rawSlots: unknown[] = [];
+    let nextPage = endpoints.consultationSlots(specialistId);
+    let pageCount = 0;
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch consultation slots");
+    while (nextPage && pageCount < MAX_SLOT_PAGES) {
+      const response = await fetch(nextPage, { signal });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch consultation slots");
+      }
+
+      const data = await response.json().catch(() => null);
+      rawSlots.push(...extractList(data));
+      nextPage = getNextPage(data);
+      pageCount += 1;
     }
 
-    const data = await response.json().catch(() => null);
-    const slots = extractList(data)
+    const slots = rawSlots
       .map(normalizeSlot)
       .filter((slot): slot is ConsultationSlot => Boolean(slot))
-      .filter((slot) => !isPastSlot(slot.date, slot.time))
+      .filter((slot) => !isPastSlot(slot.startsAt))
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 
     return slots;
