@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { notifyAuthChanged } from "../../api/auth";
 import {
-  createUserProfile,
   getUserCabinetData,
   updateProfileAvatar,
   updateUserProfile,
@@ -147,7 +146,6 @@ export function UserProfileEditPage() {
   const [form, setForm] = useState<FormState>(() => toFormState(null));
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [hasConsent, setHasConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -199,25 +197,19 @@ export function UserProfileEditPage() {
     event.preventDefault();
     if (!profile || profile.profileKind === "specialist") return;
 
-    if (!profile.userProfileId && !hasConsent) {
-      setError(labels.consentError);
-      return;
-    }
-
     setIsSaving(true);
     setError("");
 
     try {
-      if (profile.userProfileId) {
-        await updateUserProfile(profile.userProfileId, form);
-        if (avatarFile) await updateProfileAvatar(profile, avatarFile);
-      } else {
-        await createUserProfile({
-          ...form,
-          avatar: avatarFile,
-          acceptDataProcessingConsent: hasConsent,
-        });
+      const userProfileId =
+        profile.userProfileId || (profile.profileKind === "user" && profile.id !== "me" ? profile.id : "");
+
+      if (!userProfileId) {
+        throw new Error("User profile id is missing");
       }
+
+      await updateUserProfile(userProfileId, form);
+      if (avatarFile) await updateProfileAvatar(profile, avatarFile);
       notifyAuthChanged();
       navigate("/profile");
     } catch (error) {
@@ -341,18 +333,6 @@ export function UserProfileEditPage() {
               className="w-full resize-y rounded-[18px] border border-[#40213F] bg-[#F0E8F0] px-3 py-2 font-montserrat text-[12px] text-[#1C100E] outline-none transition placeholder:text-[#1C100E]/45 focus:ring-2 focus:ring-[#B34D8D]/30"
             />
           </label>
-
-          {!profile.userProfileId ? (
-            <label className="flex cursor-pointer items-start gap-3 text-[11px] leading-[1.25] text-[#1C100E]/75 min-[744px]:text-[12px]">
-              <input
-                type="checkbox"
-                checked={hasConsent}
-                onChange={(event) => setHasConsent(event.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-[#83105F]"
-              />
-              <span>{labels.consent}</span>
-            </label>
-          ) : null}
 
           {error ? (
             <p className="text-center text-[12px] leading-[1.3] text-[#83105F]">{error}</p>

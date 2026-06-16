@@ -172,7 +172,6 @@ export function SpecialistProfileEditPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [documents, setDocuments] = useState<File[]>([]);
-  const [hasConsent, setHasConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -244,11 +243,6 @@ export function SpecialistProfileEditPage() {
     event.preventDefault();
 
     if (!profile || profile.profileKind !== "specialist") return;
-
-    if (!profile.specialistProfileId && !hasConsent) {
-      setError(labels.consentError);
-      return;
-    }
 
     setIsSaving(true);
     setError("");
@@ -412,18 +406,6 @@ export function SpecialistProfileEditPage() {
             />
             <span className="mt-1 block text-[11px] leading-[1.2] text-[#1C100E]/55">{labels.optional}</span>
           </label>
-
-          {!profile.specialistProfileId ? (
-            <label className="flex cursor-pointer items-start gap-3 text-[11px] leading-[1.25] text-[#1C100E]/75 min-[744px]:text-[12px]">
-              <input
-                type="checkbox"
-                checked={hasConsent}
-                onChange={(event) => setHasConsent(event.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-[#83105F]"
-              />
-              <span>{labels.consent}</span>
-            </label>
-          ) : null}
 
           <button
             type="button"
