@@ -13,6 +13,7 @@ import {
   registerForEvent,
   type EventRegistrationResult,
 } from "../../api/events";
+import { PhoneCountryField } from "./PhoneCountryField";
 
 type EventRegistrationDialogProps = {
   eventId: number;
@@ -240,21 +241,14 @@ export function EventRegistrationDialog({
                 />
               </div>
 
-              <div>
-                <Label className={labelClass} htmlFor="event-phone">
-                  {t("eventRegistration.phone")}
-                </Label>
-                <Input
-                  id="event-phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(event) => updateField("phone", event.target.value)}
-                  maxLength={40}
-                  required
-                  placeholder={t("eventRegistration.phone")}
-                  className={fieldClass}
-                />
-              </div>
+              <PhoneCountryField
+                label={t("eventRegistration.phone")}
+                placeholder={t("eventRegistration.phone")}
+                value={form.phone}
+                onChange={(value) => updateField("phone", value)}
+                language={i18n.language}
+                required
+              />
 
               <div>
                 <Label className={labelClass} htmlFor="event-email">

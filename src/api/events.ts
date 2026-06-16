@@ -862,6 +862,18 @@ const normalizeBirthDate = (value: string) => {
   return cleanValue;
 };
 
+const normalizePhoneForSubmit = (value: string) => {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return "";
+  if (trimmedValue.startsWith("+")) {
+    const digits = trimmedValue.replace(/\D/g, "");
+    return digits ? `+${digits}`.slice(0, 40) : "";
+  }
+
+  const digits = trimmedValue.replace(/\D/g, "");
+  return digits ? `+380${digits}`.slice(0, 40) : "";
+};
+
 const normalizeGender = (value: string) => {
   const cleanValue = value.trim().toLowerCase();
   const maleValues = new Set([
@@ -1206,7 +1218,7 @@ export async function registerForEvent(
     birth_date: normalizeBirthDate(payload.birth_date),
     gender: normalizeGender(payload.gender),
     email: payload.email.trim().slice(0, 160),
-    phone: payload.phone.trim().slice(0, 40),
+    phone: normalizePhoneForSubmit(payload.phone),
     experience: payload.experience.trim(),
     eating_meat: Boolean(payload.eating_meat),
     is_agreed: Boolean(payload.is_agreed),
