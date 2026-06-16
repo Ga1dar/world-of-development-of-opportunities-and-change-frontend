@@ -132,7 +132,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
         sm:static sm:h-8 sm:w-8 min-[1420px]:hidden"
       >
         <img
-          src={isOpen ? "/close.png" : "/Menu.png"}
+          src="/Menu.png"
           alt="Menu"
           className="h-6 w-6 sm:h-8 sm:w-8"
         />

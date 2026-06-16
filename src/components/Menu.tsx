@@ -31,15 +31,27 @@ export function Menu({ isOpen, setIsOpen }: MenuProps) {
   return (
     <div
       className={`${isOpen ? "flex" : "hidden"}
-        z-90 w-full flex-col items-center justify-start bg-secondary px-4 pt-10 pb-13
+        relative z-90 w-full flex-col items-center justify-start bg-secondary px-4 pt-14 pb-13
 
         sm:absolute sm:left-auto sm:right-5
         sm:-top-20 sm:h-auto sm:w-42
         sm:rounded-[14px] sm:bg-[#F3F2F3]
-        sm:px-3 sm:py-3 sm:shadow-md
+        sm:px-3 sm:pb-3 sm:pt-10 sm:shadow-md
 
         min-[1420px]:hidden`}
       >
+      <button
+        type="button"
+        onClick={closeMenu}
+        aria-label="Закрити меню"
+        className="absolute right-5 top-4 flex size-7 items-center justify-center rounded-full
+        text-[#1C100E] transition hover:bg-[#4029401A] focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-[#40213F]
+        sm:right-3 sm:top-3 sm:size-5"
+      >
+        <img src="/close.png" alt="" className="size-5 sm:size-4" aria-hidden="true" />
+      </button>
+
       <nav
         className=" text-[18px] flex w-full flex-col items-center justify-center gap-6 text-center
           sm:gap-0
