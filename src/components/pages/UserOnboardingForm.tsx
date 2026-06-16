@@ -49,11 +49,15 @@ function TextField({
   placeholder,
   value,
   onChange,
+  type = "text",
+  required = true,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
+  type?: string;
+  required?: boolean;
 }) {
   return (
     <label className="block font-montserrat text-[#1C100E]">
@@ -61,7 +65,8 @@ function TextField({
         {label}
       </span>
       <input
-        required
+        required={required}
+        type={type}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
@@ -81,11 +86,28 @@ export function UserOnboardingForm({
   const labels = isEnglish ? copy.en : copy.ua;
   const phoneLabel = isEnglish ? "Phone*" : "Телефон*";
   const phonePlaceholder = isEnglish ? "Phone" : "Телефон";
+  const cityLabel = isEnglish ? "City*" : "Місто*";
+  const cityPlaceholder = isEnglish ? "City" : "Місто";
+  const birthDateLabel = isEnglish ? "Birth date*" : "Дата народження*";
+  const aboutLabel = isEnglish ? "About" : "Про себе";
+  const aboutPlaceholder = isEnglish
+    ? "Short information about yourself"
+    : "Коротка інформація про себе";
+  const consentLabel = isEnglish
+    ? "I consent to personal data processing"
+    : "Я надаю згоду на обробку персональних даних";
+  const consentError = isEnglish
+    ? "Please consent to personal data processing."
+    : "Підтвердіть згоду на обробку персональних даних.";
   const [firstName, setFirstName] = useState(profile.firstName || "");
   const [lastName, setLastName] = useState(profile.lastName || "");
   const [phone, setPhone] = useState(profile.phone || "");
+  const [city, setCity] = useState(profile.city || "");
+  const [birthDate, setBirthDate] = useState(profile.birthDate || "");
+  const [about, setAbout] = useState(profile.about || "");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
+  const [hasConsent, setHasConsent] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -105,6 +127,12 @@ export function UserOnboardingForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!hasConsent) {
+      setError(consentError);
+      return;
+    }
+
     setIsSaving(true);
     setError("");
 
@@ -113,6 +141,10 @@ export function UserOnboardingForm({
         firstName,
         lastName,
         phone,
+        city,
+        birthDate,
+        about,
+        acceptDataProcessingConsent: hasConsent,
         avatar,
       });
       onComplete();
@@ -129,7 +161,7 @@ export function UserOnboardingForm({
     <form
       onSubmit={handleSubmit}
       className="user-onboarding-form relative mx-auto w-full max-w-[358px] bg-[#F0E8F0] px-3 pb-7 pt-1 font-montserrat text-[#1C100E]
-      min-[744px]:max-w-none min-[744px]:rounded-[22px] min-[744px]:pb-14 min-[744px]:pt-12
+      min-[744px]:max-h-[calc(100vh-48px)] min-[744px]:max-w-none min-[744px]:overflow-y-auto min-[744px]:rounded-[22px] min-[744px]:pb-14 min-[744px]:pt-12
       min-[1023px]:pb-14 min-[1023px]:pt-12
       min-[1420px]:pb-16 min-[1420px]:pt-14
       min-[1900px]:pb-20 min-[1900px]:pt-16"
@@ -199,6 +231,54 @@ export function UserOnboardingForm({
           language={i18n.language}
           required
         />
+        <TextField
+          label={cityLabel}
+          placeholder={cityPlaceholder}
+          value={city}
+          onChange={(value) => {
+            setCity(value);
+            setError("");
+          }}
+        />
+        <TextField
+          label={birthDateLabel}
+          placeholder={birthDateLabel}
+          value={birthDate}
+          onChange={(value) => {
+            setBirthDate(value);
+            setError("");
+          }}
+          type="date"
+        />
+
+        <label className="block font-montserrat text-[#1C100E]">
+          <span className="mb-2 block text-[11px] leading-none min-[1023px]:text-[12px] min-[1420px]:text-[13px] min-[1900px]:text-[15px]">
+            {aboutLabel}
+          </span>
+          <textarea
+            value={about}
+            onChange={(event) => {
+              setAbout(event.target.value);
+              setError("");
+            }}
+            placeholder={aboutPlaceholder}
+            rows={2}
+            className="w-full resize-y rounded-[18px] border border-[#40213F] bg-[#F0E8F0] px-3 py-2 font-montserrat text-[12px] text-[#1C100E] outline-none placeholder:text-[#1C100E]/45 focus:ring-2 focus:ring-[#B34D8D]/30 min-[1900px]:text-[15px]"
+          />
+        </label>
+
+        <label className="flex cursor-pointer items-start gap-3 text-[11px] leading-[1.25] text-[#1C100E]/75 min-[744px]:text-[12px]">
+          <input
+            type="checkbox"
+            checked={hasConsent}
+            onChange={(event) => {
+              setHasConsent(event.target.checked);
+              setError("");
+            }}
+            className="mt-0.5 h-4 w-4 accent-[#83105F]"
+          />
+          <span>{consentLabel}</span>
+        </label>
 
         {error ? (
           <p className="text-center text-[11px] leading-[1.3] text-[#83105F] min-[1420px]:text-[13px]">
