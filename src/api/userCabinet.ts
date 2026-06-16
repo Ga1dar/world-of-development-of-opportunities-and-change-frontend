@@ -113,6 +113,18 @@ const asString = (value: unknown, fallback = "") => {
   return fallback;
 };
 
+const normalizePhoneForSubmit = (value: string) => {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return "";
+  if (trimmedValue.startsWith("+")) {
+    const digits = trimmedValue.replace(/\D/g, "");
+    return digits ? `+${digits}` : "";
+  }
+
+  const digits = trimmedValue.replace(/\D/g, "");
+  return digits ? `+380${digits}` : "";
+};
+
 const extractList = (data: unknown): RawRecord[] => {
   if (Array.isArray(data)) return data.filter((item) => asRecord(item));
 
@@ -780,7 +792,7 @@ export async function updateSpecialistProfile(
     const body = new FormData();
     body.append("first_name", input.firstName);
     body.append("last_name", input.lastName);
-    body.append("phone", input.phone);
+    body.append("phone", normalizePhoneForSubmit(input.phone));
     body.append("city", input.city);
     body.append("specialisation", input.specialization);
     body.append("specialization", input.specialization);
@@ -832,7 +844,7 @@ export async function createSpecialistProfile(input: SpecialistProfileCreateInpu
   const body = new FormData();
   body.append("first_name", input.firstName);
   body.append("last_name", input.lastName);
-  body.append("phone", input.phone);
+  body.append("phone", normalizePhoneForSubmit(input.phone));
   body.append("city", input.city);
   body.append("specialisation", input.specialization);
   body.append("specialization", input.specialization);
@@ -873,7 +885,7 @@ export async function updateUserProfile(profileId: string, input: UserProfileUpd
     const body = new FormData();
     body.append("first_name", input.firstName);
     body.append("last_name", input.lastName);
-    body.append("phone", input.phone);
+    body.append("phone", normalizePhoneForSubmit(input.phone));
     body.append("city", input.city);
     body.append("birth_date", input.birthDate);
     body.append("bio", input.about);
@@ -921,7 +933,7 @@ export async function createUserProfile(input: UserProfileCreateInput) {
     const body = new FormData();
     body.append("first_name", input.firstName);
     body.append("last_name", input.lastName);
-    body.append("phone", input.phone);
+    body.append("phone", normalizePhoneForSubmit(input.phone));
     body.append("city", input.city);
     body.append("birth_date", input.birthDate);
     body.append("bio", input.about);
@@ -975,7 +987,7 @@ export async function createUserOnboardingProfile(
   const body = new FormData();
   body.append("first_name", input.firstName.trim());
   body.append("last_name", input.lastName.trim());
-  body.append("phone", input.phone.trim());
+  body.append("phone", normalizePhoneForSubmit(input.phone));
 
   if (input.avatar) {
     body.append("avatar", input.avatar);

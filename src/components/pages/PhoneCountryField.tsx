@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const countries = [
   {
     code: "+380",
@@ -47,17 +49,42 @@ const getCurrentCountryCode = (value: string) => {
   );
 };
 
-const replaceCountryCode = (value: string, code: string) => {
-  const trimmedValue = value.trim();
-  const currentCode = getCurrentCountryCode(trimmedValue);
+const digitsOnly = (value: string) => value.replace(/\D/g, "");
 
-  if (!trimmedValue) return code;
-  if (trimmedValue.startsWith(currentCode)) {
-    const rest = trimmedValue.slice(currentCode.length).trimStart();
-    return rest ? `${code} ${rest}` : code;
+const getNationalNumber = (value: string, code = getCurrentCountryCode(value)) => {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) return "";
+  if (trimmedValue.startsWith(code)) {
+    return digitsOnly(trimmedValue.slice(code.length));
   }
 
-  return `${code} ${trimmedValue.replace(/^\+?\d{1,4}\s*/, "")}`.trim();
+  if (trimmedValue.startsWith("+")) {
+    return digitsOnly(trimmedValue.replace(/^\+\d{1,4}\s*/, ""));
+  }
+
+  return digitsOnly(trimmedValue);
+};
+
+const replaceCountryCode = (value: string, code: string) => {
+  const nationalNumber = getNationalNumber(value);
+
+  return nationalNumber ? `${code}${nationalNumber}` : "";
+};
+
+const formatPhoneValue = (inputValue: string, fallbackCode: string) => {
+  const trimmedValue = inputValue.trim();
+  if (!trimmedValue) return "";
+
+  if (trimmedValue.startsWith("+")) {
+    const pastedCode = getCurrentCountryCode(trimmedValue);
+    const nationalNumber = getNationalNumber(trimmedValue, pastedCode);
+
+    return nationalNumber ? `${pastedCode}${nationalNumber}` : "";
+  }
+
+  const nationalNumber = digitsOnly(trimmedValue);
+  return nationalNumber ? `${fallbackCode}${nationalNumber}` : "";
 };
 
 export function PhoneCountryField({
@@ -69,7 +96,15 @@ export function PhoneCountryField({
   required = false,
 }: PhoneCountryFieldProps) {
   const isEnglish = isEnglishLanguage(language);
-  const currentCode = getCurrentCountryCode(value);
+  const [selectedCode, setSelectedCode] = useState(() => getCurrentCountryCode(value));
+  const currentCode = value.trim() ? getCurrentCountryCode(value) : selectedCode;
+  const nationalNumber = getNationalNumber(value, currentCode);
+
+  useEffect(() => {
+    if (value.trim()) {
+      setSelectedCode(getCurrentCountryCode(value));
+    }
+  }, [value]);
 
   return (
     <label className="block font-montserrat text-[#1C100E]">
@@ -77,7 +112,11 @@ export function PhoneCountryField({
       <div className="flex h-[34px] w-full overflow-hidden rounded-[18px] border border-[#40213F] bg-[#F0E8F0] transition focus-within:ring-2 focus-within:ring-[#B34D8D]/30 min-[744px]:h-[37px] min-[1420px]:h-[34px]">
         <select
           value={currentCode}
-          onChange={(event) => onChange(replaceCountryCode(value, event.target.value))}
+          onChange={(event) => {
+            const nextCode = event.target.value;
+            setSelectedCode(nextCode);
+            onChange(replaceCountryCode(value, nextCode));
+          }}
           className="h-full max-w-[126px] shrink-0 border-r border-[#40213F]/45 bg-[#F0E8F0] px-2 font-montserrat text-[11px] text-[#1C100E] outline-none min-[744px]:max-w-[138px]"
           aria-label={isEnglish ? "Country code" : "Код країни"}
         >
@@ -88,8 +127,10 @@ export function PhoneCountryField({
           ))}
         </select>
         <input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
+          value={nationalNumber}
+          onChange={(event) => {
+            onChange(formatPhoneValue(event.target.value, currentCode));
+          }}
           required={required}
           placeholder={placeholder}
           className="h-full min-w-0 flex-1 bg-transparent px-3 font-montserrat text-[12px] text-[#1C100E] outline-none placeholder:text-[#1C100E]/45"
