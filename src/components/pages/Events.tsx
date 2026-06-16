@@ -15,22 +15,18 @@ export function Events() {
     <section className="bg-secondary px-5 pb-12 pt-6 font-montserrat 
     text-[#1C100E] min-[390px]:px-8 min-[744px]:px-10 min-[744px]:pb-14 min-[744px]:pt-9 min-[1023px]:px-16 min-[1023px]:pb-16 min-[1023px]:pt-12
     min-[1420px]:px-[60px] min-[1420px]:pb-20 min-[1420px]:pt-[120px] min-[1900px]:px-[45px] min-[1900px]:pb-[142px] min-[1900px]:pt-[120px]">
-      <div className="mx-auto w-full max-w-[326px] 
-      min-[744px]:max-w-[648px] min-[1023px]:max-w-[760px]
-      min-[1420px]:max-w-[1290px] min-[1900px]:max-w-[1843px]
-      min-[1420px]:mx-0">
+      <div className="events-shell mx-auto w-full">
         <h1 className="sr-only">{t("events")}</h1>
 
-        <div className="grid grid-cols-1 gap-4 min-[744px]:grid-cols-2 min-[744px]:gap-5 min-[1023px]:gap-6 min-[1420px]:grid-cols-2 
-        min-[1420px]:gap-12 min-[1900px]:grid-cols-3 min-[1900px]:gap-16 min-[1420px]:justify-between">
+        <div className="events-grid">
           {fallbackCategories.map((category) => (
             <Link
               key={category.slug}
               to={`/events/${category.slug}`}
-              className="group rounded-[8px] bg-[#FFF7FF] p-3 
+              className="events-card group rounded-[8px] bg-[#FFF7FF] p-3 
               text-center transition hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(64,41,64,0.14)] 
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:p-3 min-[1023px]:p-3
-               min-[1420px]:h-[440px] min-[1420px]:w-[628px] min-[1420px]:p-6 min-[1920px]:h-[440px] min-[1920px]:w-[590px]"
+               min-[1420px]:h-[440px] min-[1420px]:p-6 min-[1920px]:h-[440px]"
             >
               <img
                 src={category.image}
