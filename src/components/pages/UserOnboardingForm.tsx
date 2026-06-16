@@ -6,6 +6,7 @@ import {
   type CabinetProfile,
 } from "../../api/userCabinet";
 import { getFriendlyProfileError } from "../../utils/friendlyErrors";
+import { PhoneCountryField } from "./PhoneCountryField";
 
 type UserOnboardingFormProps = {
   profile: CabinetProfile;
@@ -76,9 +77,13 @@ export function UserOnboardingForm({
   onClose,
 }: UserOnboardingFormProps) {
   const { i18n } = useTranslation();
-  const labels = i18n.language.toLowerCase().startsWith("en") ? copy.en : copy.ua;
+  const isEnglish = i18n.language.toLowerCase().startsWith("en");
+  const labels = isEnglish ? copy.en : copy.ua;
+  const phoneLabel = isEnglish ? "Phone*" : "Телефон*";
+  const phonePlaceholder = isEnglish ? "Phone" : "Телефон";
   const [firstName, setFirstName] = useState(profile.firstName || "");
   const [lastName, setLastName] = useState(profile.lastName || "");
+  const [phone, setPhone] = useState(profile.phone || "");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -107,6 +112,7 @@ export function UserOnboardingForm({
       await createUserOnboardingProfile({
         firstName,
         lastName,
+        phone,
         avatar,
       });
       onComplete();
@@ -181,6 +187,17 @@ export function UserOnboardingForm({
             setLastName(value);
             setError("");
           }}
+        />
+        <PhoneCountryField
+          label={phoneLabel}
+          placeholder={phonePlaceholder}
+          value={phone}
+          onChange={(value) => {
+            setPhone(value);
+            setError("");
+          }}
+          language={i18n.language}
+          required
         />
 
         {error ? (

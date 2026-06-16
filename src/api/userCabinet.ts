@@ -66,6 +66,7 @@ export type UserProfileCreateInput = UserProfileUpdateInput & {
 export type UserOnboardingProfileCreateInput = {
   firstName: string;
   lastName: string;
+  phone: string;
   avatar?: File | null;
 };
 
@@ -974,6 +975,7 @@ export async function createUserOnboardingProfile(
   const body = new FormData();
   body.append("first_name", input.firstName.trim());
   body.append("last_name", input.lastName.trim());
+  body.append("phone", input.phone.trim());
 
   if (input.avatar) {
     body.append("avatar", input.avatar);
