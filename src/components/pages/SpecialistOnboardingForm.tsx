@@ -187,11 +187,13 @@ export function SpecialistOnboardingForm({
       </h1>
 
       <label className="mx-auto mt-4 flex cursor-pointer flex-col items-center">
-        <span className="relative flex h-[86px] w-[86px] items-center justify-center overflow-hidden rounded-full bg-[#C8C3C8]">
+        <span className="relative flex h-[86px] w-[86px] items-center justify-center rounded-full bg-[#C8C3C8]">
           {avatarPreview ? (
-            <img src={avatarPreview} alt="" className="h-full w-full object-cover" />
+            <span className="absolute inset-0 overflow-hidden rounded-full">
+              <img src={avatarPreview} alt="" className="h-full w-full object-cover" />
+            </span>
           ) : null}
-          <span className="absolute right-1 bottom-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#E8DCE8]">
+          <span className="absolute right-0 bottom-0 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-[#F0E8F0] bg-[#E8DCE8] shadow-[0_2px_6px_rgba(64,41,64,0.18)]">
             <Camera className="h-3.5 w-3.5" />
           </span>
         </span>
