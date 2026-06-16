@@ -36,7 +36,30 @@ body,
     hue-rotate(303deg) brightness(78%) contrast(98%);
 }
 
+.events-shell {
+  max-width: 326px;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.events-card {
+  width: 100%;
+}
+
 @media (min-width: 744px) {
+  .events-shell {
+    max-width: 648px;
+  }
+
+  .events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
   .specialist-onboarding-form {
     width: clamp(402px, calc(33.495vw + 152.8px), 816px);
     max-width: none;
@@ -52,5 +75,36 @@ body,
   .user-onboarding-form {
     width: clamp(460px, calc(29.126vw + 243.3px), 816px);
     padding-inline: clamp(76px, calc(4.854vw + 39.9px), 136px);
+  }
+}
+
+@media (min-width: 1023px) {
+  .events-shell {
+    max-width: 760px;
+  }
+
+  .events-grid {
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1420px) {
+  .events-shell {
+    max-width: min(calc(100vw - 120px), 1300px);
+  }
+
+  .events-grid {
+    gap: clamp(44px, calc(44px + (100vw - 1420px) * 0.067), 60px);
+  }
+}
+
+@media (min-width: 1900px) {
+  .events-shell {
+    max-width: min(calc(100vw - 90px), 1890px);
+  }
+
+  .events-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(32px, calc(32px + (100vw - 1900px) * 0.35), 60px);
   }
 }
