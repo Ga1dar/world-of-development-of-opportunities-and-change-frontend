@@ -142,11 +142,13 @@ export function UserOnboardingForm({
       </h1>
 
       <label className="mx-auto mt-5 flex cursor-pointer flex-col items-center min-[744px]:mt-6 min-[1023px]:mt-7 min-[1420px]:mt-8 min-[1900px]:mt-10">
-        <span className="relative flex h-[86px] w-[86px] items-center justify-center overflow-hidden rounded-full bg-[#C8C3C8] min-[744px]:h-24 min-[744px]:w-24 min-[1023px]:h-26 min-[1023px]:w-26 min-[1420px]:h-28 min-[1420px]:w-28 min-[1900px]:h-36 min-[1900px]:w-36">
+        <span className="relative flex h-[86px] w-[86px] items-center justify-center rounded-full bg-[#C8C3C8] min-[744px]:h-24 min-[744px]:w-24 min-[1023px]:h-26 min-[1023px]:w-26 min-[1420px]:h-28 min-[1420px]:w-28 min-[1900px]:h-36 min-[1900px]:w-36">
           {avatarPreview ? (
-            <img src={avatarPreview} alt="" className="h-full w-full object-cover" />
+            <span className="absolute inset-0 overflow-hidden rounded-full">
+              <img src={avatarPreview} alt="" className="h-full w-full object-cover" />
+            </span>
           ) : null}
-          <span className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#E8DCE8] min-[1420px]:h-7 min-[1420px]:w-7 min-[1900px]:h-9 min-[1900px]:w-9">
+          <span className="absolute bottom-0 right-0 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-[#F0E8F0] bg-[#E8DCE8] shadow-[0_2px_6px_rgba(64,41,64,0.18)] min-[1420px]:h-7 min-[1420px]:w-7 min-[1900px]:h-9 min-[1900px]:w-9">
             <Camera className="h-3.5 w-3.5 min-[1420px]:h-4 min-[1420px]:w-4 min-[1900px]:h-5 min-[1900px]:w-5" />
           </span>
         </span>
