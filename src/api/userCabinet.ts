@@ -63,12 +63,7 @@ export type UserProfileCreateInput = UserProfileUpdateInput & {
   avatar?: File | null;
 };
 
-export type UserOnboardingProfileCreateInput = {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  avatar?: File | null;
-};
+export type UserOnboardingProfileCreateInput = UserProfileCreateInput;
 
 export type CabinetAppointment = {
   id: string;
@@ -979,34 +974,7 @@ export async function createUserProfile(input: UserProfileCreateInput) {
 export async function createUserOnboardingProfile(
   input: UserOnboardingProfileCreateInput,
 ) {
-  const token = getAccessToken();
-  if (!token && !getRefreshToken()) {
-    throw new Error("Authentication required");
-  }
-
-  const body = new FormData();
-  body.append("first_name", input.firstName.trim());
-  body.append("last_name", input.lastName.trim());
-  body.append("phone", normalizePhoneForSubmit(input.phone));
-
-  if (input.avatar) {
-    body.append("avatar", input.avatar);
-  }
-
-  const response = await apiFetch(endpoints.userProfiles, {
-    method: "POST",
-    body,
-  });
-  const data = await parseJsonResponse(response);
-
-  if (!response.ok) {
-    const details = stringifyResponseDetails(data);
-    throw new Error(
-      `Profile creation failed: ${response.status}${details ? ` ${details}` : ""}`,
-    );
-  }
-
-  return data;
+  return createUserProfile(input);
 }
 
 export async function updateProfileAvatar(profile: CabinetProfile, avatar: File) {
