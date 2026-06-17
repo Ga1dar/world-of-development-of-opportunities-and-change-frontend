@@ -581,22 +581,35 @@ function AppointmentsView({
 
 type SpecialistRecordFilter = "all" | "week" | "date";
 
-const getAppointmentTime = (appointment: CabinetAppointment) => {
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const parseAppointmentTimestamp = (appointment: CabinetAppointment) => {
   const rawValue =
     appointment.startsAt ||
     (appointment.date && appointment.time ? `${appointment.date}T${appointment.time}` : "");
-  const parsed = new Date(rawValue);
+  const normalizedRawValue = rawValue.includes("T") ? rawValue : rawValue.replace(" ", "T");
+  const parsed = new Date(normalizedRawValue);
 
   if (!Number.isNaN(parsed.getTime())) return parsed.getTime();
 
-  const [day, month, year] = appointment.date.split(".");
+  const dateValue = appointment.date || rawValue.split(/[T ]/)[0] || "";
+  const timeValue = appointment.time || rawValue.split(/[T ]/)[1] || "";
+  const [day, month, year] = dateValue.split(".");
+  const [hour = "0", minute = "0"] = timeValue.split(":");
   const fallback = new Date(
     Number((year || "").replace(/\D/g, "")) || new Date().getFullYear(),
     (Number(month) || 1) - 1,
     Number(day) || 1,
+    Number(hour) || 0,
+    Number(minute) || 0,
   );
 
   return Number.isNaN(fallback.getTime()) ? 0 : fallback.getTime();
+};
+
+const getAppointmentTime = (appointment: CabinetAppointment) => {
+  const timestamp = parseAppointmentTimestamp(appointment);
+  return timestamp || Number.MAX_SAFE_INTEGER;
 };
 
 function SpecialistAppointmentCard({
@@ -669,18 +682,27 @@ function SpecialistAppointmentsView({
   onReschedule: (appointment: CabinetAppointment) => void;
 }) {
   const [filter, setFilter] = useState<SpecialistRecordFilter>("all");
-  const now = Date.now();
-  const weekLimit = now + 7 * 24 * 60 * 60 * 1000;
-  const filteredAppointments = appointments
-    .filter((appointment) => {
-      if (filter === "all") return true;
+  const filteredAppointments = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const weekLimit = todayStart + 7 * DAY_MS;
+    const items = [...appointments];
 
-      const appointmentTime = getAppointmentTime(appointment);
-      if (filter === "week") return appointmentTime >= now && appointmentTime <= weekLimit;
+    if (filter === "week") {
+      return items
+        .filter((appointment) => {
+          const appointmentTime = getAppointmentTime(appointment);
+          return appointmentTime >= todayStart && appointmentTime < weekLimit;
+        })
+        .sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
+    }
 
-      return appointmentTime >= now;
-    })
-    .sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
+    if (filter === "date") {
+      return items.sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
+    }
+
+    return items;
+  }, [appointments, filter]);
   const filters: Array<{ id: SpecialistRecordFilter; label: string }> = [
     { id: "all", label: labels.all },
     { id: "week", label: labels.byWeek },

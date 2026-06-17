@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { getAccessToken } from "../../api/auth";
 import { getSpecialist, type Specialist } from "../../api/specialists";
 import { ConsultationDialog } from "./ConsultationDialog";
 
@@ -48,6 +49,7 @@ export function SpecialistProfil() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isConsultationOpen, setIsConsultationOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getAccessToken()));
 
   useEffect(() => {
     let isMounted = true;
@@ -72,6 +74,19 @@ export function SpecialistProfil() {
       isMounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    const updateAuthState = () => setIsAuthenticated(Boolean(getAccessToken()));
+
+    updateAuthState();
+    window.addEventListener("auth-changed", updateAuthState);
+    window.addEventListener("storage", updateAuthState);
+
+    return () => {
+      window.removeEventListener("auth-changed", updateAuthState);
+      window.removeEventListener("storage", updateAuthState);
+    };
+  }, []);
 
   const isUkrainian = i18n.language === "ua" || i18n.language === "uk";
 
@@ -207,12 +222,14 @@ export function SpecialistProfil() {
               {t("specialistConsultation")}
             </button>
 
-            <p
-              className="mt-5 w-full max-w-115 text-[12px] leading-[1.35] 
-              text-[#1C100E] min-[744px]:mx-auto min-[744px]:max-w-91.25 min-[1023px]:hidden"
-            >
-              {t("specialistConsultationNote")}
-            </p>
+            {!isAuthenticated ? (
+              <p
+                className="mt-5 w-full max-w-115 text-[12px] leading-[1.35]
+                text-[#1C100E] min-[744px]:mx-auto min-[744px]:max-w-91.25 min-[1023px]:hidden"
+              >
+                {t("specialistConsultationNote")}
+              </p>
+            ) : null}
           </div>
 
           <div
@@ -245,14 +262,16 @@ export function SpecialistProfil() {
               {t("specialistConsultation")}
             </button>
 
-            <p
-              className="mt-5 hidden w-full max-w-115 text-[12px] leading-[1.35] text-[#1C100E] 
-              min-[1023px]:block
-              min-[1420px]:w-99.5 min-[1420px]:max-w-none min-[1420px]:text-[10px]
-              min-[1900px]:w-146.25 min-[1900px]:text-[12px]"
-            >
-              {t("specialistConsultationNote")}
-            </p>
+            {!isAuthenticated ? (
+              <p
+                className="mt-5 hidden w-full max-w-115 text-[12px] leading-[1.35] text-[#1C100E]
+                min-[1023px]:block
+                min-[1420px]:w-99.5 min-[1420px]:max-w-none min-[1420px]:text-[10px]
+                min-[1900px]:w-146.25 min-[1900px]:text-[12px]"
+              >
+                {t("specialistConsultationNote")}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

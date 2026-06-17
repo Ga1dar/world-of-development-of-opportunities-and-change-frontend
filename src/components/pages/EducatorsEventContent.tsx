@@ -37,12 +37,12 @@ export function EducatorsEventContent({
     <section
       className="bg-secondary px-4 pb-10 font-montserrat
       min-[744px]:px-10 min-[1023px]:px-16
-      min-[1420px]:px-20 min-[1900px]:px-[84px] min-[1908px]:px-20 min-[1900px]:pb-14"
+      min-[1420px]:px-20 min-[1900px]:px-[45px] min-[1900px]:pb-14"
     >
       <article
         className="mx-auto w-full max-w-[358px]
         min-[744px]:max-w-[664px] min-[1023px]:max-w-[894px]
-        min-[1420px]:max-w-[1280px] min-[1900px]:max-w-[1816px]"
+        min-[1420px]:max-w-[1280px] min-[1900px]:max-w-[1890px]"
       >
         <div className="min-[744px]:hidden">
           <h1 className={educatorsHeadingClass}>{displayTitle}</h1>

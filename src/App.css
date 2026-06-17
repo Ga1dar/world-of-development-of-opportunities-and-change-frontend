@@ -50,6 +50,10 @@ body,
   width: 100%;
 }
 
+.event-category-page {
+  box-sizing: border-box;
+}
+
 @media (min-width: 744px) {
   .events-shell {
     max-width: 648px;
@@ -73,8 +77,9 @@ body,
   }
 
   .user-onboarding-form {
-    width: clamp(460px, calc(29.126vw + 243.3px), 816px);
-    padding-inline: clamp(76px, calc(4.854vw + 39.9px), 136px);
+    width: min(664px, calc(100vw - 64px));
+    max-width: none;
+    padding-inline: 24px;
   }
 }
 
@@ -99,6 +104,10 @@ body,
 }
 
 @media (min-width: 1900px) {
+  .event-category-page {
+    padding-inline: 80px !important;
+  }
+
   .events-shell {
     max-width: min(calc(100vw - 90px), 1890px);
   }

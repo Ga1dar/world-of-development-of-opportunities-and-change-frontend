@@ -66,7 +66,7 @@ export function SupervisionEventContent({
     <section
       className="bg-secondary px-[15px] pb-14 font-montserrat
       min-[744px]:px-10 min-[1023px]:px-16
-      min-[1420px]:px-20 min-[1900px]:px-[84px] min-[1908px]:px-20 min-[1900px]:pb-14"
+      min-[1420px]:px-20 min-[1900px]:px-[45px] min-[1900px]:pb-14"
     >
       <article
         className="mx-auto w-full max-w-[358px]
