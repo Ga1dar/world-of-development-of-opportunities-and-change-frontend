@@ -51,23 +51,34 @@ const getCurrentCountryCode = (value: string) => {
 
 const digitsOnly = (value: string) => value.replace(/\D/g, "");
 
+const stripDomesticPrefix = (value: string, code: string) => {
+  const digits = digitsOnly(value);
+
+  if (code === "+380" || code === "+49") {
+    return digits.replace(/^0+/, "");
+  }
+
+  return digits;
+};
+
 const getNationalNumber = (value: string, code = getCurrentCountryCode(value)) => {
   const trimmedValue = value.trim();
 
   if (!trimmedValue) return "";
   if (trimmedValue.startsWith(code)) {
-    return digitsOnly(trimmedValue.slice(code.length));
+    return stripDomesticPrefix(trimmedValue.slice(code.length), code);
   }
 
   if (trimmedValue.startsWith("+")) {
-    return digitsOnly(trimmedValue.replace(/^\+\d{1,4}\s*/, ""));
+    const pastedCode = getCurrentCountryCode(trimmedValue);
+    return stripDomesticPrefix(trimmedValue.slice(pastedCode.length), pastedCode);
   }
 
-  return digitsOnly(trimmedValue);
+  return stripDomesticPrefix(trimmedValue, code);
 };
 
 const replaceCountryCode = (value: string, code: string) => {
-  const nationalNumber = getNationalNumber(value);
+  const nationalNumber = getNationalNumber(value, code);
 
   return nationalNumber ? `${code}${nationalNumber}` : "";
 };
@@ -83,7 +94,7 @@ const formatPhoneValue = (inputValue: string, fallbackCode: string) => {
     return nationalNumber ? `${pastedCode}${nationalNumber}` : "";
   }
 
-  const nationalNumber = digitsOnly(trimmedValue);
+  const nationalNumber = stripDomesticPrefix(trimmedValue, fallbackCode);
   return nationalNumber ? `${fallbackCode}${nationalNumber}` : "";
 };
 
@@ -99,6 +110,12 @@ export function PhoneCountryField({
   const [selectedCode, setSelectedCode] = useState(() => getCurrentCountryCode(value));
   const currentCode = value.trim() ? getCurrentCountryCode(value) : selectedCode;
   const nationalNumber = getNationalNumber(value, currentCode);
+  const commitPhoneValue = () => {
+    const normalizedValue = formatPhoneValue(nationalNumber, currentCode);
+    if (normalizedValue && normalizedValue !== value) {
+      onChange(normalizedValue);
+    }
+  };
 
   useEffect(() => {
     if (value.trim()) {
@@ -131,6 +148,7 @@ export function PhoneCountryField({
           onChange={(event) => {
             onChange(formatPhoneValue(event.target.value, currentCode));
           }}
+          onBlur={commitPhoneValue}
           required={required}
           placeholder={placeholder}
           className="h-full min-w-0 flex-1 bg-transparent px-3 font-montserrat text-[12px] text-[#1C100E] outline-none placeholder:text-[#1C100E]/45"
