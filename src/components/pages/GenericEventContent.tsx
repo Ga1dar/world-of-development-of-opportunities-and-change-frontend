@@ -34,12 +34,12 @@ export function GenericEventContent({
       className="bg-secondary px-4 pb-10
       pt-3 font-montserrat min-[744px]:px-10
       min-[1023px]:px-16 min-[1420px]:px-20
-      min-[1900px]:px-[84px] min-[1908px]:px-20 min-[1900px]:pb-14 min-[1900px]:pt-[120px]"
+      min-[1900px]:px-[45px] min-[1900px]:pb-14 min-[1900px]:pt-[120px]"
     >
       <article
         className="mx-auto w-full max-w-[358px] min-[744px]:max-w-[664px]
         min-[1023px]:max-w-[894px] min-[1420px]:max-w-[1280px]
-        min-[1900px]:max-w-[1816px]"
+        min-[1900px]:max-w-[1890px]"
       >
         <div
           className="grid gap-y-4 min-[1023px]:grid-cols-[436px_1fr]

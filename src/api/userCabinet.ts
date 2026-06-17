@@ -26,7 +26,9 @@ export type CabinetProfile = {
   phone?: string;
   city?: string;
   birthDate?: string;
+  gender?: string;
   education?: string;
+  hasChildren?: string;
   experience?: string;
   workHours?: string;
   about?: string;
@@ -55,6 +57,9 @@ export type UserProfileUpdateInput = {
   phone: string;
   city: string;
   birthDate: string;
+  gender?: string;
+  education?: string;
+  hasChildren?: string;
   about: string;
 };
 
@@ -108,16 +113,66 @@ const asString = (value: unknown, fallback = "") => {
   return fallback;
 };
 
+const PHONE_COUNTRY_CODES = ["380", "420", "49", "48", "1"] as const;
+
+const normalizeNationalPhoneDigits = (countryCode: string, nationalNumber: string) => {
+  if (countryCode === "380" || countryCode === "49") {
+    return nationalNumber.replace(/^0+/, "");
+  }
+
+  return nationalNumber;
+};
+
 const normalizePhoneForSubmit = (value: string) => {
   const trimmedValue = value.trim();
   if (!trimmedValue) return "";
+
   if (trimmedValue.startsWith("+")) {
     const digits = trimmedValue.replace(/\D/g, "");
-    return digits ? `+${digits}` : "";
+    const countryCode = PHONE_COUNTRY_CODES.find((code) => digits.startsWith(code));
+
+    if (!countryCode) {
+      return digits ? `+${digits}` : "";
+    }
+
+    const nationalNumber = normalizeNationalPhoneDigits(
+      countryCode,
+      digits.slice(countryCode.length),
+    );
+
+    return nationalNumber ? `+${countryCode}${nationalNumber}` : "";
   }
 
   const digits = trimmedValue.replace(/\D/g, "");
-  return digits ? `+380${digits}` : "";
+  const nationalNumber = normalizeNationalPhoneDigits("380", digits);
+  return nationalNumber ? `+380${nationalNumber}` : "";
+};
+
+const normalizeBooleanChoiceForSubmit = (value?: string) => {
+  const cleanValue = (value || "").trim().toLowerCase();
+  if (!cleanValue) return "";
+  if (["yes", "true", "1", "так", "та"].includes(cleanValue)) return "true";
+  if (["no", "false", "0", "ні", "нi"].includes(cleanValue)) return "false";
+  return cleanValue;
+};
+
+const appendOptionalUserProfileFields = (
+  body: FormData,
+  input: Pick<UserProfileUpdateInput, "gender" | "education" | "hasChildren">,
+) => {
+  if (input.gender) {
+    body.append("gender", input.gender);
+  }
+
+  if (input.education) {
+    body.append("education", input.education);
+    body.append("education_other", input.education);
+  }
+
+  const hasChildren = normalizeBooleanChoiceForSubmit(input.hasChildren);
+  if (hasChildren) {
+    body.append("has_children", hasChildren);
+  }
 };
 
 const extractList = (data: unknown): RawRecord[] => {
@@ -438,9 +493,15 @@ const normalizeProfile = (
     birthDate:
       readString(source, ["birth_date", "birthDate", "date_of_birth", "dateOfBirth", "birthday", "dob"]) ||
       readString(sourceUser, ["birth_date", "birthDate", "date_of_birth", "dateOfBirth", "birthday", "dob"]),
+    gender:
+      readString(source, ["gender", "sex"]) ||
+      readString(sourceUser, ["gender", "sex"]),
     education:
       readString(source, ["education", "education_other", "educationOther", "degree"]) ||
       readString(sourceUser, ["education", "education_other", "educationOther", "degree"]),
+    hasChildren:
+      readString(source, ["has_children", "hasChildren", "children", "raising_children", "raisingChildren"]) ||
+      readString(sourceUser, ["has_children", "hasChildren", "children", "raising_children", "raisingChildren"]),
     experience:
       readString(source, [
         "work_experience",
@@ -884,8 +945,9 @@ export async function updateUserProfile(profileId: string, input: UserProfileUpd
     body.append("city", input.city);
     body.append("birth_date", input.birthDate);
     body.append("bio", input.about);
+    appendOptionalUserProfileFields(body, input);
 
-    if (includeEducationOtherFallback) {
+    if (includeEducationOtherFallback && !input.education) {
       body.append("education_other", "Not specified");
     }
 
@@ -933,8 +995,9 @@ export async function createUserProfile(input: UserProfileCreateInput) {
     body.append("birth_date", input.birthDate);
     body.append("bio", input.about);
     body.append("accept_data_processing_consent", String(input.acceptDataProcessingConsent));
+    appendOptionalUserProfileFields(body, input);
 
-    if (includeEducationOtherFallback) {
+    if (includeEducationOtherFallback && !input.education) {
       body.append("education_other", "Not specified");
     }
 

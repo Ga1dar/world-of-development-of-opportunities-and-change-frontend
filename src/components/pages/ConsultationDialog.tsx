@@ -23,6 +23,7 @@ import {
   type ConsultationBookingResult,
 } from "../../api/consultations";
 import { getAccessToken } from "../../api/auth";
+import { LogIn } from "./LogIn";
 
 type ConsultationDialogProps = {
   open: boolean;
@@ -105,6 +106,7 @@ export function ConsultationDialog({
   );
   const [selectedTime, setSelectedTime] = useState("");
   const [slots, setSlots] = useState<ConsultationSlot[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getAccessToken()));
   const [isSlotsLoading, setIsSlotsLoading] = useState(false);
   const [slotsLoadFailed, setSlotsLoadFailed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -140,7 +142,26 @@ export function ConsultationDialog({
   );
 
   useEffect(() => {
-    if (!open || !Number.isInteger(specialistId) || specialistId <= 0) return;
+    if (!open) return;
+
+    const updateAuthState = () => {
+      const hasAuth = Boolean(getAccessToken());
+      setIsAuthenticated(hasAuth);
+      setStep(hasAuth ? "calendar" : "intro");
+    };
+
+    updateAuthState();
+    window.addEventListener("auth-changed", updateAuthState);
+    window.addEventListener("storage", updateAuthState);
+
+    return () => {
+      window.removeEventListener("auth-changed", updateAuthState);
+      window.removeEventListener("storage", updateAuthState);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !isAuthenticated || !Number.isInteger(specialistId) || specialistId <= 0) return;
 
     const controller = new AbortController();
     setIsSlotsLoading(true);
@@ -175,7 +196,7 @@ export function ConsultationDialog({
       });
 
     return () => controller.abort();
-  }, [open, specialistId]);
+  }, [open, isAuthenticated, specialistId]);
 
   useEffect(() => {
     if (!selectedDaySlots.length) {
@@ -216,6 +237,7 @@ export function ConsultationDialog({
     if (isSubmitting) return;
 
     if (!getAccessToken()) {
+      setIsAuthenticated(false);
       setStep("intro");
       return;
     }
@@ -385,10 +407,12 @@ export function ConsultationDialog({
             </DialogDescription>
             <Button
               type="button"
-              onClick={() => setStep("calendar")}
-              className="mt-6 h-10 w-full max-w-[336px] rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] font-montserrat text-[14px] font-medium text-[#1C100E] shadow-btn hover:brightness-105"
+              asChild
+              className="mt-6 h-auto w-full max-w-[336px] bg-transparent p-0 shadow-none hover:bg-transparent"
             >
-              {t("consultationDialog.yes")}
+              <span className="[&_button]:h-10 [&_button]:w-full [&_button]:max-w-[336px] [&_button]:rounded-[30px] [&_button]:border-2 [&_button]:border-[#FEF85C] [&_button]:bg-linear-to-b [&_button]:from-[#FFC700] [&_button]:via-[#FFD43B] [&_button]:to-[#FFF0A8] [&_button]:font-montserrat [&_button]:text-[14px] [&_button]:font-medium [&_button]:text-[#1C100E] [&_button]:shadow-btn [&_button]:hover:brightness-105">
+                <LogIn variant="menu" text={t("headerTitle.login")} />
+              </span>
             </Button>
           </div>
         )}

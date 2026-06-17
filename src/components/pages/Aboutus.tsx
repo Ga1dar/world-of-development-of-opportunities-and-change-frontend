@@ -30,7 +30,7 @@ export function Aboutus() {
     <>
       <section className="about-shell mx-auto flex w-full 
       max-w-7xl flex-col px-4 sm:px-10 min-[1023px]:px-16
-      min-[1420px]:max-w-360 min-[1420px]:px-20 min-[1900px]:max-w-475 min-[1900px]:px-21">
+      min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <article className="about-mobile">
           <h1 className="mb-5 font-montserrat text-[24px] font-medium leading-tight text-[#1C100E]">
             {t("homeTopTitle")}
@@ -90,7 +90,7 @@ export function Aboutus() {
           {renderParagraphs(paragraphs.slice(2), "col-span-2 mt-6")}
         </article>
 
-        <article className="about-big min-[1900px]:grid-cols-[910px_860px] min-[1900px]:gap-x-10.75">
+        <article className="about-big min-[1900px]:grid-cols-[minmax(0,910px)_minmax(0,1fr)] min-[1900px]:gap-x-[clamp(24px,2.2vw,43px)]">
           <div className="flex h-135 flex-col justify-start">
             <h1 className="mb-8 max-w-180 font-montserrat text-[32px] font-medium leading-11.25 text-[#1C100E]">
               {t("homeTopTitle")}
@@ -100,15 +100,15 @@ export function Aboutus() {
           <img
             src="/rectangle 2.png"
             alt={imageAlt}
-            className="h-135 w-223.5 rounded-[20px] object-cover"
+            className="h-135 w-full max-w-[894px] justify-self-end rounded-[20px] object-cover"
           />
         </article>
       </section>
 
       <section className="mx-auto mt-16 flex w-full max-w-7xl 
       flex-col items-center justify-center px-4 sm:mt-20 sm:px-10
-      min-[1023px]:px-16 min-[1420px]:max-w-360 min-[1420px]:px-20
-      min-[1900px]:mt-25 min-[1900px]:max-w-467.5 min-[1900px]:px-30">
+      min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20
+      min-[1900px]:mt-25 min-[1900px]:max-w-[1980px] min-[1900px]:px-20">
         <h2 className="w-full text-center font-montserrat text-3xl font-medium leading-[140%] text-[#1C100E] sm:text-4xl min-[1420px]:text-[56px] min-[1420px]:leading-25 min-[1900px]:mt-5">
           {t("specialistsTitle")}
         </h2>

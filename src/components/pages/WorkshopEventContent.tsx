@@ -48,10 +48,10 @@ export function WorkshopEventContent({
           className="bg-secondary px-4 pb-10
           pt-3 font-montserrat min-[744px]:px-10
           min-[1023px]:px-16 min-[1420px]:px-20
-          min-[1900px]:pb-14 min-[1900px]:pt-33.5">
+          min-[1900px]:px-[45px] min-[1900px]:pb-14 min-[1900px]:pt-33.5">
           <article
             className="mx-auto w-full max-w-89.5 min-[744px]:max-w-166
-            min-[1023px]:max-w-223.75 min-[1420px]:max-w-322.5 min-[1900px]:max-w-440">
+            min-[1023px]:max-w-223.75 min-[1420px]:max-w-322.5 min-[1900px]:max-w-[1890px]">
             <div
               className="grid gap-y-4 min-[1023px]:hidden min-[1023px]:grid-cols-[436px_410px]
               min-[1023px]:gap-x-6 min-[1023px]:gap-y-5 min-[1900px]:grid
