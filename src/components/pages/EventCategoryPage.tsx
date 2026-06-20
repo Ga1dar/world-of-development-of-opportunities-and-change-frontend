@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { Heart, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
-  getLocallyLikedEventIds,
   getEventsByCategory,
   toggleEventLike,
   type EventItem,
@@ -42,12 +41,11 @@ export function EventCategoryPage() {
     getEventsByCategory(categorySlug).then((eventItems) => {
       if (!isMounted) return;
 
-      const localLikedIds = getLocallyLikedEventIds();
       setEvents(eventItems);
       setLikedEventIds(
         new Set(
           eventItems
-            .filter((event) => event.isLiked || localLikedIds.has(event.id))
+            .filter((event) => event.isLiked)
             .map((event) => event.id),
         ),
       );
@@ -64,9 +62,12 @@ export function EventCategoryPage() {
     const targetEvent = events.find((event) => event.id === eventId);
     if (!targetEvent) return;
 
-    const applyLikeState = (liked: boolean) => {
+    const applyLikeState = (liked: boolean, likesCountOverride?: number) => {
       const delta = liked ? (wasLiked ? 0 : 1) : wasLiked ? -1 : 0;
-      const nextLikesCount = Math.max((targetEvent.likesCount || 0) + delta, 0);
+      const nextLikesCount =
+        typeof likesCountOverride === "number"
+          ? Math.max(likesCountOverride, 0)
+          : Math.max((targetEvent.likesCount || 0) + delta, 0);
       const nextEvent = { ...targetEvent, likesCount: nextLikesCount, isLiked: liked };
 
       setLikedEventIds((current) => {
@@ -101,9 +102,12 @@ export function EventCategoryPage() {
         Boolean(targetEvent.isFallback),
         optimisticLikesCount,
       );
-      if (result.liked !== nextLiked) applyLikeState(result.liked);
+      if (result.liked !== nextLiked || typeof result.likesCount === "number") {
+        applyLikeState(result.liked, result.likesCount);
+      }
     } catch (error) {
       console.error(error);
+      applyLikeState(wasLiked, targetEvent.likesCount || 0);
     }
   };
 

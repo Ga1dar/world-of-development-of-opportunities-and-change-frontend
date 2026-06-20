@@ -105,7 +105,8 @@ body,
 
 @media (min-width: 1900px) {
   .event-category-page {
-    padding-inline: 80px !important;
+    padding-left: 60px !important;
+    padding-right: 80px !important;
   }
 
   .events-shell {
