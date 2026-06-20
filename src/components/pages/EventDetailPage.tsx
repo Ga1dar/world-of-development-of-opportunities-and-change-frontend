@@ -6,7 +6,6 @@ import {
   createEventComment,
   getEvent,
   getEventComments,
-  getLocallyLikedEventIds,
   readStoredEventCommentReaction,
   toggleCommentLike,
   toggleEventLike,
@@ -240,9 +239,7 @@ export function EventDetailPage() {
               .map((comment) => comment.id),
           ),
         );
-        setIsEventLiked(
-          Boolean(eventItem?.isLiked || (eventItem && getLocallyLikedEventIds().has(eventItem.id))),
-        );
+        setIsEventLiked(Boolean(eventItem?.isLiked));
       },
     );
 
@@ -287,9 +284,12 @@ export function EventDetailPage() {
     const wasLiked = isEventLiked;
     const nextLiked = !isEventLiked;
 
-    const applyLikeState = (liked: boolean) => {
+    const applyLikeState = (liked: boolean, likesCountOverride?: number) => {
       const delta = liked ? (wasLiked ? 0 : 1) : wasLiked ? -1 : 0;
-      const nextLikesCount = Math.max((targetEvent.likesCount || 0) + delta, 0);
+      const nextLikesCount =
+        typeof likesCountOverride === "number"
+          ? Math.max(likesCountOverride, 0)
+          : Math.max((targetEvent.likesCount || 0) + delta, 0);
       const nextEvent = { ...targetEvent, likesCount: nextLikesCount, isLiked: liked };
 
       setIsEventLiked(liked);
@@ -319,9 +319,12 @@ export function EventDetailPage() {
         Boolean(targetEvent.isFallback),
         optimisticLikesCount,
       );
-      if (result.liked !== nextLiked) applyLikeState(result.liked);
+      if (result.liked !== nextLiked || typeof result.likesCount === "number") {
+        applyLikeState(result.liked, result.likesCount);
+      }
     } catch (error) {
       console.error(error);
+      applyLikeState(wasLiked, targetEvent.likesCount || 0);
       setCommentError(t("eventComments.fallbackNotice"));
     }
   };

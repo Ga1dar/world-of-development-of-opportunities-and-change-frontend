@@ -77,6 +77,7 @@ export type CreateCommentPayload = {
 
 export type ToggleResult = {
   liked: boolean;
+  likesCount?: number;
 };
 
 type RawRecord = Record<string, unknown>;
@@ -326,6 +327,13 @@ const asNumber = (value: unknown, fallback: number) => {
   return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : fallback;
 };
 
+const asNonNegativeNumber = (value: unknown) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= 0
+    ? numericValue
+    : undefined;
+};
+
 const slugify = (value: string, fallback: string) => {
   const slug = value
     .toLowerCase()
@@ -505,6 +513,8 @@ const syncStoredEventLike = (
 export const getLocallyLikedEventIds = () => readStoredLikedEventIds();
 
 const applyStoredEventReaction = (event: EventItem): EventItem => {
+  if (hasAccessToken()) return event;
+
   const storedReaction = readStoredEventReaction(event.id);
   const localLiked = readStoredLikedEventIds().has(event.id);
 
@@ -623,6 +633,8 @@ const hasCurrentUserLike = (record: RawRecord, eventId: number) => {
   const likes = record.likes ?? record.event_likes ?? record.eventLikes;
   if (Array.isArray(likes) && likes.some(isSameCurrentUser)) return true;
 
+  if (getAccessToken()) return false;
+
   return readStoredLikedEventIds().has(eventId);
 };
 
@@ -718,12 +730,8 @@ const normalizeEvent = (raw: unknown, index: number): EventItem => {
     record.likes_count ?? record.likesCount,
     fallback.likesCount || 0,
   );
-  const storedReaction = readStoredEventReaction(id);
-  const localLiked = readStoredLikedEventIds().has(id);
-  const isLiked = storedReaction?.liked ?? hasCurrentUserLike(record, id);
-  const likesCount =
-    storedReaction?.likesCount ??
-    (localLiked && baseLikesCount === 0 ? 1 : baseLikesCount);
+  const isLiked = hasCurrentUserLike(record, id);
+  const likesCount = baseLikesCount;
 
   return {
     id,
@@ -808,6 +816,21 @@ const parseToggleResult = (
   fallbackLiked = true,
 ): ToggleResult => {
   const record = asRecord(data);
+  const eventRecord = asRecord(record?.event);
+  const nestedDataRecord = asRecord(record?.data);
+  const likesCount = asNonNegativeNumber(
+    record?.likes_count ??
+      record?.likesCount ??
+      record?.total_likes ??
+      record?.totalLikes ??
+      record?.count ??
+      eventRecord?.likes_count ??
+      eventRecord?.likesCount ??
+      nestedDataRecord?.likes_count ??
+      nestedDataRecord?.likesCount,
+  );
+  const withLikesCount = (liked: boolean): ToggleResult =>
+    typeof likesCount === "number" ? { liked, likesCount } : { liked };
   const explicitValue =
     record?.liked ??
     record?.is_liked ??
@@ -816,11 +839,11 @@ const parseToggleResult = (
     record?.currentUserLiked;
 
   if (typeof explicitValue === "boolean") {
-    return { liked: explicitValue };
+    return withLikesCount(explicitValue);
   }
 
   const detail = asString(record?.detail ?? record?.message).toLowerCase();
-  if (!detail) return { liked: fallbackLiked };
+  if (!detail) return withLikesCount(fallbackLiked);
 
   if (
     detail.includes("unliked") ||
@@ -828,14 +851,14 @@ const parseToggleResult = (
     detail.includes("deleted") ||
     detail.includes("disliked")
   ) {
-    return { liked: false };
+    return withLikesCount(false);
   }
 
   if (detail.includes(enabledDetail) || detail.includes("liked")) {
-    return { liked: true };
+    return withLikesCount(true);
   }
 
-  return { liked: fallbackLiked };
+  return withLikesCount(fallbackLiked);
 };
 
 const DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -1159,16 +1182,25 @@ export async function toggleEventLike(
     });
 
     if (!response.ok) {
-      syncStoredEventLike(eventId, fallbackLiked, fallbackLikesCount);
-      return { liked: fallbackLiked };
+      throw new Error("Failed to toggle event like");
     }
 
-    const result = parseToggleResult(data, "event liked", fallbackLiked);
-    syncStoredEventLike(eventId, result.liked, fallbackLikesCount);
+    let result = parseToggleResult(data, "event liked", fallbackLiked);
+    if (typeof result.likesCount !== "number") {
+      const freshEvent = await getEvent(eventId);
+      if (freshEvent) {
+        result = {
+          ...result,
+          likesCount: freshEvent.likesCount || 0,
+        };
+      }
+    }
+
+    syncStoredEventLike(eventId, result.liked, result.likesCount);
     return result;
-  } catch {
-    syncStoredEventLike(eventId, fallbackLiked, fallbackLikesCount);
-    return { liked: fallbackLiked };
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
 }
 
