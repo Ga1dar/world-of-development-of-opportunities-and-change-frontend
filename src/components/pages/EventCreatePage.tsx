@@ -232,6 +232,11 @@ export function EventCreatePage() {
       return;
     }
 
+    if (category.isFallback) {
+      setError(copy.errors.categoryInvalid);
+      return;
+    }
+
     if (!title.trim()) {
       setError(copy.errors.titleRequired);
       return;

@@ -1,12 +1,30 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { fallbackCategories, type EventCategory } from "../../api/events";
-import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
+import {
+  fallbackCategories,
+  getEventCategories,
+  type EventCategory,
+} from "../../api/events";
+import { useCanManageEventCategories } from "../../hooks/useCanCreateEvents";
 
 export function Events() {
   const { i18n, t } = useTranslation();
   const lang = i18n.language.startsWith("en") ? "en" : "ua";
-  const canCreateEvents = useCanCreateEvents();
+  const canManageEventCategories = useCanManageEventCategories();
+  const [categories, setCategories] = useState<EventCategory[]>(fallbackCategories);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getEventCategories().then((items) => {
+      if (isMounted) setCategories(items);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const getTitle = (category: EventCategory) =>
     lang === "en" ? category.title_en : category.title_ua;
@@ -19,7 +37,7 @@ export function Events() {
         <h1 className="sr-only">{t("events")}</h1>
 
         <div className="events-grid">
-          {fallbackCategories.map((category) => (
+          {categories.map((category) => (
             <Link
               key={category.slug}
               to={`/events/${category.slug}`}
@@ -40,7 +58,7 @@ export function Events() {
           ))}
         </div>
 
-        {canCreateEvents && (
+        {canManageEventCategories && (
           <Link
             to="/events/categories/new"
             className="mt-5 flex h-10 w-full max-w-[326px] items-center justify-center rounded-[30px] border-2 border-[#FEF85C] bg-linear-to-b from-[#FFC700] via-[#FFD43B] to-[#FFF0A8] text-center text-[12px] font-medium text-[#1C100E] shadow-btn transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:ml-auto min-[744px]:mt-7 min-[744px]:max-w-[277px] min-[1023px]:mt-9 min-[1420px]:mt-10 min-[1900px]:max-w-[277px]"

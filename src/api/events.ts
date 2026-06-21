@@ -8,6 +8,7 @@ export type EventCategory = {
   title_ua: string;
   title_en: string;
   image: string;
+  isFallback?: boolean;
 };
 
 export type EventComment = {
@@ -122,6 +123,7 @@ const fallbackCategories: EventCategory[] = [
     title_ua: "Майбутні події та заняття",
     title_en: "Upcoming events and classes",
     image: staticCategoryImages.upcoming,
+    isFallback: true,
   },
   {
     id: 2,
@@ -129,6 +131,7 @@ const fallbackCategories: EventCategory[] = [
     title_ua: "Воркшоп",
     title_en: "Workshop",
     image: staticCategoryImages.workshop,
+    isFallback: true,
   },
   {
     id: 3,
@@ -136,6 +139,7 @@ const fallbackCategories: EventCategory[] = [
     title_ua: "«Колиска сили»",
     title_en: "Cradle of Strength",
     image: staticCategoryImages["kolyska-syly"],
+    isFallback: true,
   },
   {
     id: 4,
@@ -143,6 +147,7 @@ const fallbackCategories: EventCategory[] = [
     title_ua: "Арт майстерня",
     title_en: "Art workshop",
     image: staticCategoryImages["art-workshop"],
+    isFallback: true,
   },
   {
     id: 5,
@@ -150,6 +155,7 @@ const fallbackCategories: EventCategory[] = [
     title_ua: "Для освітян",
     title_en: "For educators",
     image: staticCategoryImages["for-educators"],
+    isFallback: true,
   },
   {
     id: 6,
@@ -157,6 +163,7 @@ const fallbackCategories: EventCategory[] = [
     title_ua: "Супервізія",
     title_en: "Supervision",
     image: staticCategoryImages.supervision,
+    isFallback: true,
   },
 ];
 
@@ -836,6 +843,7 @@ const normalizeCategory = (raw: unknown, index: number): EventCategory => {
       record.image ?? record.photo,
       staticCategoryImages[slug] || fallback.image,
     ),
+    isFallback: false,
   };
 };
 
@@ -1214,11 +1222,13 @@ export async function getEventsByCategory(categorySlug: string) {
   );
 
   try {
-    let category = fallbackCategories.find((item) => item.slug === categorySlug);
+    const categories = await getEventCategories();
+    const category =
+      categories.find((item) => item.slug === categorySlug) ||
+      fallbackCategories.find((item) => item.slug === categorySlug);
 
-    if (!category) {
-      const categories = await getEventCategories();
-      category = categories.find((item) => item.slug === categorySlug);
+    if (category?.isFallback) {
+      return fallback;
     }
 
     const url = createEndpointUrl(endpoints.events);
