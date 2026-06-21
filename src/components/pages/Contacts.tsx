@@ -11,11 +11,11 @@ const MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
 )}`;
 
 const contactIconClass =
-  "flex size-8 shrink-0 items-center justify-center rounded-full border border-[#402940]/35 text-[#402940] min-[744px]:size-[34px]";
+  "flex size-8 shrink-0 items-center justify-center rounded-full border border-[#1C100E] text-[#1C100E] min-[744px]:size-[34px]";
 const socialIconClass =
-  "size-8 shrink-0 object-contain brightness-0 opacity-70 min-[744px]:size-[34px]";
+  "size-8 shrink-0 object-contain filter-[brightness(0)_saturate(100%)_invert(7%)_sepia(22%)_saturate(1564%)_hue-rotate(329deg)_brightness(94%)_contrast(95%)] min-[744px]:size-[34px]";
 const contactLinkClass =
-  "flex items-center gap-3.5 text-[16px] leading-[1.35] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:text-[20px]";
+  "flex items-center gap-3.5 text-[16px] leading-[1.35] text-[#1C100E] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:text-[20px]";
 
 function MapPreview({ address }: { address: string }) {
   return (
