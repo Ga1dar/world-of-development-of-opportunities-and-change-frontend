@@ -109,6 +109,25 @@ const itemIdentity = (item: FavoriteContentItem) =>
 const storedItemIdentity = (item: FavoriteContentItem) =>
   `${itemIdentity(item)}:${item.userKeys?.join("|") || "legacy"}`;
 
+const isFallbackVideoFavoriteItem = (item: FavoriteContentItem) => {
+  if (item.kind !== "video") return false;
+
+  const id = item.id.trim().toLowerCase();
+  const slug = item.slug.trim().toLowerCase();
+  const href = item.href.trim().toLowerCase();
+
+  return (
+    id.startsWith("fallback") ||
+    slug.startsWith("fallback") ||
+    slug === "videos" ||
+    href === "/materials/videos/videos" ||
+    href.endsWith("/materials/videos/videos")
+  );
+};
+
+const isVisibleFavoriteContentItem = (item: FavoriteContentItem) =>
+  !isFallbackVideoFavoriteItem(item);
+
 const notifyFavoritesChanged = () => {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(FAVORITES_CHANGED_EVENT));
@@ -156,6 +175,8 @@ const readAllFavoriteContentItems = (): FavoriteContentItem[] => {
           savedByFavorite: record.savedByFavorite === true,
           userKeys: asStringArray(record.userKeys),
         };
+
+        if (!isVisibleFavoriteContentItem(favoriteItem)) return null;
 
         return favoriteItem;
       })
@@ -212,6 +233,14 @@ export const syncFavoriteContentItem = (
       belongsToCurrentUser(current, currentUserKeys),
   );
 
+  if (!isVisibleFavoriteContentItem(nextItem)) {
+    if (existingIndex >= 0) {
+      items.splice(existingIndex, 1);
+      writeFavoriteContentItems(items);
+    }
+    return;
+  }
+
   if (isFavorite) {
     if (existingIndex >= 0) items[existingIndex] = nextItem;
     else items.unshift(nextItem);
@@ -231,6 +260,7 @@ export const mergeFavoriteContentItems = (
   const byIdentity = new Map<string, FavoriteContentItem>();
 
   groups.flat().forEach((item) => {
+    if (!isVisibleFavoriteContentItem(item)) return;
     byIdentity.set(itemIdentity(item), item);
   });
 
@@ -383,7 +413,7 @@ export const getCurrentUserFavoriteContentItems = async (
     normalizeServerFavoriteVideo(item, language, index),
   );
 
-  return [...events, ...articles, ...videos];
+  return [...events, ...articles, ...videos].filter(isVisibleFavoriteContentItem);
 };
 
 export const eventToFavoriteContentItem = (
