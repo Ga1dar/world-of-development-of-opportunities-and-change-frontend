@@ -166,7 +166,18 @@ function CommentForm({
         <div className="mt-5 space-y-4">
           {comments.map((comment) => (
             <article key={comment.id} className="rounded-[16px] bg-[#F8F8F8] px-4 py-3">
-              <p className="text-[14px] font-medium">{comment.author}</p>
+              <div className="flex items-center gap-3">
+                {comment.userAvatar ? (
+                  <img
+                    src={comment.userAvatar}
+                    alt=""
+                    className="size-7 rounded-full object-cover"
+                  />
+                ) : (
+                  <CircleUserRound className="size-7 stroke-[2]" aria-hidden="true" />
+                )}
+                <p className="text-[14px] font-medium">{comment.author}</p>
+              </div>
               <p className="mt-1 text-[14px] leading-[1.35] text-[#1C100E]/75">{comment.text}</p>
             </article>
           ))}
