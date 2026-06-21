@@ -41,8 +41,8 @@ const teamMembers: TeamMember[] = [
   {
     nameUa: "Владислав Козлов",
     nameEn: "Vladyslav Kozlov",
-    roleUa: "Project Manager",
-    roleEn: "Project Manager",
+    roleUa: "DevOps Engineer",
+    roleEn: "DevOps Engineer",
   },
   {
     nameUa: "Марина Кравчук",

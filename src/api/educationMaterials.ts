@@ -334,9 +334,10 @@ const readPersonName = (...records: Array<RawRecord | null>) => {
   return "";
 };
 
-const readPersonAvatar = (...records: Array<RawRecord | null>) => {
+const readPersonAvatar = (...records: Array<RawRecord | null>): string => {
   for (const record of records) {
     if (!record) continue;
+    const profileRecord = getProfileRecord(record);
 
     const avatar = resolveMediaUrl(
       record.avatar ??
@@ -354,13 +355,26 @@ const readPersonAvatar = (...records: Array<RawRecord | null>) => {
         record.profile_image ??
         record.profileImage ??
         record.user_avatar ??
-        record.userAvatar,
+        record.userAvatar ??
+        profileRecord?.avatar ??
+        profileRecord?.avatar_url ??
+        profileRecord?.avatarUrl ??
+        profileRecord?.photo ??
+        profileRecord?.photo_url ??
+        profileRecord?.photoUrl ??
+        profileRecord?.image ??
+        profileRecord?.image_url ??
+        profileRecord?.imageUrl ??
+        profileRecord?.picture ??
+        profileRecord?.profile_photo ??
+        profileRecord?.profilePhoto ??
+        profileRecord?.profile_image ??
+        profileRecord?.profileImage ??
+        profileRecord?.user_avatar ??
+        profileRecord?.userAvatar,
       "",
     );
     if (avatar) return avatar;
-
-    const nestedAvatar = readPersonAvatar(getProfileRecord(record));
-    if (nestedAvatar) return nestedAvatar;
   }
 
   return "";
@@ -755,9 +769,15 @@ const normalizeArticleComment = (raw: RawRecord, index: number): EducationArticl
     readPersonName(rawUserProfile, userProfile, authorRecord) ||
     "Користувач";
   const rawUserValue = asString(raw.user ?? raw.author).toLowerCase();
+  const rawIdentityRecord = {
+    user_id: raw.user_id,
+    userId: raw.userId,
+    email: raw.email,
+    username: raw.username,
+  };
   const isCurrentUserComment =
     hasSharedIdentity(
-      [raw, authorRecord, userProfile, rawUserProfile],
+      [rawIdentityRecord, authorRecord, userProfile, rawUserProfile],
       [currentUser, currentUserProfile],
     ) ||
     (rawUserValue &&
@@ -765,13 +785,16 @@ const normalizeArticleComment = (raw: RawRecord, index: number): EducationArticl
   const currentUserAvatar = isCurrentUserComment
     ? readPersonAvatar(currentUserProfile, currentUser)
     : "";
+  const displayAuthor = isCurrentUserComment
+    ? readPersonName(currentUserProfile, currentUser) || authorName
+    : authorName;
 
   return {
     id: asString(raw.id, String(index + 1)),
-    author: authorName,
+    author: displayAuthor,
     userAvatar:
       resolveMediaUrl(raw.user_avatar ?? raw.userAvatar ?? raw.avatar, "") ||
-      readPersonAvatar(rawUserProfile, userProfile, authorRecord) ||
+      readPersonAvatar(rawUserProfile, userProfile, authorRecord, raw) ||
       currentUserAvatar,
     text: asString(raw.text ?? raw.content ?? raw.body),
     createdAt: asString(raw.created_at ?? raw.createdAt),
