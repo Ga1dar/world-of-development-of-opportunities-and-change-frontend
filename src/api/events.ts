@@ -430,23 +430,61 @@ const readPersonName = (...records: Array<RawRecord | null>) => {
   return "";
 };
 
-const readPersonAvatar = (...records: Array<RawRecord | null>) => {
+const readPersonAvatar = (...records: Array<RawRecord | null>): string => {
   for (const record of records) {
     if (!record) continue;
 
     const avatar = resolveImageUrl(
       record.avatar ??
+        record.avatar_url ??
+        record.avatarUrl ??
         record.photo ??
+        record.photo_url ??
+        record.photoUrl ??
         record.image ??
+        record.image_url ??
+        record.imageUrl ??
         record.picture ??
+        record.profile_photo ??
+        record.profilePhoto ??
+        record.profile_image ??
+        record.profileImage ??
         record.user_avatar ??
         record.userAvatar,
       "",
     );
     if (avatar) return avatar;
+
+    const nestedAvatar = readPersonAvatar(getProfileRecord(record));
+    if (nestedAvatar) return nestedAvatar;
   }
 
   return "";
+};
+
+const readIdentityKeys = (...records: Array<RawRecord | null>) =>
+  records.flatMap((record) =>
+    record
+      ? [
+          record.id,
+          record.pk,
+          record.user_id,
+          record.userId,
+          record.email,
+          record.username,
+        ]
+          .map((value) => asString(value).toLowerCase())
+          .filter(Boolean)
+      : [],
+  );
+
+const hasSharedIdentity = (...groups: Array<Array<RawRecord | null>>) => {
+  const [firstGroup, ...restGroups] = groups.map((group) => new Set(readIdentityKeys(...group)));
+  if (!firstGroup?.size) return false;
+
+  return restGroups.some((group) =>
+    Array.from(group).some((key) => firstGroup.has(key)),
+  );
 };
 
 const resolveImageList = (value: unknown, fallback: string[]) => {
@@ -699,15 +737,35 @@ const normalizeComment = (raw: unknown, index: number): EventComment => {
     asRecord(record.profile) ||
     asRecord(record.specialist_profile) ||
     asRecord(record.specialistProfile);
+  const currentUser = getStoredCurrentUser();
+  const currentUserProfile = getProfileRecord(currentUser);
   const resolvedAuthor =
     asString(record.user_full_name ?? record.userFullName) ||
     asString(record.author_name ?? record.authorName) ||
     readPersonName(rawUserProfile, userProfile, userRecord);
+  const rawUserValue = asString(record.user ?? record.author).toLowerCase();
+  const rawIdentityRecord = {
+    user_id: record.user_id,
+    userId: record.userId,
+    email: record.email,
+    username: record.username,
+  };
+  const isCurrentUserComment =
+    hasSharedIdentity(
+      [rawIdentityRecord, userRecord, userProfile, rawUserProfile],
+      [currentUser, currentUserProfile],
+    ) ||
+    (rawUserValue &&
+      readIdentityKeys(currentUser, currentUserProfile).includes(rawUserValue));
   const resolvedAvatar =
     resolveImageUrl(record.user_avatar ?? record.userAvatar ?? record.avatar, "") ||
-    readPersonAvatar(rawUserProfile, userProfile, userRecord);
+    readPersonAvatar(rawUserProfile, userProfile, userRecord, record) ||
+    (isCurrentUserComment ? readPersonAvatar(currentUserProfile, currentUser) : "");
+  const displayAuthor = isCurrentUserComment
+    ? readPersonName(currentUserProfile, currentUser) || resolvedAuthor
+    : resolvedAuthor;
 
-  if (resolvedAuthor) record.user_full_name = resolvedAuthor;
+  if (displayAuthor) record.user_full_name = displayAuthor;
   if (resolvedAvatar) record.user_avatar = resolvedAvatar;
 
   const isLiked =
