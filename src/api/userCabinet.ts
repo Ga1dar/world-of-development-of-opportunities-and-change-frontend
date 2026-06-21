@@ -73,6 +73,7 @@ export type UserOnboardingProfileCreateInput = UserProfileCreateInput;
 export type CabinetAppointment = {
   id: string;
   status: "confirmed" | "completed" | "cancelled" | string;
+  specialistId?: string;
   specialistName: string;
   specialistAvatar: string;
   specialistRole: string;
@@ -651,6 +652,17 @@ const parseDateTime = (rawValue: string) => {
   };
 };
 
+const readSpecialistIdFromBookAgainUrl = (value: string) => {
+  if (!value) return "";
+
+  try {
+    return new URL(value, API_URL).searchParams.get("specialist") || "";
+  } catch {
+    const match = value.match(/[?&]specialist=([^&]+)/);
+    return match ? decodeURIComponent(match[1]) : "";
+  }
+};
+
 const normalizeAppointment = (
   raw: RawRecord,
   fallbackStatus: CabinetAppointment["status"],
@@ -688,10 +700,28 @@ const normalizeAppointment = (
       .join(" ") ||
     readString(user, ["full_name", "fullName", "name", "email"]) ||
     readString(raw, ["user_email", "client_email"]);
+  const bookAgainUrl = readString(raw, ["book_again_url", "bookAgainUrl"]);
+  const specialistId =
+    readString(raw, [
+      "specialist_id",
+      "specialistId",
+      "specialist_profile_id",
+      "specialistProfileId",
+    ]) ||
+    readReferenceId(raw.specialist) ||
+    readString(slot, [
+      "specialist_id",
+      "specialistId",
+      "specialist_profile_id",
+      "specialistProfileId",
+    ]) ||
+    readReferenceId(slot?.specialist) ||
+    readSpecialistIdFromBookAgainUrl(bookAgainUrl);
 
   return {
     id: readString(raw, ["id"]) || `${parsed.date}-${parsed.time}`,
     status: readString(raw, ["status"]) || fallbackStatus,
+    specialistId,
     specialistName,
     specialistAvatar: resolveMediaUrl(
       raw.specialist_avatar ??
@@ -713,7 +743,7 @@ const normalizeAppointment = (
     date: readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date,
     time: readString(raw, ["time"]) || readString(slot, ["time"]) || parsed.time,
     startsAt: startValue || `${readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date}T${readString(raw, ["time"]) || readString(slot, ["time"]) || parsed.time}`,
-    bookAgainUrl: readString(raw, ["book_again_url", "bookAgainUrl"]),
+    bookAgainUrl,
   };
 };
 
