@@ -303,16 +303,8 @@ export function VideoDetailPage() {
       };
 
       setVideo(updatedVideo);
-      syncFavoriteContentItem(
-        videoToFavoriteContentItem(updatedVideo),
-        updatedVideo.isFavorite,
-      );
     } catch {
       setVideo(video);
-      syncFavoriteContentItem(
-        videoToFavoriteContentItem(video),
-        video.isFavorite,
-      );
     }
   };
 

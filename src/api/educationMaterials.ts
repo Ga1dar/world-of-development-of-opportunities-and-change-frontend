@@ -340,17 +340,55 @@ const readPersonAvatar = (...records: Array<RawRecord | null>) => {
 
     const avatar = resolveMediaUrl(
       record.avatar ??
+        record.avatar_url ??
+        record.avatarUrl ??
         record.photo ??
+        record.photo_url ??
+        record.photoUrl ??
         record.image ??
+        record.image_url ??
+        record.imageUrl ??
         record.picture ??
+        record.profile_photo ??
+        record.profilePhoto ??
+        record.profile_image ??
+        record.profileImage ??
         record.user_avatar ??
         record.userAvatar,
       "",
     );
     if (avatar) return avatar;
+
+    const nestedAvatar = readPersonAvatar(getProfileRecord(record));
+    if (nestedAvatar) return nestedAvatar;
   }
 
   return "";
+};
+
+const readIdentityKeys = (...records: Array<RawRecord | null>) =>
+  records.flatMap((record) =>
+    record
+      ? [
+          record.id,
+          record.pk,
+          record.user_id,
+          record.userId,
+          record.email,
+          record.username,
+        ]
+          .map((value) => asString(value).toLowerCase())
+          .filter(Boolean)
+      : [],
+  );
+
+const hasSharedIdentity = (...groups: Array<Array<RawRecord | null>>) => {
+  const [firstGroup, ...restGroups] = groups.map((group) => new Set(readIdentityKeys(...group)));
+  if (!firstGroup?.size) return false;
+
+  return restGroups.some((group) =>
+    Array.from(group).some((key) => firstGroup.has(key)),
+  );
 };
 
 const readLocalizedString = (record: RawRecord, baseKey: string, language: "ua" | "en") =>
@@ -700,6 +738,8 @@ const normalizeArticleComment = (raw: RawRecord, index: number): EducationArticl
     asRecord(raw.profile) ||
     asRecord(raw.specialist_profile) ||
     asRecord(raw.specialistProfile);
+  const currentUser = getStoredCurrentUser();
+  const currentUserProfile = getProfileRecord(currentUser);
   const authorName =
     asString(
       raw.author_name ??
@@ -714,13 +754,25 @@ const normalizeArticleComment = (raw: RawRecord, index: number): EducationArticl
     ) ||
     readPersonName(rawUserProfile, userProfile, authorRecord) ||
     "Користувач";
+  const rawUserValue = asString(raw.user ?? raw.author).toLowerCase();
+  const isCurrentUserComment =
+    hasSharedIdentity(
+      [raw, authorRecord, userProfile, rawUserProfile],
+      [currentUser, currentUserProfile],
+    ) ||
+    (rawUserValue &&
+      readIdentityKeys(currentUser, currentUserProfile).includes(rawUserValue));
+  const currentUserAvatar = isCurrentUserComment
+    ? readPersonAvatar(currentUserProfile, currentUser)
+    : "";
 
   return {
     id: asString(raw.id, String(index + 1)),
     author: authorName,
     userAvatar:
       resolveMediaUrl(raw.user_avatar ?? raw.userAvatar ?? raw.avatar, "") ||
-      readPersonAvatar(rawUserProfile, userProfile, authorRecord),
+      readPersonAvatar(rawUserProfile, userProfile, authorRecord) ||
+      currentUserAvatar,
     text: asString(raw.text ?? raw.content ?? raw.body),
     createdAt: asString(raw.created_at ?? raw.createdAt),
     likesCount: asNumber(raw.likes_count ?? raw.likesCount),

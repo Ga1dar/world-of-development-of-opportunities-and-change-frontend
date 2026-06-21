@@ -132,10 +132,8 @@ function VideoCard({ video, language }: { video: EducationVideo; language: "ua" 
       };
 
       setCurrentVideo(updatedVideo);
-      syncVideo(updatedVideo);
     } catch {
       setCurrentVideo(currentVideo);
-      syncVideo(currentVideo);
     }
   };
 
