@@ -337,6 +337,7 @@ const readPersonName = (...records: Array<RawRecord | null>) => {
 const readPersonAvatar = (...records: Array<RawRecord | null>): string => {
   for (const record of records) {
     if (!record) continue;
+    const profileRecord = getProfileRecord(record);
 
     const avatar = resolveMediaUrl(
       record.avatar ??
@@ -354,13 +355,26 @@ const readPersonAvatar = (...records: Array<RawRecord | null>): string => {
         record.profile_image ??
         record.profileImage ??
         record.user_avatar ??
-        record.userAvatar,
+        record.userAvatar ??
+        profileRecord?.avatar ??
+        profileRecord?.avatar_url ??
+        profileRecord?.avatarUrl ??
+        profileRecord?.photo ??
+        profileRecord?.photo_url ??
+        profileRecord?.photoUrl ??
+        profileRecord?.image ??
+        profileRecord?.image_url ??
+        profileRecord?.imageUrl ??
+        profileRecord?.picture ??
+        profileRecord?.profile_photo ??
+        profileRecord?.profilePhoto ??
+        profileRecord?.profile_image ??
+        profileRecord?.profileImage ??
+        profileRecord?.user_avatar ??
+        profileRecord?.userAvatar,
       "",
     );
     if (avatar) return avatar;
-
-    const nestedAvatar = readPersonAvatar(getProfileRecord(record));
-    if (nestedAvatar) return nestedAvatar;
   }
 
   return "";
