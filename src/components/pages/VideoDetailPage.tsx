@@ -2,7 +2,7 @@ import { Bookmark, CircleUserRound, Heart, MessageSquare } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-import { getAccessToken } from "../../api/auth";
+import { getAccessToken, getRefreshToken } from "../../api/auth";
 import {
   createEducationVideoComment,
   getEducationVideo,
@@ -28,6 +28,7 @@ const pageMaxWidth =
   "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20";
 
 const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en");
+const hasAuthSession = () => Boolean(getAccessToken() || getRefreshToken());
 
 const copy = {
   ua: {
@@ -124,6 +125,8 @@ function VideoCommentForm({
   labels,
   value,
   isAuthenticated,
+  error,
+  isSubmitting,
   onChange,
   onSubmit,
 }: {
@@ -131,6 +134,8 @@ function VideoCommentForm({
   labels: VideoDetailCopy;
   value: string;
   isAuthenticated: boolean;
+  error: string;
+  isSubmitting: boolean;
   onChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
@@ -162,12 +167,19 @@ function VideoCommentForm({
           placeholder={labels.placeholder}
           className="h-9 w-full rounded-[30px] border border-[#40213F] bg-transparent px-4 text-[12px] outline-none placeholder:text-[#1C100E]/50 disabled:opacity-70 min-[744px]:h-10 min-[744px]:text-[14px]"
         />
-        <p className="mt-2 text-[11px] text-[#1C100E]/65 min-[744px]:text-[12px]">
-          {labels.authHint}
-        </p>
+        {!isAuthenticated && (
+          <p className="mt-2 text-[11px] text-[#1C100E]/65 min-[744px]:text-[12px]">
+            {labels.authHint}
+          </p>
+        )}
+        {error && (
+          <p className="mt-2 text-[11px] text-[#A0186A] min-[744px]:text-[12px]">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
-          disabled={!isAuthenticated || value.trim().length === 0}
+          disabled={!isAuthenticated || isSubmitting || value.trim().length === 0}
           className="mt-4 flex h-11 w-full items-center justify-center rounded-[30px] bg-white text-[14px] font-medium disabled:opacity-60 min-[744px]:ml-auto min-[744px]:h-12 min-[744px]:max-w-[160px]"
         >
           {labels.submit}
@@ -190,7 +202,9 @@ export function VideoDetailPage() {
   );
   const [comments, setComments] = useState<EducationArticleComment[]>([]);
   const [commentText, setCommentText] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getAccessToken()));
+  const [commentError, setCommentError] = useState("");
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(hasAuthSession());
 
   useEffect(() => {
     const controller = new AbortController();
@@ -231,7 +245,7 @@ export function VideoDetailPage() {
   }, [video.id, video.slug]);
 
   useEffect(() => {
-    const updateAuth = () => setIsAuthenticated(Boolean(getAccessToken()));
+    const updateAuth = () => setIsAuthenticated(hasAuthSession());
     window.addEventListener("auth-changed", updateAuth);
     window.addEventListener("storage", updateAuth);
 
@@ -355,6 +369,9 @@ export function VideoDetailPage() {
     const text = commentText.trim();
     if (!text || video.id.startsWith("fallback")) return;
 
+    setCommentError("");
+    setIsCommentSubmitting(true);
+
     try {
       const created = await createEducationVideoComment(video.slug, text);
       if (created) {
@@ -363,7 +380,11 @@ export function VideoDetailPage() {
         setCommentText("");
       }
     } catch {
-      // The visible hint already explains that comments require an account.
+      const hasSession = hasAuthSession();
+      setIsAuthenticated(hasSession);
+      setCommentError(hasSession ? "Could not add the comment. Try again." : labels.authHint);
+    } finally {
+      setIsCommentSubmitting(false);
     }
   };
 
@@ -391,6 +412,8 @@ export function VideoDetailPage() {
           labels={labels}
           value={commentText}
           isAuthenticated={isAuthenticated}
+          error={commentError}
+          isSubmitting={isCommentSubmitting}
           onChange={setCommentText}
           onSubmit={handleCommentSubmit}
         />

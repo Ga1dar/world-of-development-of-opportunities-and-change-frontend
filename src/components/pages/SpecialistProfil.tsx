@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getAccessToken } from "../../api/auth";
 import { getSpecialist, type Specialist } from "../../api/specialists";
@@ -44,6 +44,7 @@ function DetailRow({ title, items }: TextSectionProps) {
 
 export function SpecialistProfil() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { i18n, t } = useTranslation();
   const [specialist, setSpecialist] = useState<Specialist | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +88,21 @@ export function SpecialistProfil() {
       window.removeEventListener("storage", updateAuthState);
     };
   }, []);
+
+  useEffect(() => {
+    const shouldOpenConsultation =
+      searchParams.get("consultation") === "1" ||
+      searchParams.get("book") === "consultation";
+
+    if (!specialist || !shouldOpenConsultation) return;
+
+    setIsConsultationOpen(true);
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("consultation");
+    nextParams.delete("book");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, specialist]);
 
   const isUkrainian = i18n.language === "ua" || i18n.language === "uk";
 

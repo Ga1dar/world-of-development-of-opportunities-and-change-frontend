@@ -441,10 +441,58 @@ const postJson = async (url: string, body?: unknown) => {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    const data = await response.json().catch(() => null);
+    throw Object.assign(new Error(`Request failed: ${response.status}`), {
+      status: response.status,
+      data,
+    });
   }
 
   return response.json().catch(() => null);
+};
+
+const getResponseRecord = (data: unknown) => {
+  const record = asRecord(data);
+  if (!record) return null;
+
+  return (
+    asRecord(record.comment) ||
+    asRecord(record.data) ||
+    asRecord(record.result) ||
+    record
+  );
+};
+
+const isValidationError = (error: unknown) => {
+  const status = (error as { status?: number } | null)?.status;
+  return status === 400 || status === 422;
+};
+
+const createEducationComment = async (
+  url: string,
+  text: string,
+  normalize: (raw: RawRecord, index: number) => EducationArticleComment,
+) => {
+  const payloads = [
+    { text },
+    { content: text },
+    { comment: text },
+    { body: text },
+  ];
+  let lastError: unknown = null;
+
+  for (const payload of payloads) {
+    try {
+      const data = await postJson(url, payload);
+      const record = getResponseRecord(data);
+      return record ? normalize(record, 0) : null;
+    } catch (error) {
+      lastError = error;
+      if (!isValidationError(error)) throw error;
+    }
+  }
+
+  throw lastError;
 };
 
 const readErrorMessage = async (response: Response) => {
@@ -622,9 +670,11 @@ export async function getEducationArticleComments(slug: string, signal?: AbortSi
 }
 
 export async function createEducationArticleComment(slug: string, text: string) {
-  const data = await postJson(endpoints.educationArticleComments(slug), { text });
-  const record = asRecord(data);
-  return record ? normalizeArticleComment(record, 0) : null;
+  return createEducationComment(
+    endpoints.educationArticleComments(slug),
+    text,
+    normalizeArticleComment,
+  );
 }
 
 export async function createEducationArticle(
@@ -806,7 +856,9 @@ export async function getEducationVideoComments(slug: string, signal?: AbortSign
 }
 
 export async function createEducationVideoComment(slug: string, text: string) {
-  const data = await postJson(endpoints.educationVideoComments(slug), { text });
-  const record = asRecord(data);
-  return record ? normalizeVideoComment(record, 0) : null;
+  return createEducationComment(
+    endpoints.educationVideoComments(slug),
+    text,
+    normalizeVideoComment,
+  );
 }
