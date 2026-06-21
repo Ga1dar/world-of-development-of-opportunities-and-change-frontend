@@ -571,7 +571,7 @@ export function Edukationmaterial() {
 
   return (
     <section className={`${pageMaxWidth} bg-secondary pb-14 font-montserrat text-[#1C100E] min-[744px]:pb-16 min-[1023px]:pt-6 min-[1420px]:pt-20 min-[1900px]:pt-24`}>
-      <div className="mx-auto w-full min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1180px]">
+      <div className="mx-auto w-full min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:mx-0 min-[1900px]:max-w-none">
         <h1 className="text-center text-[20px] font-medium leading-[1.2] min-[744px]:text-[22px] min-[1023px]:text-[30px] min-[1900px]:text-[34px]">
           {labels.articles}
         </h1>
@@ -582,7 +582,7 @@ export function Edukationmaterial() {
           </p>
         ) : null}
 
-        <div className="mt-5 grid gap-4 min-[744px]:mt-7 min-[1023px]:grid-cols-2 min-[1023px]:gap-6 min-[1420px]:mt-8 min-[1900px]:gap-10">
+        <div className="mt-5 grid gap-4 min-[744px]:mt-7 min-[1023px]:grid-cols-2 min-[1023px]:gap-6 min-[1420px]:mt-8 min-[1900px]:grid-cols-[repeat(2,570px)] min-[1900px]:gap-10">
           {visibleArticles.map((article) => (
             <ArticleCard key={article.id} article={article} language={language} />
           ))}
@@ -601,7 +601,7 @@ export function Edukationmaterial() {
           {labels.videos}
         </h2>
 
-        <div className="mt-4 grid gap-4 min-[744px]:mt-5 min-[1023px]:grid-cols-3 min-[1023px]:gap-6 min-[1420px]:mt-6 min-[1900px]:gap-10">
+        <div className="mt-4 grid gap-4 min-[744px]:mt-5 min-[1023px]:grid-cols-3 min-[1023px]:gap-6 min-[1420px]:mt-6 min-[1900px]:grid-cols-[repeat(3,367px)] min-[1900px]:gap-10">
           {visibleVideos.map((video) => (
             <VideoCard key={video.id} video={video} labels={labels} language={language} />
           ))}
