@@ -173,8 +173,8 @@ const readAllFavoriteContentItems = (): FavoriteContentItem[] => {
 export const readFavoriteContentItems = (): FavoriteContentItem[] => {
   const currentUserKeys = getCurrentUserKeys();
 
-  return readAllFavoriteContentItems().filter((item) =>
-    belongsToCurrentUser(item, currentUserKeys),
+  return readAllFavoriteContentItems().filter(
+    (item) => item.savedByFavorite === true && belongsToCurrentUser(item, currentUserKeys),
   );
 };
 
@@ -202,7 +202,7 @@ export const syncFavoriteContentItem = (
   const nextItem = {
     ...item,
     key,
-    savedByFavorite: isFavorite || item.savedByFavorite,
+    savedByFavorite: isFavorite,
     userKeys: uniqueStrings([...(item.userKeys ?? []), ...currentUserKeys]),
   };
   const identity = itemIdentity(nextItem);
