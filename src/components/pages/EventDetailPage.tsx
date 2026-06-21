@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Bookmark, CircleUserRound, Heart, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getAccessToken, getRefreshToken } from "../../api/auth";
 import {
   createEventComment,
   getEvent,
@@ -27,6 +28,8 @@ import { WorkshopEventContent } from "./WorkshopEventContent";
 
 const eventBodyClass =
   "font-montserrat text-[16px] font-normal leading-[1.4] tracking-normal text-[#2D302D] min-[744px]:text-[18px]";
+
+const hasAuthSession = () => Boolean(getAccessToken() || getRefreshToken());
 
 const educatorsCopy = {
   ua: {
@@ -202,6 +205,7 @@ export function EventDetailPage() {
   const [commentText, setCommentText] = useState("");
   const [commentError, setCommentError] = useState("");
   const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(hasAuthSession());
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
   const [isEventLiked, setIsEventLiked] = useState(false);
   const [likedCommentIds, setLikedCommentIds] = useState<Set<number>>(new Set());
@@ -248,6 +252,18 @@ export function EventDetailPage() {
     };
   }, [eventId]);
 
+  useEffect(() => {
+    const updateAuth = () => setIsAuthenticated(hasAuthSession());
+
+    window.addEventListener("auth-changed", updateAuth);
+    window.addEventListener("storage", updateAuth);
+
+    return () => {
+      window.removeEventListener("auth-changed", updateAuth);
+      window.removeEventListener("storage", updateAuth);
+    };
+  }, []);
+
   const handleCommentSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {
     submitEvent.preventDefault();
     setCommentError("");
@@ -272,7 +288,13 @@ export function EventDetailPage() {
           : current,
       );
     } catch {
-      setCommentError(t("eventComments.fallbackNotice"));
+      const hasSession = hasAuthSession();
+      setIsAuthenticated(hasSession);
+      setCommentError(
+        hasSession
+          ? t("eventComments.fallbackNotice")
+          : t("eventComments.authNotice"),
+      );
     } finally {
       setIsCommentSubmitting(false);
     }
@@ -502,6 +524,7 @@ export function EventDetailPage() {
                 id="event-comment-text"
                 value={commentText}
                 onChange={(event) => setCommentText(event.target.value)}
+                disabled={!isAuthenticated}
                 maxLength={1000}
                 required
                 placeholder={t("eventComments.placeholderShort")}
@@ -510,14 +533,20 @@ export function EventDetailPage() {
                  min-[744px]:text-[14px]
                  ${variant === "supervision" ? "min-[1900px]:h-[46px]" : ""}`}
               />
-              <p className="mt-1.5 font-montserrat text-[10px] leading-[1.3] text-[#2D302D]/70 min-[744px]:text-[12px]">
-                {t("eventComments.authNotice")}
-              </p>
+              {!isAuthenticated && (
+                <p className="mt-1.5 font-montserrat text-[10px] leading-[1.3] text-[#2D302D]/70 min-[744px]:text-[12px]">
+                  {t("eventComments.authNotice")}
+                </p>
+              )}
             </div>
 
             <Button
               type="submit"
-              disabled={isCommentSubmitting}
+              disabled={
+                !isAuthenticated ||
+                isCommentSubmitting ||
+                commentText.trim().length < 2
+              }
               className={`ml-auto w-full
               ${variant === "supervision" ? "h-[57px] min-[744px]:h-9 min-[1900px]:h-[57px]" : "h-8 min-[744px]:h-9"}
               ${variant === "supervision" ? "max-w-none min-[744px]:max-w-42 min-[1900px]:max-w-[277px]" : "max-w-none min-[744px]:max-w-42"}
@@ -586,7 +615,7 @@ export function EventDetailPage() {
               </p>
             </article>
           ))}
-          {!comments.length && (
+          {!comments.length && !isAuthenticated && (
             <p className="font-montserrat text-[12px] text-[#2D302D]/70 min-[744px]:text-[14px]">
               {t("eventComments.authNotice")}
             </p>
@@ -672,6 +701,7 @@ export function EventDetailPage() {
                   id="educators-comment-text"
                   value={commentText}
                   onChange={(event) => setCommentText(event.target.value)}
+                  disabled={!isAuthenticated}
                   maxLength={1000}
                   required
                   placeholder={t("eventComments.placeholderShort")}
@@ -679,14 +709,20 @@ export function EventDetailPage() {
                   px-4 font-montserrat text-[14px] text-[#2D302D] focus-visible:ring-[#40213F]
                   min-[744px]:h-[50px]"
                 />
-                <p className="mt-2 font-montserrat text-[12px] leading-[1.35] text-[#2D302D]/70">
-                  {t("eventComments.authNotice")}
-                </p>
+                {!isAuthenticated && (
+                  <p className="mt-2 font-montserrat text-[12px] leading-[1.35] text-[#2D302D]/70">
+                    {t("eventComments.authNotice")}
+                  </p>
+                )}
               </div>
 
               <Button
                 type="submit"
-                disabled={isCommentSubmitting}
+                disabled={
+                  !isAuthenticated ||
+                  isCommentSubmitting ||
+                  commentText.trim().length < 2
+                }
                 className="ml-auto h-[57px] w-full max-w-none rounded-[30px] bg-white
                 px-6 font-montserrat text-[16px] font-medium text-[#1C100E]
                 hover:bg-white/85 disabled:opacity-70 min-[744px]:h-[57px] min-[744px]:max-w-[320px]
@@ -752,7 +788,7 @@ export function EventDetailPage() {
                 </p>
               </article>
             ))}
-            {!comments.length && (
+            {!comments.length && !isAuthenticated && (
               <p className="font-montserrat text-[12px] text-[#2D302D]/70 min-[744px]:text-[14px]">
                 {t("eventComments.authNotice")}
               </p>

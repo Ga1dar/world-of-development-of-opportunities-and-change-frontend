@@ -1,6 +1,6 @@
 import { API_URL } from "./client";
 import { endpoints } from "./endpoints";
-import { apiFetch, getAccessToken, getStoredCurrentUser } from "./auth";
+import { apiFetch, getAccessToken, getRefreshToken, getStoredCurrentUser } from "./auth";
 
 export type EventCategory = {
   id: number;
@@ -398,6 +398,57 @@ const resolveImageUrl = (value: unknown, fallback: string) => {
   return apiOrigin ? new URL(image, `${apiOrigin}/`).toString() : image;
 };
 
+const getProfileRecord = (record: RawRecord | null) =>
+  asRecord(record?.profile) ||
+  asRecord(record?.user_profile) ||
+  asRecord(record?.userProfile) ||
+  asRecord(record?.specialist_profile) ||
+  asRecord(record?.specialistProfile);
+
+const readPersonName = (...records: Array<RawRecord | null>) => {
+  for (const record of records) {
+    if (!record) continue;
+
+    const fullName = asString(
+      record.full_name ??
+        record.fullName ??
+        record.name ??
+        record.display_name ??
+        record.displayName,
+    );
+    if (fullName) return fullName;
+
+    const firstName = asString(record.first_name ?? record.firstName);
+    const lastName = asString(record.last_name ?? record.lastName);
+    const combinedName = [firstName, lastName].filter(Boolean).join(" ");
+    if (combinedName) return combinedName;
+
+    const email = asString(record.email);
+    if (email) return email;
+  }
+
+  return "";
+};
+
+const readPersonAvatar = (...records: Array<RawRecord | null>) => {
+  for (const record of records) {
+    if (!record) continue;
+
+    const avatar = resolveImageUrl(
+      record.avatar ??
+        record.photo ??
+        record.image ??
+        record.picture ??
+        record.user_avatar ??
+        record.userAvatar,
+      "",
+    );
+    if (avatar) return avatar;
+  }
+
+  return "";
+};
+
 const resolveImageList = (value: unknown, fallback: string[]) => {
   if (!Array.isArray(value)) return fallback;
 
@@ -513,7 +564,7 @@ const syncStoredEventLike = (
 export const getLocallyLikedEventIds = () => readStoredLikedEventIds();
 
 const applyStoredEventReaction = (event: EventItem): EventItem => {
-  if (hasAccessToken()) return event;
+  if (hasAuthSession()) return event;
 
   const storedReaction = readStoredEventReaction(event.id);
   const localLiked = readStoredLikedEventIds().has(event.id);
@@ -633,13 +684,32 @@ const hasCurrentUserLike = (record: RawRecord, eventId: number) => {
   const likes = record.likes ?? record.event_likes ?? record.eventLikes;
   if (Array.isArray(likes) && likes.some(isSameCurrentUser)) return true;
 
-  if (getAccessToken()) return false;
+  if (hasAuthSession()) return false;
 
   return readStoredLikedEventIds().has(eventId);
 };
 
 const normalizeComment = (raw: unknown, index: number): EventComment => {
   const record = asRecord(raw) || {};
+  const userRecord = asRecord(record.user) || asRecord(record.author);
+  const userProfile = getProfileRecord(userRecord);
+  const rawUserProfile =
+    asRecord(record.user_profile) ||
+    asRecord(record.userProfile) ||
+    asRecord(record.profile) ||
+    asRecord(record.specialist_profile) ||
+    asRecord(record.specialistProfile);
+  const resolvedAuthor =
+    asString(record.user_full_name ?? record.userFullName) ||
+    asString(record.author_name ?? record.authorName) ||
+    readPersonName(rawUserProfile, userProfile, userRecord);
+  const resolvedAvatar =
+    resolveImageUrl(record.user_avatar ?? record.userAvatar ?? record.avatar, "") ||
+    readPersonAvatar(rawUserProfile, userProfile, userRecord);
+
+  if (resolvedAuthor) record.user_full_name = resolvedAuthor;
+  if (resolvedAvatar) record.user_avatar = resolvedAvatar;
+
   const isLiked =
     record.is_liked ??
     record.isLiked ??
@@ -807,8 +877,19 @@ const authHeaders = () => {
   return headers;
 };
 
-const hasAccessToken = () =>
-  typeof window !== "undefined" && Boolean(localStorage.getItem("accessToken"));
+const hasAuthSession = () => Boolean(getAccessToken() || getRefreshToken());
+
+const getResponseRecord = (data: unknown) => {
+  const record = asRecord(data);
+  if (!record) return null;
+
+  return (
+    asRecord(record.comment) ||
+    asRecord(record.data) ||
+    asRecord(record.result) ||
+    record
+  );
+};
 
 const parseToggleResult = (
   data: unknown,
@@ -1033,7 +1114,7 @@ export async function getEvents(): Promise<EventItem[]> {
 
     const { response, data } = await requestJson(
       url.toString(),
-      hasAccessToken() ? { headers: authHeaders() } : undefined,
+      hasAuthSession() ? { headers: authHeaders() } : undefined,
     );
 
     if (!response.ok) {
@@ -1073,7 +1154,7 @@ export async function getEventsByCategory(categorySlug: string) {
 
     const { response, data } = await requestJson(
       url.toString(),
-      hasAccessToken() ? { headers: authHeaders() } : undefined,
+      hasAuthSession() ? { headers: authHeaders() } : undefined,
     );
 
     if (!response.ok) {
@@ -1099,7 +1180,7 @@ export async function getEvent(id: string | number): Promise<EventItem | null> {
   try {
     const { response, data } = await requestJson(
       endpoints.eventDetail(id),
-      hasAccessToken() ? { headers: authHeaders() } : undefined,
+      hasAuthSession() ? { headers: authHeaders() } : undefined,
     );
 
     if (!response.ok) {
@@ -1137,7 +1218,7 @@ export async function createEventComment(
   eventId: string | number,
   payload: CreateCommentPayload,
 ) {
-  if (!hasAccessToken()) {
+  if (!hasAuthSession()) {
     throw new Error("Authentication required");
   }
 
@@ -1147,17 +1228,37 @@ export async function createEventComment(
     throw new Error("Invalid comment");
   }
 
-  const { response, data } = await requestJson(endpoints.eventComments(eventId), {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ text }),
-  });
+  const payloads = [
+    { text },
+    { content: text },
+    { comment: text },
+    { body: text },
+  ];
+  let lastError: unknown = null;
 
-  if (!response.ok) {
-    throw new Error("Failed to create comment");
+  for (const body of payloads) {
+    const { response, data } = await requestJson(endpoints.eventComments(eventId), {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+      const record = getResponseRecord(data);
+      return normalizeComment(record ?? data, 0);
+    }
+
+    lastError = Object.assign(new Error("Failed to create comment"), {
+      status: response.status,
+      data,
+    });
+
+    if (response.status !== 400 && response.status !== 422) {
+      break;
+    }
   }
 
-  return normalizeComment(data, 0);
+  throw lastError;
 }
 
 export async function toggleEventLike(
@@ -1171,7 +1272,7 @@ export async function toggleEventLike(
     return { liked: fallbackLiked };
   }
 
-  if (!hasAccessToken()) {
+  if (!hasAuthSession()) {
     throw new Error("Authentication required");
   }
 
@@ -1205,7 +1306,7 @@ export async function toggleEventLike(
 }
 
 export async function getFavoriteEvents(): Promise<EventItem[]> {
-  if (!hasAccessToken()) return [];
+  if (!hasAuthSession()) return [];
 
   const events = await getEvents();
   const localLikedIds = readStoredLikedEventIds();
@@ -1217,7 +1318,7 @@ export async function toggleCommentLike(
   eventId: string | number,
   commentId: string | number,
 ) {
-  if (!hasAccessToken()) {
+  if (!hasAuthSession()) {
     throw new Error("Authentication required");
   }
 
