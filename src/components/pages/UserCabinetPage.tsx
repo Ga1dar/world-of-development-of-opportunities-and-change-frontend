@@ -32,6 +32,8 @@ import { CancelConsultationDialog } from "./CancelConsultationDialog";
 import { DocumentPreviewDialog } from "./DocumentPreviewDialog";
 
 type CabinetTab = "appointments" | "favorites" | "about" | "calendar" | "history";
+const CONSULTATION_REVIEW_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSfhxgIklNqpJJCuE_Nhm_PXsdyazL73ur0S8wiejVLKBjLLzA/viewform";
 const cabinetTabs = new Set<CabinetTab>([
   "appointments",
   "favorites",
@@ -472,10 +474,12 @@ function AppointmentCard({
   appointment,
   labels,
   onCancelOrReschedule,
+  onRepeat,
 }: {
   appointment: CabinetAppointment;
   labels: typeof copy.ua;
   onCancelOrReschedule: (appointment: CabinetAppointment) => void;
+  onRepeat: (appointment: CabinetAppointment) => void;
 }) {
   const isCompleted = appointment.status === "completed";
 
@@ -508,12 +512,22 @@ function AppointmentCard({
 
       {isCompleted ? (
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <button type="button" className={`${whiteButton} h-10 text-[13px]`}>
+          <button
+            type="button"
+            onClick={() => onRepeat(appointment)}
+            disabled={!appointment.specialistId}
+            className={`${whiteButton} h-10 text-[13px] disabled:cursor-not-allowed disabled:opacity-60`}
+          >
             {labels.repeat}
           </button>
-          <button type="button" className="h-10 rounded-[30px] bg-[#EADCE8] font-montserrat text-[13px] font-medium text-[#1C100E]">
+          <a
+            href={CONSULTATION_REVIEW_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-10 items-center justify-center rounded-[30px] bg-[#EADCE8] font-montserrat text-[13px] font-medium text-[#1C100E]"
+          >
             {labels.review}
-          </button>
+          </a>
         </div>
       ) : (
         <button
@@ -533,11 +547,13 @@ function AppointmentsView({
   completedAppointments,
   labels,
   onCancelOrReschedule,
+  onRepeat,
 }: {
   appointments: CabinetAppointment[];
   completedAppointments: CabinetAppointment[];
   labels: typeof copy.ua;
   onCancelOrReschedule: (appointment: CabinetAppointment) => void;
+  onRepeat: (appointment: CabinetAppointment) => void;
 }) {
   const items = [...appointments, ...completedAppointments];
 
@@ -564,6 +580,7 @@ function AppointmentsView({
               appointment={appointment}
               labels={labels}
               onCancelOrReschedule={onCancelOrReschedule}
+              onRepeat={onRepeat}
             />
           ))}
         </div>
@@ -1624,6 +1641,12 @@ export function UserCabinetPage() {
     setRescheduleAppointment(null);
   };
 
+  const handleRepeatAppointment = (appointment: CabinetAppointment) => {
+    if (!appointment.specialistId) return;
+
+    navigate(`/specialists/${appointment.specialistId}?consultation=1`);
+  };
+
   return (
     <section className={`${pageMaxWidth} pt-4 pb-16 min-[744px]:pt-0 min-[1023px]:pt-8 min-[1420px]:pt-20 min-[1900px]:pt-24`}>
       {isSpecialistAbout ? (
@@ -1670,6 +1693,7 @@ export function UserCabinetPage() {
             completedAppointments={completedAppointments}
             labels={labels}
             onCancelOrReschedule={setSelectedAppointment}
+            onRepeat={handleRepeatAppointment}
           />
         )
       ) : activeTab === "calendar" ? (

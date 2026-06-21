@@ -2,7 +2,7 @@ import { Bookmark, CircleUserRound, Heart, MessageSquare } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
-import { getAccessToken } from "../../api/auth";
+import { getAccessToken, getRefreshToken } from "../../api/auth";
 import {
   createEducationArticleComment,
   getEducationArticle,
@@ -28,6 +28,7 @@ const pageMaxWidth =
   "mx-auto w-full max-w-[390px] px-3 min-[744px]:max-w-[744px] min-[744px]:px-8 min-[1023px]:max-w-[1024px] min-[1023px]:px-16 min-[1420px]:max-w-[1440px] min-[1420px]:px-16 min-[1900px]:max-w-[1980px] min-[1900px]:px-16";
 
 const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en");
+const hasAuthSession = () => Boolean(getAccessToken() || getRefreshToken());
 
 const copy = {
   ua: {
@@ -128,6 +129,8 @@ function CommentForm({
   labels,
   value,
   isAuthenticated,
+  error,
+  isSubmitting,
   onChange,
   onSubmit,
 }: {
@@ -135,6 +138,8 @@ function CommentForm({
   labels: typeof copy.ua;
   value: string;
   isAuthenticated: boolean;
+  error: string;
+  isSubmitting: boolean;
   onChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
@@ -176,10 +181,13 @@ function CommentForm({
           placeholder={labels.placeholder}
           className="h-11 w-full rounded-[30px] border border-[#40213F] bg-transparent px-4 text-[14px] outline-none placeholder:text-[#1C100E]/50 disabled:opacity-70"
         />
-        <p className="mt-3 text-[13px] text-[#1C100E]/65">{labels.authHint}</p>
+        {!isAuthenticated && (
+          <p className="mt-3 text-[13px] text-[#1C100E]/65">{labels.authHint}</p>
+        )}
+        {error && <p className="mt-3 text-[13px] text-[#A0186A]">{error}</p>}
         <button
           type="submit"
-          disabled={!isAuthenticated || value.trim().length === 0}
+          disabled={!isAuthenticated || isSubmitting || value.trim().length === 0}
           className="mt-5 flex h-12 w-full max-w-none items-center justify-center rounded-[30px] bg-white text-[15px] font-medium disabled:opacity-60 min-[744px]:ml-auto min-[744px]:max-w-[260px]"
         >
           {labels.submit}
@@ -218,7 +226,9 @@ export function ArticleDetailPage() {
   );
   const [comments, setComments] = useState<EducationArticleComment[]>([]);
   const [commentText, setCommentText] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getAccessToken()));
+  const [commentError, setCommentError] = useState("");
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(hasAuthSession());
   const [isContentsOpen, setIsContentsOpen] = useState(false);
   const articleGridRef = useRef<HTMLDivElement>(null);
   const contentsColumnRef = useRef<HTMLElement>(null);
@@ -272,7 +282,7 @@ export function ArticleDetailPage() {
   }, [article.id, article.slug]);
 
   useEffect(() => {
-    const updateAuth = () => setIsAuthenticated(Boolean(getAccessToken()));
+    const updateAuth = () => setIsAuthenticated(hasAuthSession());
     window.addEventListener("auth-changed", updateAuth);
     window.addEventListener("storage", updateAuth);
 
@@ -522,6 +532,9 @@ export function ArticleDetailPage() {
     const text = commentText.trim();
     if (!text || article.id.startsWith("fallback")) return;
 
+    setCommentError("");
+    setIsCommentSubmitting(true);
+
     try {
       const created = await createEducationArticleComment(article.slug, text);
       if (created) {
@@ -530,7 +543,11 @@ export function ArticleDetailPage() {
         setCommentText("");
       }
     } catch {
-      // The visible hint already explains that comments require an account.
+      const hasSession = hasAuthSession();
+      setIsAuthenticated(hasSession);
+      setCommentError(hasSession ? "Could not add the comment. Try again." : labels.authHint);
+    } finally {
+      setIsCommentSubmitting(false);
     }
   };
 
@@ -614,6 +631,8 @@ export function ArticleDetailPage() {
             labels={labels}
             value={commentText}
             isAuthenticated={isAuthenticated}
+            error={commentError}
+            isSubmitting={isCommentSubmitting}
             onChange={setCommentText}
             onSubmit={handleCommentSubmit}
           />
