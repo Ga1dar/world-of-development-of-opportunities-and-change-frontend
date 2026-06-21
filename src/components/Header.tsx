@@ -48,8 +48,8 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       className={`relative z-80 flex h-21.25 w-full items-end justify-end gap-7
         bg-[#4029401A] px-0 sm:mb-20 sm:h-23.25 sm:gap-5
         min-[1420px]:mt-0! min-[1420px]:mb-0! min-[1420px]:h-36.75!
-         min-[1420px]:items-start min-[1420px]:gap-6 min-[1420px]:bg-secondary
-          min-[1420px]:pl-20 min-[1420px]:pr-18.75 min-[1420px]:pt-8.75 min-[1900px]:h-38! min-[1900px]:pt-10 min-[1900px]:pr-15
+          min-[1420px]:items-start min-[1420px]:gap-6 min-[1420px]:bg-secondary
+          min-[1420px]:pl-20 min-[1420px]:pr-18.75 min-[1420px]:pt-8.75 min-[1900px]:h-38! min-[1900px]:pt-10 min-[1900px]:pr-[45px]
           ${isOpen ? "mb-14" : "mb-14" }`}
       >
       <div
