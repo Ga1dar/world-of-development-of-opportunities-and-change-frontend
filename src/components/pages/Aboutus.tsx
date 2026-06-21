@@ -30,7 +30,7 @@ export function Aboutus() {
     <>
       <section className="about-shell mx-auto flex w-full 
       max-w-7xl flex-col px-4 sm:px-10 min-[1023px]:px-16
-      min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1900px]:max-w-[1980px] min-[1900px]:px-20 min-[1900px]:pl-[83px]">
+      min-[1420px]:max-w-[1440px] min-[1420px]:px-20 min-[1420px]:pl-[90px] min-[1420px]:pr-[70px] min-[1900px]:max-w-[1980px] min-[1900px]:px-20 min-[1900px]:pl-[83px]">
         <article className="about-mobile">
           <h1 className="mb-5 font-montserrat text-[24px] font-medium leading-tight text-[#1C100E]">
             {t("homeTopTitle")}

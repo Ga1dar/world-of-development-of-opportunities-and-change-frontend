@@ -73,7 +73,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       <nav
         className="relative z-100 hidden flex-1 items-center 
         justify-end gap-2 min-[1420px]:mt-5.75
-        min-[1420px]:flex min-[1420px]:pl-0 min-[1900px]:pl-37.5 min-[1900px]:justify-center"
+        min-[1420px]:flex min-[1420px]:pl-0 min-[1900px]:justify-end"
       >
         <NavLink to="/about" onClick={closeMenu} className={navLinkClass}>
           {t("aboutUs")}
