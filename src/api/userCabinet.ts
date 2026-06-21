@@ -59,6 +59,7 @@ export type UserProfileUpdateInput = {
   birthDate: string;
   gender?: string;
   education?: string;
+  educationOther?: string;
   hasChildren?: string;
   about: string;
 };
@@ -157,17 +158,83 @@ const normalizeBooleanChoiceForSubmit = (value?: string) => {
   return cleanValue;
 };
 
+const normalizeChoiceKey = (value?: string) =>
+  (value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+const normalizeEducationForSubmit = (value?: string) => {
+  const cleanValue = normalizeChoiceKey(value);
+  if (!cleanValue) return "";
+
+  if (
+    [
+      "teacher",
+      "pedagogue",
+      "педагог",
+      "педагог/педагогиня",
+      "педагогиня",
+    ].includes(cleanValue)
+  ) {
+    return "teacher";
+  }
+
+  if (
+    [
+      "psychologist",
+      "psychology",
+      "психолог",
+      "психолог/психологиня",
+      "психологиня",
+    ].includes(cleanValue)
+  ) {
+    return "psychologist";
+  }
+
+  if (
+    [
+      "trauma_pedagogy",
+      "trauma pedagogy",
+      "trauma pedagogue",
+      "травмопедагог",
+      "травмопедагог/травмопедагогиня",
+      "травмопедагогиня",
+    ].includes(cleanValue)
+  ) {
+    return "trauma_pedagogy";
+  }
+
+  if (
+    [
+      "other",
+      "other education",
+      "інша освіта",
+      "інша освіта (вказати)",
+      "інше",
+    ].includes(cleanValue)
+  ) {
+    return "other";
+  }
+
+  return "other";
+};
+
 const appendOptionalUserProfileFields = (
   body: FormData,
-  input: Pick<UserProfileUpdateInput, "gender" | "education" | "hasChildren">,
+  input: Pick<UserProfileUpdateInput, "gender" | "education" | "educationOther" | "hasChildren">,
 ) => {
   if (input.gender) {
     body.append("gender", input.gender);
   }
 
   if (input.education) {
-    body.append("education", input.education);
-    body.append("education_other", input.education);
+    const education = normalizeEducationForSubmit(input.education);
+    body.append("education", education);
+
+    if (education === "other") {
+      const educationOther = (input.educationOther || input.education).trim();
+      if (educationOther) {
+        body.append("education_other", educationOther);
+      }
+    }
   }
 
   const hasChildren = normalizeBooleanChoiceForSubmit(input.hasChildren);
