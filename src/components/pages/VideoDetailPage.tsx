@@ -150,7 +150,15 @@ function VideoCommentForm({
           {comments.map((comment) => (
             <article key={comment.id} className="rounded-[16px] bg-[#F8F8F8] px-4 py-3">
               <div className="flex items-center gap-3">
-                <CircleUserRound className="size-6 stroke-[2]" aria-hidden="true" />
+                {comment.userAvatar ? (
+                  <img
+                    src={comment.userAvatar}
+                    alt=""
+                    className="size-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <CircleUserRound className="size-6 stroke-[2]" aria-hidden="true" />
+                )}
                 <p className="text-[14px] font-medium">{comment.author}</p>
               </div>
               <p className="mt-2 text-[14px] leading-[1.35] text-[#1C100E]/75">{comment.text}</p>

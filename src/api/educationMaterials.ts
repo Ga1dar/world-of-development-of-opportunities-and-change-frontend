@@ -31,6 +31,7 @@ export type EducationArticleSection = {
 export type EducationArticleComment = {
   id: string;
   author: string;
+  userAvatar?: string;
   text: string;
   createdAt: string;
   likesCount: number;
@@ -299,6 +300,57 @@ const resolveMediaUrl = (value: unknown, fallback = "") => {
   }
 
   return path.startsWith("/") ? path : apiOrigin ? new URL(path, `${apiOrigin}/`).toString() : path;
+};
+
+const getProfileRecord = (record: RawRecord | null) =>
+  asRecord(record?.profile) ||
+  asRecord(record?.user_profile) ||
+  asRecord(record?.userProfile) ||
+  asRecord(record?.specialist_profile) ||
+  asRecord(record?.specialistProfile);
+
+const readPersonName = (...records: Array<RawRecord | null>) => {
+  for (const record of records) {
+    if (!record) continue;
+
+    const fullName = asString(
+      record.full_name ??
+        record.fullName ??
+        record.name ??
+        record.display_name ??
+        record.displayName,
+    );
+    if (fullName) return fullName;
+
+    const firstName = asString(record.first_name ?? record.firstName);
+    const lastName = asString(record.last_name ?? record.lastName);
+    const combinedName = [firstName, lastName].filter(Boolean).join(" ");
+    if (combinedName) return combinedName;
+
+    const email = asString(record.email);
+    if (email) return email;
+  }
+
+  return "";
+};
+
+const readPersonAvatar = (...records: Array<RawRecord | null>) => {
+  for (const record of records) {
+    if (!record) continue;
+
+    const avatar = resolveMediaUrl(
+      record.avatar ??
+        record.photo ??
+        record.image ??
+        record.picture ??
+        record.user_avatar ??
+        record.userAvatar,
+      "",
+    );
+    if (avatar) return avatar;
+  }
+
+  return "";
 };
 
 const readLocalizedString = (record: RawRecord, baseKey: string, language: "ua" | "en") =>
@@ -641,14 +693,34 @@ export async function toggleEducationArticleFavorite(
 
 const normalizeArticleComment = (raw: RawRecord, index: number): EducationArticleComment => {
   const authorRecord = asRecord(raw.author) ?? asRecord(raw.user);
+  const userProfile = getProfileRecord(authorRecord);
+  const rawUserProfile =
+    asRecord(raw.user_profile) ||
+    asRecord(raw.userProfile) ||
+    asRecord(raw.profile) ||
+    asRecord(raw.specialist_profile) ||
+    asRecord(raw.specialistProfile);
   const authorName =
-    asString(raw.author_name ?? raw.authorName) ||
-    asString(authorRecord?.full_name ?? authorRecord?.name ?? authorRecord?.email) ||
+    asString(
+      raw.author_name ??
+        raw.authorName ??
+        raw.user_full_name ??
+        raw.userFullName ??
+        raw.user_name ??
+        raw.userName ??
+        raw.author ??
+        raw.user ??
+        raw.name,
+    ) ||
+    readPersonName(rawUserProfile, userProfile, authorRecord) ||
     "Користувач";
 
   return {
     id: asString(raw.id, String(index + 1)),
     author: authorName,
+    userAvatar:
+      resolveMediaUrl(raw.user_avatar ?? raw.userAvatar ?? raw.avatar, "") ||
+      readPersonAvatar(rawUserProfile, userProfile, authorRecord),
     text: asString(raw.text ?? raw.content ?? raw.body),
     createdAt: asString(raw.created_at ?? raw.createdAt),
     likesCount: asNumber(raw.likes_count ?? raw.likesCount),
