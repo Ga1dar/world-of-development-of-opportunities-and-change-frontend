@@ -36,6 +36,9 @@ const copy = {
     cityPlaceholder: "Київ",
     education: "Освіта*",
     educationPlaceholder: "Виберіть варіант...",
+    educationOther: "Вкажіть освіту*",
+    educationOtherPlaceholder: "Ваша освіта",
+    educationOtherError: "Вкажіть вашу освіту.",
     hasChildren: "Виховую дітей*",
     hasChildrenPlaceholder: "Так/Ні",
     about: "Про себе",
@@ -65,6 +68,9 @@ const copy = {
     cityPlaceholder: "Kyiv",
     education: "Education*",
     educationPlaceholder: "Choose an option...",
+    educationOther: "Specify education*",
+    educationOtherPlaceholder: "Your education",
+    educationOtherError: "Specify your education.",
     hasChildren: "Raising children*",
     hasChildrenPlaceholder: "Yes/No",
     about: "About",
@@ -97,16 +103,16 @@ const genderOptions = {
 
 const educationOptions = {
   ua: [
-    { value: "Педагог/Педагогиня", label: "Педагог/Педагогиня" },
-    { value: "Психолог/Психологиня", label: "Психолог/Психологиня" },
-    { value: "Травмопедагог/Травмопедагогиня", label: "Травмопедагог/Травмопедагогиня" },
-    { value: "Інша освіта", label: "Інша освіта (вказати)" },
+    { value: "teacher", label: "Педагог/Педагогиня" },
+    { value: "psychologist", label: "Психолог/Психологиня" },
+    { value: "trauma_pedagogy", label: "Травмопедагог/Травмопедагогиня" },
+    { value: "other", label: "Інша освіта (вказати)" },
   ],
   en: [
-    { value: "Teacher", label: "Teacher" },
-    { value: "Psychologist", label: "Psychologist" },
-    { value: "Trauma pedagogue", label: "Trauma pedagogue" },
-    { value: "Other education", label: "Other education" },
+    { value: "teacher", label: "Teacher" },
+    { value: "psychologist", label: "Psychologist" },
+    { value: "trauma_pedagogy", label: "Trauma pedagogue" },
+    { value: "other", label: "Other education" },
   ],
 } satisfies Record<"ua" | "en", SelectOption[]>;
 
@@ -123,6 +129,32 @@ const childrenOptions = {
 
 const inputClass =
   "h-[34px] w-full rounded-[18px] border border-[#40213F] bg-[#F3F2F3] px-3 font-montserrat text-[12px] text-[#1C100E] outline-none transition placeholder:text-[#1C100E]/45 focus:ring-2 focus:ring-[#B34D8D]/30 min-[744px]:h-[37px]";
+
+const normalizeEducationValue = (value?: string) => {
+  const cleanValue = (value || "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (!cleanValue) return "";
+  if (["teacher", "pedagogue", "педагог", "педагог/педагогиня"].includes(cleanValue)) {
+    return "teacher";
+  }
+  if (["psychologist", "psychology", "психолог", "психолог/психологиня"].includes(cleanValue)) {
+    return "psychologist";
+  }
+  if (
+    [
+      "trauma_pedagogy",
+      "trauma pedagogy",
+      "trauma pedagogue",
+      "травмопедагог",
+      "травмопедагог/травмопедагогиня",
+    ].includes(cleanValue)
+  ) {
+    return "trauma_pedagogy";
+  }
+  if (["other", "other education", "інша освіта", "інша освіта (вказати)"].includes(cleanValue)) {
+    return "other";
+  }
+  return "other";
+};
 
 function TextField({
   label,
@@ -205,13 +237,17 @@ export function UserOnboardingForm({
   const isEnglish = i18n.language.toLowerCase().startsWith("en");
   const localeKey = isEnglish ? "en" : "ua";
   const labels = isEnglish ? copy.en : copy.ua;
+  const initialEducation = normalizeEducationValue(profile.education);
   const [firstName, setFirstName] = useState(profile.firstName || "");
   const [lastName, setLastName] = useState(profile.lastName || "");
   const [phone, setPhone] = useState(profile.phone || "");
   const [city, setCity] = useState(profile.city || "");
   const [birthDate, setBirthDate] = useState(profile.birthDate || "");
   const [gender, setGender] = useState(profile.gender || "");
-  const [education, setEducation] = useState(profile.education || "");
+  const [education, setEducation] = useState(initialEducation);
+  const [educationOther, setEducationOther] = useState(
+    initialEducation === "other" && profile.education ? profile.education : "",
+  );
   const [hasChildren, setHasChildren] = useState(profile.hasChildren || "");
   const [about, setAbout] = useState(profile.about || "");
   const [avatar, setAvatar] = useState<File | null>(null);
@@ -249,6 +285,11 @@ export function UserOnboardingForm({
       return;
     }
 
+    if (education === "other" && !educationOther.trim()) {
+      setError(labels.educationOtherError);
+      return;
+    }
+
     setIsSaving(true);
     setError("");
 
@@ -261,6 +302,7 @@ export function UserOnboardingForm({
         birthDate,
         gender,
         education,
+        educationOther: educationOther.trim(),
         hasChildren,
         about,
         acceptDataProcessingConsent: hasConsent,
@@ -384,9 +426,23 @@ export function UserOnboardingForm({
             options={educationOptions[localeKey]}
             onChange={(value) => {
               setEducation(value);
+              if (value !== "other") {
+                setEducationOther("");
+              }
               clearError();
             }}
           />
+          {education === "other" ? (
+            <TextField
+              label={labels.educationOther}
+              placeholder={labels.educationOtherPlaceholder}
+              value={educationOther}
+              onChange={(value) => {
+                setEducationOther(value);
+                clearError();
+              }}
+            />
+          ) : null}
           <SelectField
             label={labels.hasChildren}
             placeholder={labels.hasChildrenPlaceholder}
