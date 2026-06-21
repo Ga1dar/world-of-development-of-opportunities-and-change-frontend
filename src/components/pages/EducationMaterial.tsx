@@ -428,10 +428,8 @@ function VideoCard({
       };
 
       setCurrentVideo(updatedVideo);
-      syncVideo(updatedVideo);
     } catch {
       setCurrentVideo(currentVideo);
-      syncVideo(currentVideo);
     }
   };
 
