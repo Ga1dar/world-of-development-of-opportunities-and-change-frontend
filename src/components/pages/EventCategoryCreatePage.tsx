@@ -2,14 +2,14 @@ import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
 import { ImageIcon, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createEventCategory } from "../../api/events";
-import { useCanCreateEvents } from "../../hooks/useCanCreateEvents";
+import { useCanManageEventCategories } from "../../hooks/useCanCreateEvents";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 export function EventCategoryCreatePage() {
   const navigate = useNavigate();
-  const canCreateEvents = useCanCreateEvents();
+  const canManageEventCategories = useCanManageEventCategories();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [image, setImage] = useState<File | null>(null);
@@ -77,12 +77,11 @@ export function EventCategoryCreatePage() {
     }
   };
 
-  if (!canCreateEvents) {
+  if (!canManageEventCategories) {
     return (
       <section className="-mt-14 flex min-h-[50vh] items-center justify-center bg-secondary px-5 py-12 font-montserrat text-[#1C100E] sm:-mt-20 min-[1023px]:px-16 min-[1420px]:mt-0!">
         <p className="max-w-[520px] text-center text-[16px] leading-[1.4]">
-          Створювати категорії подій можуть тільки спеціалісти з профілем або
-          адміністратори.
+          Створювати категорії подій можуть тільки адміністратори.
         </p>
       </section>
     );

@@ -40,6 +40,32 @@ const readBoolean = (record: CurrentUserRecord | null, keys: string[]) => {
   return keys.some((key) => record[key] === true);
 };
 
+const readString = (record: CurrentUserRecord | null, keys: string[]) => {
+  if (!record) return "";
+
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+};
+
+const isAdminRecord = (record: CurrentUserRecord | null) => {
+  if (!record) return false;
+
+  const role = readString(record, ["role", "user_role", "userRole"]).toLowerCase();
+
+  return (
+    readBoolean(record, ["is_staff", "isStaff", "staff", "is_superuser"]) ||
+    role.includes("admin") ||
+    role.includes("staff") ||
+    role.includes("moderator")
+  );
+};
+
 const hasSpecialistProfile = (record: CurrentUserRecord | null) => {
   if (!record) return false;
 
@@ -66,10 +92,7 @@ const hasSpecialistProfile = (record: CurrentUserRecord | null) => {
 const canCreateEventsFromRecord = (record: CurrentUserRecord | null) => {
   if (!record) return false;
 
-  return (
-    readBoolean(record, ["is_staff", "isStaff", "staff", "is_superuser"]) ||
-    hasSpecialistProfile(record)
-  );
+  return isAdminRecord(record) || hasSpecialistProfile(record);
 };
 
 const decodeJwtPayload = (token: string) => {
@@ -279,6 +302,9 @@ export const canCreateEventsFromStoredToken = () =>
   canCreateEventsFromRecord(getStoredCurrentUser()) ||
   canCreateEventsFromRecord(decodeJwtPayload(getAccessToken()));
 
+export const canManageEventCategoriesFromStoredToken = () =>
+  isAdminRecord(getStoredCurrentUser()) || isAdminRecord(decodeJwtPayload(getAccessToken()));
+
 export async function canCurrentUserCreateEvents() {
   const accessToken = getAccessToken();
   if (!accessToken && !getRefreshToken()) return false;
@@ -295,5 +321,24 @@ export async function canCurrentUserCreateEvents() {
     return canCreateEventsFromRecord(normalizeCurrentUserResponse(data));
   } catch {
     return canCreateEventsFromStoredToken();
+  }
+}
+
+export async function canCurrentUserManageEventCategories() {
+  const accessToken = getAccessToken();
+  if (!accessToken && !getRefreshToken()) return false;
+
+  try {
+    const response = await apiFetch(endpoints.me);
+
+    if (!response.ok) {
+      return canManageEventCategoriesFromStoredToken();
+    }
+
+    const data = await response.json().catch(() => null);
+    storeCurrentUser(data);
+    return isAdminRecord(normalizeCurrentUserResponse(data));
+  } catch {
+    return canManageEventCategoriesFromStoredToken();
   }
 }

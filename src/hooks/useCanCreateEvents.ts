@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import {
+  canCurrentUserManageEventCategories,
   canCreateEventsFromStoredToken,
   canCurrentUserCreateEvents,
+  canManageEventCategoriesFromStoredToken,
 } from "../api/auth";
 
 export function useCanCreateEvents() {
@@ -32,4 +34,34 @@ export function useCanCreateEvents() {
   }, []);
 
   return canCreateEvents;
+}
+
+export function useCanManageEventCategories() {
+  const [canManageEventCategories, setCanManageEventCategories] = useState(
+    canManageEventCategoriesFromStoredToken,
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const updateCanManageEventCategories = () => {
+      setCanManageEventCategories(canManageEventCategoriesFromStoredToken());
+
+      canCurrentUserManageEventCategories().then((value) => {
+        if (isMounted) setCanManageEventCategories(value);
+      });
+    };
+
+    updateCanManageEventCategories();
+    window.addEventListener("auth-changed", updateCanManageEventCategories);
+    window.addEventListener("storage", updateCanManageEventCategories);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("auth-changed", updateCanManageEventCategories);
+      window.removeEventListener("storage", updateCanManageEventCategories);
+    };
+  }, []);
+
+  return canManageEventCategories;
 }
