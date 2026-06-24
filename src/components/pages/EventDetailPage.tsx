@@ -187,7 +187,8 @@ function DecorativeSun({ className = "" }: { className?: string }) {
       className={`pointer-events-none h-29.5 w-29.5
       object-contain opacity-90 min-[744px]:h-42
       min-[744px]:w-42 min-[1420px]:h-52.5
-      min-[1420px]:w-52.5 ${className}`}
+      min-[1420px]:w-52.5 min-[1900px]:h-[410px]
+      min-[1900px]:w-[410px] ${className}`}
     />
   );
 }
@@ -498,20 +499,19 @@ export function EventDetailPage() {
         className={`absolute right-0 top-16 hidden min-[744px]:block
         ${variant === "supervision"
           ? "min-[744px]:right-10 min-[744px]:top-3 min-[1023px]:right-8 min-[1023px]:top-0 min-[1420px]:right-0 min-[1420px]:top-0 min-[1900px]:right-[calc(765px-50vw)] min-[1900px]:top-3"
-          : "min-[744px]:right-8 min-[1023px]:right-16 min-[1420px]:right-24"}`}
+          : "min-[744px]:right-8 min-[1023px]:right-16 min-[1420px]:right-24 min-[1900px]:top-0"}`}
       >
         <DecorativeSun
           className={
             variant === "supervision"
-              ? "min-[744px]:!h-[319px] min-[744px]:!w-[319px] min-[1023px]:!h-[341px] min-[1023px]:!w-[341px] min-[1420px]:!h-[409px] min-[1420px]:!w-[409px]"
+              ? "min-[744px]:!h-[319px] min-[744px]:!w-[319px] min-[1023px]:!h-[341px] min-[1023px]:!w-[341px] min-[1420px]:!h-[409px] min-[1420px]:!w-[409px] min-[1900px]:!h-[410px] min-[1900px]:!w-[410px]"
               : ""
           }
         />
       </div>
 
       <div
-        className={`relative z-10 max-w-155 min-[1420px]:max-w-190
-        ${variant === "supervision" ? "min-[1900px]:max-w-[894px]" : ""}`}
+        className="relative z-10 max-w-155 min-[1420px]:max-w-190 min-[1900px]:max-w-[1203px]"
       >
         <h2 className="font-montserrat text-[18px] font-medium leading-[1.4] text-[#1C100E] min-[744px]:text-[20px]">
           {t("eventComments.title")} ( {commentsCount} )
@@ -535,11 +535,10 @@ export function EventDetailPage() {
                 disabled={!isAuthenticated}
                 maxLength={1000}
                 required
-                placeholder={t("eventComments.placeholderShort")}
-                className={`h-8 rounded-[30px] border-[#40213F] bg-transparent
+                 placeholder={t("eventComments.placeholderShort")}
+                 className={`h-8 rounded-[30px] border-[#40213F] bg-transparent
                  px-3 font-montserrat text-[12px] text-[#2D302D] focus-visible:ring-[#40213F]
-                 min-[744px]:text-[14px]
-                 ${variant === "supervision" ? "min-[1900px]:h-[46px]" : ""}`}
+                 min-[744px]:text-[14px] min-[1900px]:h-[46px]`}
               />
               {!isAuthenticated && (
                 <p className="mt-1.5 font-montserrat text-[10px] leading-[1.3] text-[#2D302D]/70 min-[744px]:text-[12px]">
@@ -694,7 +693,7 @@ export function EventDetailPage() {
             {t("eventComments.title")} ( {commentsCount} )
           </h2>
 
-          <form onSubmit={handleCommentSubmit} className="mt-8">
+          <form onSubmit={handleCommentSubmit} className="mt-8 min-[1900px]:w-[1203px]">
             <label
               htmlFor="educators-comment-text"
               className="flex items-center gap-3 font-montserrat text-[14px] text-[#2D302D]"
@@ -715,7 +714,7 @@ export function EventDetailPage() {
                   placeholder={t("eventComments.placeholderShort")}
                   className="h-[50px] rounded-[30px] border-[#40213F] bg-transparent
                   px-4 font-montserrat text-[14px] text-[#2D302D] focus-visible:ring-[#40213F]
-                  min-[744px]:h-[50px]"
+                  min-[744px]:h-[50px] min-[1900px]:h-[46px]"
                 />
                 {!isAuthenticated && (
                   <p className="mt-2 font-montserrat text-[12px] leading-[1.35] text-[#2D302D]/70">
@@ -812,7 +811,7 @@ export function EventDetailPage() {
           min-[1023px]:right-0 min-[1023px]:top-0 min-[1023px]:block
           min-[1023px]:h-[341px] min-[1023px]:w-[342px]
           min-[1420px]:static min-[1420px]:h-[409px] min-[1420px]:w-[409px]
-          min-[1900px]:h-[487px] min-[1900px]:w-[487px]"
+          min-[1900px]:h-[410px] min-[1900px]:w-[410px]"
         />
       </div>
     </section>
