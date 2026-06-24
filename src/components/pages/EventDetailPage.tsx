@@ -493,13 +493,13 @@ export function EventDetailPage() {
     <section
       className={`relative mt-7 border-t border-[#40213F]/45 pt-5
       min-[744px]:mt-8 min-[744px]:pt-6
-      ${variant === "supervision" ? "min-[1420px]:pb-15" : ""}`}
+      ${variant === "supervision" ? "min-[1420px]:pb-15" : "min-[1900px]:pb-10"}`}
     >
       <div
         className={`absolute right-0 top-16 hidden min-[744px]:block
         ${variant === "supervision"
           ? "min-[744px]:right-10 min-[744px]:top-3 min-[1023px]:right-8 min-[1023px]:top-0 min-[1420px]:right-0 min-[1420px]:top-0 min-[1900px]:right-[calc(765px-50vw)] min-[1900px]:top-3"
-          : "min-[744px]:right-8 min-[1023px]:right-16 min-[1420px]:right-24 min-[1900px]:top-0"}`}
+          : "min-[744px]:right-8 min-[1023px]:right-16 min-[1420px]:right-24 min-[1900px]:top-[-19px]"}`}
       >
         <DecorativeSun
           className={
