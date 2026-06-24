@@ -427,7 +427,8 @@ export function EventDetailPage() {
   const isEducatorsEvent =
     event.categorySlug === "for-educators" || event.slug.includes("educator");
   const isWorkshopEvent =
-    event.categorySlug === "workshop" || event.slug.includes("workshop");
+    event.categorySlug === "workshop" ||
+    (event.slug.includes("workshop") && event.categorySlug !== "art-workshop");
   const isSupervisionEvent =
     event.categorySlug === "supervision" || event.slug.includes("supervision");
   const displayTitle = isWorkshopEvent
@@ -435,6 +436,13 @@ export function EventDetailPage() {
     : isEducatorsEvent
       ? educatorsPageCopy[copyLang].title
       : rawTitle;
+  const fallbackTitleNotice =
+    lang === "en"
+      ? "placeholder is used temporarily until real events are added to the database"
+      : "заглушка використовується тимчасово до додавання реальних подій у базу";
+  const titleWithFallbackNotice = event.isFallback
+    ? `${displayTitle} (${fallbackTitleNotice})`
+    : displayTitle;
   const paragraphs = isWorkshopEvent
     ? workshopPageCopy[copyLang].paragraphs
     : isEducatorsEvent
@@ -814,7 +822,7 @@ export function EventDetailPage() {
     return (
       <>
         <EducatorsEventContent
-          displayTitle={displayTitle}
+          displayTitle={titleWithFallbackNotice}
           paragraphs={paragraphs}
           renderEventActions={renderEventActions}
           renderEducatorsImage={renderEducatorsImage}
@@ -845,7 +853,7 @@ export function EventDetailPage() {
     return (
       <WorkshopEventContent
         copyLang={copyLang}
-        displayTitle={displayTitle}
+        displayTitle={titleWithFallbackNotice}
         paragraphs={paragraphs}
         renderEventActions={renderEventActions}
         renderComments={renderComments}
@@ -856,7 +864,7 @@ export function EventDetailPage() {
   return (
     <>
       <GenericEventContent
-        title={displayTitle}
+        title={titleWithFallbackNotice}
         description={serverDescription}
         images={serverImages}
         renderEventActions={renderEventActions}
