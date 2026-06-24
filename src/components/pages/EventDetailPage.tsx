@@ -499,7 +499,7 @@ export function EventDetailPage() {
         className={`absolute right-0 top-16 hidden min-[744px]:block
         ${variant === "supervision"
           ? "min-[744px]:right-10 min-[744px]:top-3 min-[1023px]:right-8 min-[1023px]:top-0 min-[1420px]:right-0 min-[1420px]:top-0 min-[1900px]:right-[calc(765px-50vw)] min-[1900px]:top-3"
-          : "min-[744px]:right-8 min-[1023px]:right-16 min-[1420px]:right-24"}`}
+          : "min-[744px]:right-8 min-[1023px]:right-16 min-[1420px]:right-24 min-[1900px]:top-0"}`}
       >
         <DecorativeSun
           className={
