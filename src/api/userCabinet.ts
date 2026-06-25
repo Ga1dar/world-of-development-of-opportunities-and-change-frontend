@@ -80,6 +80,7 @@ export type CabinetAppointment = {
   specialistRole: string;
   clientName: string;
   clientEmail: string;
+  clientAvatar: string;
   date: string;
   time: string;
   startsAt: string;
@@ -807,6 +808,16 @@ const normalizeAppointment = (
     clientEmail:
       readString(raw, ["user_email", "client_email", "email"]) ||
       readString(user, ["email"]),
+    clientAvatar: resolveMediaUrl(
+      raw.client_avatar ??
+        raw.clientAvatar ??
+        raw.user_avatar ??
+        raw.userAvatar ??
+        raw.profile_avatar ??
+        raw.profileAvatar ??
+        readAvatarValue(userProfile, user),
+      FALLBACK_AVATAR,
+    ),
     date: readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date,
     time: readString(raw, ["time"]) || readString(slot, ["time"]) || parsed.time,
     startsAt: startValue || `${readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date}T${readString(raw, ["time"]) || readString(slot, ["time"]) || parsed.time}`,
