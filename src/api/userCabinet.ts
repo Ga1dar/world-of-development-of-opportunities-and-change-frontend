@@ -752,6 +752,13 @@ const readAppointmentClientId = (
   readReferenceId(profile?.user) ||
   readReferenceId(user);
 
+const readProfileUser = (profile: RawRecord | null) =>
+  asRecord(profile?.user) ||
+  asRecord(profile?.owner) ||
+  asRecord(profile?.account) ||
+  asRecord(profile?.user_details) ||
+  asRecord(profile?.userDetails);
+
 const readAppointmentClientProfileId = (
   raw: RawRecord,
   user: RawRecord | null,
@@ -771,7 +778,7 @@ const profileMatchesAppointmentClient = (
   profile: RawRecord,
   appointment: CabinetAppointment,
 ) => {
-  const profileUser = asRecord(profile.user) || asRecord(profile.owner) || asRecord(profile.account);
+  const profileUser = readProfileUser(profile);
   const profileId = readReferenceId(profile);
   const userId =
     readReferenceId(profile.user) ||
@@ -802,7 +809,7 @@ const hydrateAppointmentClientAvatars = (
     if (appointment.clientAvatar && appointment.clientAvatar !== FALLBACK_AVATAR) return appointment;
 
     const profile = profiles.find((item) => profileMatchesAppointmentClient(item, appointment));
-    const avatar = profile ? resolveProfileAvatar(readAvatarValue(profile, asRecord(profile.user)), "") : "";
+    const avatar = profile ? resolveProfileAvatar(readAvatarValue(profile, readProfileUser(profile)), "") : "";
 
     return avatar ? { ...appointment, clientAvatar: avatar } : appointment;
   });
@@ -813,8 +820,27 @@ const normalizeAppointment = (
 ): CabinetAppointment => {
   const slot = asRecord(raw.slot);
   const specialist = asRecord(raw.specialist) || asRecord(slot?.specialist);
-  const user = asRecord(raw.user) || asRecord(raw.client) || asRecord(raw.patient);
-  const userProfile = asRecord(user?.profile) || asRecord(raw.profile) || asRecord(raw.user_profile);
+  const rawUser = asRecord(raw.user);
+  const client = asRecord(raw.client);
+  const patient = asRecord(raw.patient);
+  const user = rawUser || client || patient;
+  const userProfile =
+    asRecord(user?.profile) ||
+    asRecord(user?.user_profile) ||
+    asRecord(user?.userProfile) ||
+    asRecord(client?.profile) ||
+    asRecord(client?.user_profile) ||
+    asRecord(client?.userProfile) ||
+    asRecord(patient?.profile) ||
+    asRecord(patient?.user_profile) ||
+    asRecord(patient?.userProfile) ||
+    asRecord(raw.profile) ||
+    asRecord(raw.user_profile) ||
+    asRecord(raw.userProfile) ||
+    asRecord(raw.client_profile) ||
+    asRecord(raw.clientProfile) ||
+    asRecord(raw.patient_profile) ||
+    asRecord(raw.patientProfile);
   const startValue = readString(raw, [
     "start_time",
     "startTime",
@@ -902,9 +928,15 @@ const normalizeAppointment = (
         raw.clientPhoto ??
         raw.user_photo ??
         raw.userPhoto ??
+        raw.patient_photo ??
+        raw.patientPhoto ??
+        raw.profile_photo ??
+        raw.profilePhoto ??
+        raw.image ??
+        raw.picture ??
         raw.photo ??
         raw.avatar ??
-        readAvatarValue(userProfile, user),
+        readAvatarValue(userProfile, readProfileUser(userProfile) || user),
       FALLBACK_AVATAR,
     ),
     date: readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date,

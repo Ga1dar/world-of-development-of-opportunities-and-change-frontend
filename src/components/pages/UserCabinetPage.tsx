@@ -664,7 +664,7 @@ function SpecialistNameFilterModal({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 top-[92px] z-[200] flex items-start justify-center overflow-y-auto bg-[#1C100E]/35 px-0 py-6 min-[744px]:top-[112px] min-[744px]:px-6 min-[1900px]:top-[118px]"
+      className="fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto bg-[#1C100E]/35 px-0 pt-[91px] min-[744px]:px-6 min-[744px]:pt-[58px] min-[1023px]:pt-[76px] min-[1900px]:pt-[82px]"
       role="presentation"
       onMouseDown={onClose}
     >
