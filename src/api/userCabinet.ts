@@ -830,7 +830,6 @@ const hydrateAppointmentClientAvatars = async (
     const profileIdsToFetch = Array.from(
       new Set(
         appointments
-          .filter((appointment) => !appointment.clientAvatar || appointment.clientAvatar === FALLBACK_AVATAR)
           .map((appointment) => appointment.clientProfileId || readReferenceId(findAppointmentClientProfile(profiles, appointment)))
           .filter(Boolean),
       ),
@@ -849,12 +848,12 @@ const hydrateAppointmentClientAvatars = async (
     ];
 
     return appointments.map((appointment) => {
-      if (appointment.clientAvatar && appointment.clientAvatar !== FALLBACK_AVATAR) return appointment;
-
       const profile = findAppointmentClientProfile(hydratedProfiles, appointment);
       const avatar = readProfileAvatar(profile);
 
-      return avatar ? { ...appointment, clientAvatar: avatar } : appointment;
+      if (avatar) return { ...appointment, clientAvatar: avatar };
+      if (appointment.clientAvatar && appointment.clientAvatar !== FALLBACK_AVATAR) return appointment;
+      return appointment;
     });
   };
 
@@ -974,12 +973,6 @@ const normalizeAppointment = (
         raw.userPhoto ??
         raw.patient_photo ??
         raw.patientPhoto ??
-        raw.profile_photo ??
-        raw.profilePhoto ??
-        raw.image ??
-        raw.picture ??
-        raw.photo ??
-        raw.avatar ??
         readAvatarValue(userProfile, readProfileUser(userProfile) || user),
       FALLBACK_AVATAR,
     ),
