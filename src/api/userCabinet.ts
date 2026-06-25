@@ -801,18 +801,62 @@ const profileMatchesAppointmentClient = (
   );
 };
 
-const hydrateAppointmentClientAvatars = (
+const readProfileAvatar = (profile: RawRecord | null) =>
+  profile ? resolveProfileAvatar(readAvatarValue(profile, readProfileUser(profile)), "") : "";
+
+const findAppointmentClientProfile = (
+  profiles: RawRecord[],
+  appointment: CabinetAppointment,
+) => profiles.find((item) => profileMatchesAppointmentClient(item, appointment)) || null;
+
+const normalizeProfileDetailResponse = (data: unknown) => {
+  const response = asRecord(data);
+
+  return (
+    asRecord(response?.data) ||
+    asRecord(response?.profile) ||
+    asRecord(response?.user_profile) ||
+    asRecord(response?.userProfile) ||
+    response
+  );
+};
+
+const hydrateAppointmentClientAvatars = async (
   appointments: CabinetAppointment[],
   profiles: RawRecord[],
+  signal?: AbortSignal,
 ) =>
-  appointments.map((appointment) => {
-    if (appointment.clientAvatar && appointment.clientAvatar !== FALLBACK_AVATAR) return appointment;
+  {
+    const profileIdsToFetch = Array.from(
+      new Set(
+        appointments
+          .filter((appointment) => !appointment.clientAvatar || appointment.clientAvatar === FALLBACK_AVATAR)
+          .map((appointment) => appointment.clientProfileId || readReferenceId(findAppointmentClientProfile(profiles, appointment)))
+          .filter(Boolean),
+      ),
+    );
 
-    const profile = profiles.find((item) => profileMatchesAppointmentClient(item, appointment));
-    const avatar = profile ? resolveProfileAvatar(readAvatarValue(profile, readProfileUser(profile)), "") : "";
+    const detailedProfiles = await Promise.all(
+      profileIdsToFetch.map((id) =>
+        fetchJson(endpoints.userProfile(id), signal)
+          .then(normalizeProfileDetailResponse)
+          .catch(() => null),
+      ),
+    );
+    const hydratedProfiles = [
+      ...profiles,
+      ...detailedProfiles.filter((profile): profile is RawRecord => Boolean(profile)),
+    ];
 
-    return avatar ? { ...appointment, clientAvatar: avatar } : appointment;
-  });
+    return appointments.map((appointment) => {
+      if (appointment.clientAvatar && appointment.clientAvatar !== FALLBACK_AVATAR) return appointment;
+
+      const profile = findAppointmentClientProfile(hydratedProfiles, appointment);
+      const avatar = readProfileAvatar(profile);
+
+      return avatar ? { ...appointment, clientAvatar: avatar } : appointment;
+    });
+  };
 
 const normalizeAppointment = (
   raw: RawRecord,
@@ -1061,8 +1105,12 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
 
   return {
     profile,
-    appointments: hydrateAppointmentClientAvatars(appointments, userProfiles),
-    completedAppointments: hydrateAppointmentClientAvatars(completedAppointments, userProfiles),
+    appointments: await hydrateAppointmentClientAvatars(appointments, userProfiles, signal),
+    completedAppointments: await hydrateAppointmentClientAvatars(
+      completedAppointments,
+      userProfiles,
+      signal,
+    ),
     documents,
   };
 }
