@@ -1,4 +1,4 @@
-import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare } from "lucide-react";
+import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -84,11 +84,12 @@ const copy = {
     calendarEmpty: "Календар спеціаліста з'явиться тут.",
     historyEmpty: "Історія звернень з'явиться тут.",
     all: "Усі",
-    byWeek: "За тижнем",
+    byName: "За іменем",
     byDate: "За датою",
     cancel: "Відмінити",
     reschedule: "Перенести",
     specialistRecordsEmpty: "Записи на консультації з'являться тут.",
+    specialistNameFilterEmpty: "Записані користувачі з'являться тут.",
     cancelAppointmentError: "Не вдалося відмінити запис. Спробуйте ще раз.",
     emailLabel: "Пошта:",
     emailMissing: "Відсутня",
@@ -158,11 +159,12 @@ const copy = {
     calendarEmpty: "The specialist calendar will appear here.",
     historyEmpty: "Request history will appear here.",
     all: "All",
-    byWeek: "By week",
+    byName: "By name",
     byDate: "By date",
     cancel: "Cancel",
     reschedule: "Reschedule",
     specialistRecordsEmpty: "Consultation bookings will appear here.",
+    specialistNameFilterEmpty: "Booked users will appear here.",
     cancelAppointmentError: "Could not cancel booking. Try again.",
     emailLabel: "Email:",
     emailMissing: "Missing",
@@ -596,9 +598,7 @@ function AppointmentsView({
   );
 }
 
-type SpecialistRecordFilter = "all" | "week" | "date";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+type SpecialistRecordFilter = "all" | "date";
 
 const parseAppointmentTimestamp = (appointment: CabinetAppointment) => {
   const rawValue =
@@ -628,6 +628,85 @@ const getAppointmentTime = (appointment: CabinetAppointment) => {
   const timestamp = parseAppointmentTimestamp(appointment);
   return timestamp || Number.MAX_SAFE_INTEGER;
 };
+
+const getAppointmentClientName = (appointment: CabinetAppointment) =>
+  (appointment.clientName || appointment.clientEmail || "—").trim();
+
+type SpecialistNameFilterItem = {
+  id: string;
+  name: string;
+  avatar: string;
+};
+
+function SpecialistNameFilterModal({
+  open,
+  labels,
+  items,
+  onClose,
+}: {
+  open: boolean;
+  labels: typeof copy.ua;
+  items: SpecialistNameFilterItem[];
+  onClose: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-[#1C100E]/35 px-0 pt-[91px] min-[744px]:px-6 min-[744px]:pt-[58px] min-[1023px]:pt-[76px] min-[1900px]:pt-[82px]"
+      role="presentation"
+      onMouseDown={onClose}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label={labels.byName}
+        onMouseDown={(event) => event.stopPropagation()}
+        className="relative h-[415px] w-full max-w-[390px] rounded-[18px] bg-[#F6EEF5] px-8 pt-[70px] font-montserrat text-[#1C100E] shadow-[0_18px_45px_rgba(28,16,14,0.12)] min-[744px]:max-w-[600px] min-[744px]:px-[72px] min-[744px]:pt-[68px] min-[1900px]:h-[491px] min-[1900px]:max-w-[825px] min-[1900px]:px-[128px] min-[1900px]:pt-[76px]"
+      >
+        <button
+          type="button"
+          aria-label={labels.close}
+          onClick={onClose}
+          className="absolute right-5 top-5 flex size-7 items-center justify-center rounded-full text-[#1C100E]/45 transition-colors hover:text-[#1C100E] min-[744px]:right-6 min-[744px]:top-6"
+        >
+          <X size={16} strokeWidth={1.7} />
+        </button>
+
+        <img
+          src="/Logo1.png"
+          alt="СвіТи"
+          className="mx-auto h-auto w-[76px] min-[744px]:w-[82px] min-[1900px]:w-[90px]"
+        />
+
+        <h2 className="mt-2 text-center text-[14px] font-medium leading-[1.25] min-[744px]:text-[15px]">
+          {labels.byName}
+        </h2>
+
+        <div className="mx-auto mt-6 flex max-h-[230px] w-full max-w-[300px] flex-col gap-4 overflow-y-auto pr-1 min-[744px]:mt-7 min-[1900px]:max-h-[270px]">
+          {items.length ? (
+            items.map((item) => (
+              <div key={item.id} className="flex items-center gap-3">
+                <img
+                  src={item.avatar || "/user.jpg"}
+                  alt=""
+                  className="size-6 rounded-full object-cover"
+                />
+                <span className="min-w-0 truncate text-[12px] leading-[1.25] min-[744px]:text-[13px]">
+                  {item.name}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-[12px] leading-[1.35] text-[#1C100E]/65">
+              {labels.specialistNameFilterEmpty}
+            </p>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
 
 function SpecialistAppointmentCard({
   appointment,
@@ -699,20 +778,9 @@ function SpecialistAppointmentsView({
   onReschedule: (appointment: CabinetAppointment) => void;
 }) {
   const [filter, setFilter] = useState<SpecialistRecordFilter>("all");
+  const [isNameFilterOpen, setIsNameFilterOpen] = useState(false);
   const filteredAppointments = useMemo(() => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const weekLimit = todayStart + 7 * DAY_MS;
     const items = [...appointments];
-
-    if (filter === "week") {
-      return items
-        .filter((appointment) => {
-          const appointmentTime = getAppointmentTime(appointment);
-          return appointmentTime >= todayStart && appointmentTime < weekLimit;
-        })
-        .sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
-    }
 
     if (filter === "date") {
       return items.sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
@@ -720,30 +788,74 @@ function SpecialistAppointmentsView({
 
     return items;
   }, [appointments, filter]);
+  const nameFilterItems = useMemo(
+    () =>
+      [...appointments]
+        .map((appointment, index) => ({
+          id: `${appointment.id}-${index}`,
+          name: getAppointmentClientName(appointment),
+          avatar: appointment.clientAvatar || "/user.jpg",
+          appointment,
+        }))
+        .sort((a, b) => {
+          const byName = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+          return byName || getAppointmentTime(a.appointment) - getAppointmentTime(b.appointment);
+        })
+        .map(({ id, name, avatar }) => ({ id, name, avatar })),
+    [appointments],
+  );
   const filters: Array<{ id: SpecialistRecordFilter; label: string }> = [
     { id: "all", label: labels.all },
-    { id: "week", label: labels.byWeek },
     { id: "date", label: labels.byDate },
   ];
+  const activeFilterClass = "border border-[#B34D8D] bg-[#E7C5DA] text-[#83105F]";
+  const inactiveFilterClass = "bg-white text-[#1C100E]";
+  const filterButtonClass =
+    "h-10 min-w-[92px] rounded-[30px] px-5 font-montserrat text-[12px] font-medium transition-colors min-[744px]:min-w-[112px]";
 
   return (
     <section className="relative mx-auto mt-6 w-full min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1180px]">
       <div className="relative z-10 flex flex-wrap gap-3 min-[744px]:gap-5">
-        {filters.map((item) => (
+        <button
+          type="button"
+          onClick={() => setFilter("all")}
+          className={`${filterButtonClass} ${
+            filter === "all" && !isNameFilterOpen ? activeFilterClass : inactiveFilterClass
+          }`}
+        >
+          {labels.all}
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsNameFilterOpen(true)}
+          className={`${filterButtonClass} ${
+            isNameFilterOpen ? activeFilterClass : inactiveFilterClass
+          }`}
+        >
+          {labels.byName}
+        </button>
+        {filters
+          .filter((item) => item.id !== "all")
+          .map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setFilter(item.id)}
-            className={`h-10 min-w-[92px] rounded-[30px] px-5 font-montserrat text-[12px] font-medium transition-colors min-[744px]:min-w-[112px] ${
-              filter === item.id
-                ? "border border-[#B34D8D] bg-[#E7C5DA] text-[#83105F]"
-                : "bg-white text-[#1C100E]"
+            className={`${filterButtonClass} ${
+              filter === item.id && !isNameFilterOpen ? activeFilterClass : inactiveFilterClass
             }`}
           >
             {item.label}
           </button>
         ))}
       </div>
+
+      <SpecialistNameFilterModal
+        open={isNameFilterOpen}
+        labels={labels}
+        items={nameFilterItems}
+        onClose={() => setIsNameFilterOpen(false)}
+      />
 
       {filteredAppointments.length ? (
         <img
