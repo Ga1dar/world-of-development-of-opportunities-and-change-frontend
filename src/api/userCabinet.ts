@@ -78,6 +78,8 @@ export type CabinetAppointment = {
   specialistName: string;
   specialistAvatar: string;
   specialistRole: string;
+  clientId: string;
+  clientProfileId: string;
   clientName: string;
   clientEmail: string;
   clientAvatar: string;
@@ -731,6 +733,80 @@ const readSpecialistIdFromBookAgainUrl = (value: string) => {
   }
 };
 
+const readAppointmentClientId = (
+  raw: RawRecord,
+  user: RawRecord | null,
+  profile: RawRecord | null,
+) =>
+  readReferenceId(raw.user) ||
+  readReferenceId(raw.client) ||
+  readReferenceId(raw.patient) ||
+  readString(raw, [
+    "user_id",
+    "userId",
+    "client_id",
+    "clientId",
+    "patient_id",
+    "patientId",
+  ]) ||
+  readReferenceId(profile?.user) ||
+  readReferenceId(user);
+
+const readAppointmentClientProfileId = (
+  raw: RawRecord,
+  user: RawRecord | null,
+  profile: RawRecord | null,
+) =>
+  readReferenceId(raw.user_profile) ||
+  readReferenceId(raw.userProfile) ||
+  readReferenceId(raw.profile) ||
+  readReferenceId(raw.client_profile) ||
+  readReferenceId(raw.clientProfile) ||
+  readReferenceId(profile) ||
+  readReferenceId(user?.profile) ||
+  readReferenceId(user?.user_profile) ||
+  readReferenceId(user?.userProfile);
+
+const profileMatchesAppointmentClient = (
+  profile: RawRecord,
+  appointment: CabinetAppointment,
+) => {
+  const profileUser = asRecord(profile.user) || asRecord(profile.owner) || asRecord(profile.account);
+  const profileId = readReferenceId(profile);
+  const userId =
+    readReferenceId(profile.user) ||
+    readReferenceId(profileUser) ||
+    readString(profile, ["user_id", "userId"]);
+  const email =
+    readString(profile, ["email", "user_email", "userEmail"]) ||
+    readString(profileUser, ["email", "user_email", "userEmail"]);
+  const fullName =
+    readString(profile, ["full_name", "fullName", "name"]) ||
+    [readString(profile, ["first_name", "firstName"]), readString(profile, ["last_name", "lastName"])]
+      .filter(Boolean)
+      .join(" ");
+
+  return (
+    (!!appointment.clientProfileId && profileId === appointment.clientProfileId) ||
+    (!!appointment.clientId && userId === appointment.clientId) ||
+    (!!appointment.clientEmail && email.toLowerCase() === appointment.clientEmail.toLowerCase()) ||
+    (!!appointment.clientName && fullName.toLowerCase() === appointment.clientName.toLowerCase())
+  );
+};
+
+const hydrateAppointmentClientAvatars = (
+  appointments: CabinetAppointment[],
+  profiles: RawRecord[],
+) =>
+  appointments.map((appointment) => {
+    if (appointment.clientAvatar && appointment.clientAvatar !== FALLBACK_AVATAR) return appointment;
+
+    const profile = profiles.find((item) => profileMatchesAppointmentClient(item, appointment));
+    const avatar = profile ? resolveProfileAvatar(readAvatarValue(profile, asRecord(profile.user)), "") : "";
+
+    return avatar ? { ...appointment, clientAvatar: avatar } : appointment;
+  });
+
 const normalizeAppointment = (
   raw: RawRecord,
   fallbackStatus: CabinetAppointment["status"],
@@ -768,6 +844,11 @@ const normalizeAppointment = (
       .join(" ") ||
     readString(user, ["full_name", "fullName", "name", "email"]) ||
     readString(raw, ["user_email", "client_email"]);
+  const clientEmail =
+    readString(raw, ["user_email", "client_email", "email"]) ||
+    readString(user, ["email"]);
+  const clientId = readAppointmentClientId(raw, user, userProfile);
+  const clientProfileId = readAppointmentClientProfileId(raw, user, userProfile);
   const bookAgainUrl = readString(raw, ["book_again_url", "bookAgainUrl"]);
   const specialistId =
     readString(raw, [
@@ -804,17 +885,25 @@ const normalizeAppointment = (
     specialistRole:
       readString(raw, ["specialist_role", "specialistRole"]) ||
       readString(specialist, ["specialization", "specialisation", "role", "position"]),
+    clientId,
+    clientProfileId,
     clientName,
-    clientEmail:
-      readString(raw, ["user_email", "client_email", "email"]) ||
-      readString(user, ["email"]),
+    clientEmail,
     clientAvatar: resolveMediaUrl(
       raw.client_avatar ??
         raw.clientAvatar ??
         raw.user_avatar ??
         raw.userAvatar ??
+        raw.patient_avatar ??
+        raw.patientAvatar ??
         raw.profile_avatar ??
         raw.profileAvatar ??
+        raw.client_photo ??
+        raw.clientPhoto ??
+        raw.user_photo ??
+        raw.userPhoto ??
+        raw.photo ??
+        raw.avatar ??
         readAvatarValue(userProfile, user),
       FALLBACK_AVATAR,
     ),
@@ -923,7 +1012,7 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     };
   }
 
-  const [appointments, completedAppointments, documents] = await Promise.all([
+  const [appointments, completedAppointments, documents, userProfiles] = await Promise.all([
     fetchJson(`${endpoints.consultationAppointments}?sort_field=date&sort_direction=asc`, signal)
       .then((data) => extractList(data).map((item) => normalizeAppointment(item, "confirmed")))
       .catch(() => []),
@@ -933,12 +1022,15 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     fetchJson(endpoints.documents, signal)
       .then((data) => extractList(data).map(normalizeDocument))
       .catch(() => []),
+    fetchJson(endpoints.userProfiles, signal)
+      .then(extractList)
+      .catch(() => []),
   ]);
 
   return {
     profile,
-    appointments,
-    completedAppointments,
+    appointments: hydrateAppointmentClientAvatars(appointments, userProfiles),
+    completedAppointments: hydrateAppointmentClientAvatars(completedAppointments, userProfiles),
     documents,
   };
 }
