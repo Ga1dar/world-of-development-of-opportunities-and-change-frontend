@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { LogIn } from "./LogIn";
 import {
+  getCabinetAppointments,
   getUserCabinetData,
   updateProfileAvatar,
   type CabinetAppointment,
+  type CabinetAppointmentQuery,
   type CabinetDocument,
   type CabinetProfile,
 } from "../../api/userCabinet";
@@ -644,6 +646,7 @@ type SpecialistNameFilterItem = {
   key: string;
   name: string;
   avatar?: string;
+  userId?: string;
 };
 
 function SpecialistNameFilterModal({
@@ -801,44 +804,31 @@ function SpecialistAppointmentCard({
 
 function SpecialistAppointmentsView({
   appointments,
+  filterSourceAppointments,
   labels,
   cancellingId,
   error,
+  isFiltering,
+  onFilterChange,
   onCancel,
   onReschedule,
 }: {
   appointments: CabinetAppointment[];
+  filterSourceAppointments: CabinetAppointment[];
   labels: typeof copy.ua;
   cancellingId: string;
   error: string;
+  isFiltering: boolean;
+  onFilterChange: (query?: CabinetAppointmentQuery) => void;
   onCancel: (appointment: CabinetAppointment) => void;
   onReschedule: (appointment: CabinetAppointment) => void;
 }) {
   const [filter, setFilter] = useState<SpecialistRecordFilter>("all");
   const [activeFilterModal, setActiveFilterModal] = useState<Exclude<SpecialistRecordFilter, "all"> | "">("");
-  const [selectedClientKey, setSelectedClientKey] = useState("");
-  const [selectedDateKey, setSelectedDateKey] = useState("");
-  const filteredAppointments = useMemo(() => {
-    const items = [...appointments];
-
-    if (filter === "name" && selectedClientKey) {
-      return items
-        .filter((appointment) => getAppointmentClientKey(appointment) === selectedClientKey)
-        .sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
-    }
-
-    if (filter === "date" && selectedDateKey) {
-      return items
-        .filter((appointment) => getAppointmentDateKey(appointment) === selectedDateKey)
-        .sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
-    }
-
-    return items;
-  }, [appointments, filter, selectedClientKey, selectedDateKey]);
   const nameFilterItems = useMemo(() => {
     const items = new Map<string, SpecialistNameFilterItem & { sortTime: number }>();
 
-    appointments.forEach((appointment) => {
+    filterSourceAppointments.forEach((appointment) => {
       const key = getAppointmentClientKey(appointment);
       if (!key) return;
 
@@ -853,12 +843,14 @@ function SpecialistAppointmentsView({
           key,
           name: getAppointmentClientName(appointment),
           avatar,
+          userId: appointment.clientId || undefined,
           sortTime: getAppointmentTime(appointment),
         });
         return;
       }
 
       if (!existing.avatar && avatar) existing.avatar = avatar;
+      if (!existing.userId && appointment.clientId) existing.userId = appointment.clientId;
       existing.sortTime = Math.min(existing.sortTime, getAppointmentTime(appointment));
     });
 
@@ -868,11 +860,11 @@ function SpecialistAppointmentsView({
         return byName || a.sortTime - b.sortTime;
       })
       .map(({ sortTime: _sortTime, ...item }) => item);
-  }, [appointments]);
+  }, [filterSourceAppointments]);
   const dateFilterItems = useMemo(() => {
     const items = new Map<string, SpecialistNameFilterItem & { sortTime: number }>();
 
-    appointments.forEach((appointment) => {
+    filterSourceAppointments.forEach((appointment) => {
       const key = getAppointmentDateKey(appointment);
       if (!key || items.has(key)) return;
 
@@ -887,7 +879,7 @@ function SpecialistAppointmentsView({
     return Array.from(items.values())
       .sort((a, b) => a.sortTime - b.sortTime)
       .map(({ sortTime: _sortTime, ...item }) => item);
-  }, [appointments]);
+  }, [filterSourceAppointments]);
   const activeFilterClass = "border border-[#B34D8D] bg-[#E7C5DA] text-[#83105F]";
   const inactiveFilterClass = "bg-white text-[#1C100E]";
   const filterButtonClass =
@@ -900,35 +892,37 @@ function SpecialistAppointmentsView({
           type="button"
           onClick={() => {
             setFilter("all");
-            setSelectedClientKey("");
-            setSelectedDateKey("");
             setActiveFilterModal("");
+            onFilterChange();
           }}
+          disabled={isFiltering}
           className={`${filterButtonClass} ${
             filter === "all" && !activeFilterModal ? activeFilterClass : inactiveFilterClass
-          }`}
+          } disabled:cursor-wait disabled:opacity-70`}
         >
           {labels.all}
         </button>
         <button
           type="button"
           onClick={() => setActiveFilterModal("name")}
+          disabled={isFiltering}
           className={`${filterButtonClass} ${
             activeFilterModal === "name" || filter === "name"
               ? activeFilterClass
               : inactiveFilterClass
-          }`}
+          } disabled:cursor-wait disabled:opacity-70`}
         >
           {labels.byName}
         </button>
         <button
           type="button"
           onClick={() => setActiveFilterModal("date")}
+          disabled={isFiltering}
           className={`${filterButtonClass} ${
             activeFilterModal === "date" || filter === "date"
               ? activeFilterClass
               : inactiveFilterClass
-          }`}
+          } disabled:cursor-wait disabled:opacity-70`}
         >
           {labels.byDate}
         </button>
@@ -942,10 +936,9 @@ function SpecialistAppointmentsView({
         emptyText={labels.specialistNameFilterEmpty}
         onClose={() => setActiveFilterModal("")}
         onSelect={(item) => {
-          setSelectedClientKey(item.key);
-          setSelectedDateKey("");
           setFilter("name");
           setActiveFilterModal("");
+          onFilterChange(item.userId ? { user: item.userId } : undefined);
         }}
       />
 
@@ -958,14 +951,13 @@ function SpecialistAppointmentsView({
         showAvatar={false}
         onClose={() => setActiveFilterModal("")}
         onSelect={(item) => {
-          setSelectedDateKey(item.key);
-          setSelectedClientKey("");
           setFilter("date");
           setActiveFilterModal("");
+          onFilterChange({ date: item.key });
         }}
       />
 
-      {filteredAppointments.length ? (
+      {appointments.length ? (
         <img
           src="/sunForPersonalOfice.png"
           alt=""
@@ -980,9 +972,9 @@ function SpecialistAppointmentsView({
         </p>
       ) : null}
 
-      {filteredAppointments.length ? (
+      {appointments.length ? (
         <div className="relative z-10 mt-5 grid gap-4 min-[744px]:mt-6 min-[1023px]:grid-cols-2 min-[1420px]:grid-cols-3 min-[1900px]:gap-6">
-          {filteredAppointments.map((appointment) => (
+          {appointments.map((appointment) => (
             <SpecialistAppointmentCard
               key={appointment.id}
               appointment={appointment}
@@ -1673,6 +1665,7 @@ export function UserCabinetPage() {
 
   const [profile, setProfile] = useState<CabinetProfile | null>(null);
   const [appointments, setAppointments] = useState<CabinetAppointment[]>([]);
+  const [allAppointments, setAllAppointments] = useState<CabinetAppointment[]>([]);
   const [completedAppointments, setCompletedAppointments] = useState<CabinetAppointment[]>([]);
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
   const [favoriteItems, setFavoriteItems] = useState<FavoriteContentItem[]>([]);
@@ -1683,6 +1676,7 @@ export function UserCabinetPage() {
   const [rescheduleAppointment, setRescheduleAppointment] = useState<CabinetAppointment | null>(null);
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState("");
   const [appointmentMutationError, setAppointmentMutationError] = useState("");
+  const [isAppointmentFilterLoading, setIsAppointmentFilterLoading] = useState(false);
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1730,6 +1724,7 @@ export function UserCabinetPage() {
         ]);
         setProfile(data.profile);
         setAppointments(data.appointments);
+        setAllAppointments(data.appointments);
         setCompletedAppointments(data.completedAppointments);
         setDocuments(data.documents);
         setFavoriteItems(favorites);
@@ -1826,6 +1821,27 @@ export function UserCabinetPage() {
     }
   };
 
+  const handleSpecialistAppointmentFilterChange = async (
+    query: CabinetAppointmentQuery = {},
+  ) => {
+    setAppointmentMutationError("");
+    setIsAppointmentFilterLoading(true);
+
+    try {
+      const nextAppointments = await getCabinetAppointments(query);
+      setAppointments(nextAppointments);
+
+      if (!query.user && !query.date && !query.completed) {
+        setAllAppointments(nextAppointments);
+      }
+    } catch (error) {
+      console.error(error);
+      setAppointmentMutationError(labels.loadError);
+    } finally {
+      setIsAppointmentFilterLoading(false);
+    }
+  };
+
   const handleCancelSpecialistAppointment = async () => {
     if (cancellingAppointmentId || !cancelAppointment) return;
 
@@ -1836,6 +1852,7 @@ export function UserCabinetPage() {
 
     if (result.status === "success") {
       setAppointments((items) => items.filter((item) => item.id !== cancelAppointment.id));
+      setAllAppointments((items) => items.filter((item) => item.id !== cancelAppointment.id));
       setCompletedAppointments((items) =>
         items.filter((item) => item.id !== cancelAppointment.id),
       );
@@ -1852,6 +1869,13 @@ export function UserCabinetPage() {
     slot: ConsultationSlot,
   ) => {
     setAppointments((items) =>
+      items.map((item) =>
+        item.id === appointmentId
+          ? { ...item, date: slot.date, time: slot.time, startsAt: slot.startsAt }
+          : item,
+      ),
+    );
+    setAllAppointments((items) =>
       items.map((item) =>
         item.id === appointmentId
           ? { ...item, date: slot.date, time: slot.time, startsAt: slot.startsAt }
@@ -1898,9 +1922,12 @@ export function UserCabinetPage() {
         isSpecialist ? (
           <SpecialistAppointmentsView
             appointments={appointments}
+            filterSourceAppointments={allAppointments}
             labels={labels}
             cancellingId={cancellingAppointmentId}
             error={appointmentMutationError}
+            isFiltering={isAppointmentFilterLoading}
+            onFilterChange={(query) => void handleSpecialistAppointmentFilterChange(query)}
             onCancel={(appointment) => {
               setAppointmentMutationError("");
               setCancelAppointment(appointment);
