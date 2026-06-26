@@ -322,7 +322,6 @@ function ProfileCard({
   const profileSummary = isSpecialist
     ? profile.profession || labels.roleSpecialist
     : roleLabel(profile.role, labels);
-  const workHours = profile.workHours || (isSpecialist ? "(з 09:00 до 18:00)" : "");
   const cardWidthClass = isSpecialist
     ? "min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[880px] min-[1900px]:max-w-[1180px]"
     : "min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[742px] min-[1900px]:max-w-[1028px]";
@@ -365,11 +364,6 @@ function ProfileCard({
           <p className="mt-3 text-[14px] leading-[1.25]">
             {profileSummary}
           </p>
-          {workHours ? (
-            <p className="mt-3 text-[14px] font-medium leading-[1.25]">
-              {labels.workSchedule} {workHours}
-            </p>
-          ) : null}
         </div>
       </div>
 
@@ -598,7 +592,7 @@ function AppointmentsView({
   );
 }
 
-type SpecialistRecordFilter = "all" | "date";
+type SpecialistRecordFilter = "all" | "name" | "date";
 
 const parseAppointmentTimestamp = (appointment: CabinetAppointment) => {
   const rawValue =
@@ -632,22 +626,44 @@ const getAppointmentTime = (appointment: CabinetAppointment) => {
 const getAppointmentClientName = (appointment: CabinetAppointment) =>
   (appointment.clientName || appointment.clientEmail || "—").trim();
 
+const getAppointmentClientKey = (appointment: CabinetAppointment) =>
+  (
+    appointment.clientProfileId ||
+    appointment.clientId ||
+    appointment.clientEmail ||
+    getAppointmentClientName(appointment)
+  )
+    .trim()
+    .toLowerCase();
+
+const getAppointmentDateKey = (appointment: CabinetAppointment) =>
+  parseAppointmentDate(appointment.date || appointment.startsAt);
+
 type SpecialistNameFilterItem = {
   id: string;
+  key: string;
   name: string;
-  avatar: string;
+  avatar?: string;
 };
 
 function SpecialistNameFilterModal({
   open,
   labels,
   items,
+  title,
+  emptyText,
+  showAvatar = true,
   onClose,
+  onSelect,
 }: {
   open: boolean;
   labels: typeof copy.ua;
   items: SpecialistNameFilterItem[];
+  title: string;
+  emptyText: string;
+  showAvatar?: boolean;
   onClose: () => void;
+  onSelect: (item: SpecialistNameFilterItem) => void;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -671,7 +687,7 @@ function SpecialistNameFilterModal({
       <section
         role="dialog"
         aria-modal="true"
-        aria-label={labels.byName}
+        aria-label={title}
         onMouseDown={(event) => event.stopPropagation()}
         className="relative h-[415px] w-full max-w-[390px] rounded-[18px] bg-[#F6EEF5] px-8 pt-[70px] font-montserrat text-[#1C100E] shadow-[0_18px_45px_rgba(28,16,14,0.12)] min-[744px]:max-w-[600px] min-[744px]:px-[72px] min-[744px]:pt-[68px] min-[1900px]:h-[491px] min-[1900px]:max-w-[825px] min-[1900px]:px-[128px] min-[1900px]:pt-[76px]"
       >
@@ -691,26 +707,36 @@ function SpecialistNameFilterModal({
         />
 
         <h2 className="mt-2 text-center text-[14px] font-medium leading-[1.25] min-[744px]:text-[15px]">
-          {labels.byName}
+          {title}
         </h2>
 
         <div className="mx-auto mt-6 flex max-h-[230px] w-full max-w-[300px] flex-col gap-4 overflow-y-auto pr-1 min-[744px]:mt-7 min-[1900px]:max-h-[270px]">
           {items.length ? (
             items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3">
-                <img
-                  src={item.avatar || "/user.jpg"}
-                  alt=""
-                  className="size-6 rounded-full object-cover"
-                />
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelect(item)}
+                className="flex w-full items-center gap-3 rounded-[14px] text-left transition-opacity hover:opacity-75"
+              >
+                {showAvatar ? (
+                  <img
+                    src={item.avatar || "/user.jpg"}
+                    alt=""
+                    onError={(event) => {
+                      event.currentTarget.src = "/user.jpg";
+                    }}
+                    className="size-6 shrink-0 rounded-full object-cover"
+                  />
+                ) : null}
                 <span className="min-w-0 truncate text-[12px] leading-[1.25] min-[744px]:text-[13px]">
                   {item.name}
                 </span>
-              </div>
+              </button>
             ))
           ) : (
             <p className="text-center text-[12px] leading-[1.35] text-[#1C100E]/65">
-              {labels.specialistNameFilterEmpty}
+              {emptyText}
             </p>
           )}
         </div>
@@ -789,36 +815,79 @@ function SpecialistAppointmentsView({
   onReschedule: (appointment: CabinetAppointment) => void;
 }) {
   const [filter, setFilter] = useState<SpecialistRecordFilter>("all");
-  const [isNameFilterOpen, setIsNameFilterOpen] = useState(false);
+  const [activeFilterModal, setActiveFilterModal] = useState<Exclude<SpecialistRecordFilter, "all"> | "">("");
+  const [selectedClientKey, setSelectedClientKey] = useState("");
+  const [selectedDateKey, setSelectedDateKey] = useState("");
   const filteredAppointments = useMemo(() => {
     const items = [...appointments];
 
-    if (filter === "date") {
-      return items.sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
+    if (filter === "name" && selectedClientKey) {
+      return items
+        .filter((appointment) => getAppointmentClientKey(appointment) === selectedClientKey)
+        .sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
+    }
+
+    if (filter === "date" && selectedDateKey) {
+      return items
+        .filter((appointment) => getAppointmentDateKey(appointment) === selectedDateKey)
+        .sort((a, b) => getAppointmentTime(a) - getAppointmentTime(b));
     }
 
     return items;
-  }, [appointments, filter]);
-  const nameFilterItems = useMemo(
-    () =>
-      [...appointments]
-        .map((appointment, index) => ({
-          id: `${appointment.id}-${index}`,
+  }, [appointments, filter, selectedClientKey, selectedDateKey]);
+  const nameFilterItems = useMemo(() => {
+    const items = new Map<string, SpecialistNameFilterItem & { sortTime: number }>();
+
+    appointments.forEach((appointment) => {
+      const key = getAppointmentClientKey(appointment);
+      if (!key) return;
+
+      const existing = items.get(key);
+      const avatar = appointment.clientAvatar && appointment.clientAvatar !== "/user.jpg"
+        ? appointment.clientAvatar
+        : undefined;
+
+      if (!existing) {
+        items.set(key, {
+          id: key,
+          key,
           name: getAppointmentClientName(appointment),
-          avatar: appointment.clientAvatar || "/user.jpg",
-          appointment,
-        }))
-        .sort((a, b) => {
-          const byName = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-          return byName || getAppointmentTime(a.appointment) - getAppointmentTime(b.appointment);
-        })
-        .map(({ id, name, avatar }) => ({ id, name, avatar })),
-    [appointments],
-  );
-  const filters: Array<{ id: SpecialistRecordFilter; label: string }> = [
-    { id: "all", label: labels.all },
-    { id: "date", label: labels.byDate },
-  ];
+          avatar,
+          sortTime: getAppointmentTime(appointment),
+        });
+        return;
+      }
+
+      if (!existing.avatar && avatar) existing.avatar = avatar;
+      existing.sortTime = Math.min(existing.sortTime, getAppointmentTime(appointment));
+    });
+
+    return Array.from(items.values())
+      .sort((a, b) => {
+        const byName = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        return byName || a.sortTime - b.sortTime;
+      })
+      .map(({ sortTime: _sortTime, ...item }) => item);
+  }, [appointments]);
+  const dateFilterItems = useMemo(() => {
+    const items = new Map<string, SpecialistNameFilterItem & { sortTime: number }>();
+
+    appointments.forEach((appointment) => {
+      const key = getAppointmentDateKey(appointment);
+      if (!key || items.has(key)) return;
+
+      items.set(key, {
+        id: key,
+        key,
+        name: normalizeDate(key),
+        sortTime: getAppointmentTime(appointment),
+      });
+    });
+
+    return Array.from(items.values())
+      .sort((a, b) => a.sortTime - b.sortTime)
+      .map(({ sortTime: _sortTime, ...item }) => item);
+  }, [appointments]);
   const activeFilterClass = "border border-[#B34D8D] bg-[#E7C5DA] text-[#83105F]";
   const inactiveFilterClass = "bg-white text-[#1C100E]";
   const filterButtonClass =
@@ -829,43 +898,71 @@ function SpecialistAppointmentsView({
       <div className="relative z-10 flex flex-wrap gap-3 min-[744px]:gap-5">
         <button
           type="button"
-          onClick={() => setFilter("all")}
+          onClick={() => {
+            setFilter("all");
+            setSelectedClientKey("");
+            setSelectedDateKey("");
+            setActiveFilterModal("");
+          }}
           className={`${filterButtonClass} ${
-            filter === "all" && !isNameFilterOpen ? activeFilterClass : inactiveFilterClass
+            filter === "all" && !activeFilterModal ? activeFilterClass : inactiveFilterClass
           }`}
         >
           {labels.all}
         </button>
         <button
           type="button"
-          onClick={() => setIsNameFilterOpen(true)}
+          onClick={() => setActiveFilterModal("name")}
           className={`${filterButtonClass} ${
-            isNameFilterOpen ? activeFilterClass : inactiveFilterClass
+            activeFilterModal === "name" || filter === "name"
+              ? activeFilterClass
+              : inactiveFilterClass
           }`}
         >
           {labels.byName}
         </button>
-        {filters
-          .filter((item) => item.id !== "all")
-          .map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setFilter(item.id)}
-            className={`${filterButtonClass} ${
-              filter === item.id && !isNameFilterOpen ? activeFilterClass : inactiveFilterClass
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+        <button
+          type="button"
+          onClick={() => setActiveFilterModal("date")}
+          className={`${filterButtonClass} ${
+            activeFilterModal === "date" || filter === "date"
+              ? activeFilterClass
+              : inactiveFilterClass
+          }`}
+        >
+          {labels.byDate}
+        </button>
       </div>
 
       <SpecialistNameFilterModal
-        open={isNameFilterOpen}
+        open={activeFilterModal === "name"}
         labels={labels}
         items={nameFilterItems}
-        onClose={() => setIsNameFilterOpen(false)}
+        title={labels.byName}
+        emptyText={labels.specialistNameFilterEmpty}
+        onClose={() => setActiveFilterModal("")}
+        onSelect={(item) => {
+          setSelectedClientKey(item.key);
+          setSelectedDateKey("");
+          setFilter("name");
+          setActiveFilterModal("");
+        }}
+      />
+
+      <SpecialistNameFilterModal
+        open={activeFilterModal === "date"}
+        labels={labels}
+        items={dateFilterItems}
+        title={labels.byDate}
+        emptyText={labels.specialistRecordsEmpty}
+        showAvatar={false}
+        onClose={() => setActiveFilterModal("")}
+        onSelect={(item) => {
+          setSelectedDateKey(item.key);
+          setSelectedClientKey("");
+          setFilter("date");
+          setActiveFilterModal("");
+        }}
       />
 
       {filteredAppointments.length ? (
