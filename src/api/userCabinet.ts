@@ -759,6 +759,26 @@ const readProfileUser = (profile: RawRecord | null) =>
   asRecord(profile?.user_details) ||
   asRecord(profile?.userDetails);
 
+const profileBelongsToUser = (profile: RawRecord | null, user: RawRecord | null) => {
+  if (!profile || !user) return false;
+
+  const profileUser = readProfileUser(profile);
+  const profileUserId =
+    readReferenceId(profile.user) ||
+    readReferenceId(profileUser) ||
+    readString(profile, ["user_id", "userId"]);
+  const userId = readReferenceId(user) || readString(user, ["id", "user_id", "userId"]);
+  const profileEmail =
+    readString(profile, ["email", "user_email", "userEmail"]) ||
+    readString(profileUser, ["email", "user_email", "userEmail"]);
+  const userEmail = readString(user, ["email", "user_email", "userEmail"]);
+
+  return (
+    (!!profileUserId && !!userId && profileUserId === userId) ||
+    (!!profileEmail && !!userEmail && profileEmail.toLowerCase() === userEmail.toLowerCase())
+  );
+};
+
 const readAppointmentClientProfileId = (
   raw: RawRecord,
   user: RawRecord | null,
@@ -766,7 +786,6 @@ const readAppointmentClientProfileId = (
 ) =>
   readReferenceId(raw.user_profile) ||
   readReferenceId(raw.userProfile) ||
-  readReferenceId(raw.profile) ||
   readReferenceId(raw.client_profile) ||
   readReferenceId(raw.clientProfile) ||
   readReferenceId(profile) ||
@@ -792,12 +811,16 @@ const profileMatchesAppointmentClient = (
     [readString(profile, ["first_name", "firstName"]), readString(profile, ["last_name", "lastName"])]
       .filter(Boolean)
       .join(" ");
+  const hasStrongAppointmentIdentity =
+    !!appointment.clientProfileId || !!appointment.clientId || !!appointment.clientEmail;
 
   return (
     (!!appointment.clientProfileId && profileId === appointment.clientProfileId) ||
     (!!appointment.clientId && userId === appointment.clientId) ||
     (!!appointment.clientEmail && email.toLowerCase() === appointment.clientEmail.toLowerCase()) ||
-    (!!appointment.clientName && fullName.toLowerCase() === appointment.clientName.toLowerCase())
+    (!hasStrongAppointmentIdentity &&
+      !!appointment.clientName &&
+      fullName.toLowerCase() === appointment.clientName.toLowerCase())
   );
 };
 
@@ -867,6 +890,8 @@ const normalizeAppointment = (
   const client = asRecord(raw.client);
   const patient = asRecord(raw.patient);
   const user = rawUser || client || patient;
+  const rawProfile = asRecord(raw.profile);
+  const clientRawProfile = profileBelongsToUser(rawProfile, user) ? rawProfile : null;
   const userProfile =
     asRecord(user?.profile) ||
     asRecord(user?.user_profile) ||
@@ -877,13 +902,13 @@ const normalizeAppointment = (
     asRecord(patient?.profile) ||
     asRecord(patient?.user_profile) ||
     asRecord(patient?.userProfile) ||
-    asRecord(raw.profile) ||
     asRecord(raw.user_profile) ||
     asRecord(raw.userProfile) ||
     asRecord(raw.client_profile) ||
     asRecord(raw.clientProfile) ||
     asRecord(raw.patient_profile) ||
-    asRecord(raw.patientProfile);
+    asRecord(raw.patientProfile) ||
+    clientRawProfile;
   const startValue = readString(raw, [
     "start_time",
     "startTime",
