@@ -102,6 +102,13 @@ export type CabinetData = {
   documents: CabinetDocument[];
 };
 
+export type CabinetAppointmentQuery = {
+  user?: string;
+  date?: string;
+  completed?: boolean;
+  sortDirection?: "asc" | "desc";
+};
+
 const FALLBACK_AVATAR = "/user.jpg";
 const SPECIALIST_FALLBACK_AVATAR = "/lashenko2.png";
 export const PROFILE_AVATAR_CHANGED_EVENT = "profile-avatar-changed";
@@ -788,6 +795,18 @@ const readAppointmentClientProfileId = (
   readReferenceId(raw.userProfile) ||
   readReferenceId(raw.client_profile) ||
   readReferenceId(raw.clientProfile) ||
+  readReferenceId(raw.patient_profile) ||
+  readReferenceId(raw.patientProfile) ||
+  readString(raw, [
+    "user_profile_id",
+    "userProfileId",
+    "client_profile_id",
+    "clientProfileId",
+    "patient_profile_id",
+    "patientProfileId",
+    "profile_id",
+    "profileId",
+  ]) ||
   readReferenceId(profile) ||
   readReferenceId(user?.profile) ||
   readReferenceId(user?.user_profile) ||
@@ -844,6 +863,13 @@ const normalizeProfileDetailResponse = (data: unknown) => {
   );
 };
 
+const readFirstProfileFromResponse = (data: unknown) => {
+  const list = extractList(data);
+  if (list.length > 0) return list[0];
+
+  return normalizeProfileDetailResponse(data);
+};
+
 const hydrateAppointmentClientAvatars = async (
   appointments: CabinetAppointment[],
   profiles: RawRecord[],
@@ -857,17 +883,34 @@ const hydrateAppointmentClientAvatars = async (
           .filter(Boolean),
       ),
     );
-
-    const detailedProfiles = await Promise.all(
-      profileIdsToFetch.map((id) =>
-        fetchJson(endpoints.userProfile(id), signal)
-          .then(normalizeProfileDetailResponse)
-          .catch(() => null),
+    const userIdsToFetch = Array.from(
+      new Set(
+        appointments
+          .map((appointment) => appointment.clientId)
+          .filter((id): id is string => Boolean(id)),
       ),
     );
+
+    const [detailedProfiles, profilesByUser] = await Promise.all([
+      Promise.all(
+        profileIdsToFetch.map((id) =>
+          fetchJson(endpoints.userProfile(id), signal)
+            .then(normalizeProfileDetailResponse)
+            .catch(() => null),
+        ),
+      ),
+      Promise.all(
+        userIdsToFetch.map((id) =>
+          fetchJson(`${endpoints.userProfiles}?user=${encodeURIComponent(id)}`, signal)
+            .then(readFirstProfileFromResponse)
+            .catch(() => null),
+        ),
+      ),
+    ]);
     const hydratedProfiles = [
       ...profiles,
       ...detailedProfiles.filter((profile): profile is RawRecord => Boolean(profile)),
+      ...profilesByUser.filter((profile): profile is RawRecord => Boolean(profile)),
     ];
 
     return appointments.map((appointment) => {
@@ -1007,6 +1050,38 @@ const normalizeAppointment = (
     bookAgainUrl,
   };
 };
+
+const buildAppointmentsUrl = (input: CabinetAppointmentQuery = {}) => {
+  const endpoint = input.completed
+    ? endpoints.consultationCompletedAppointments
+    : endpoints.consultationAppointments;
+  const params = new URLSearchParams();
+
+  params.set("sort_field", "date");
+  params.set("sort_direction", input.sortDirection || (input.completed ? "desc" : "asc"));
+
+  if (input.user) params.set("user", input.user);
+  if (input.date) params.set("date", input.date);
+
+  return `${endpoint}?${params.toString()}`;
+};
+
+export async function getCabinetAppointments(
+  input: CabinetAppointmentQuery = {},
+  signal?: AbortSignal,
+): Promise<CabinetAppointment[]> {
+  const fallbackStatus = input.completed ? "completed" : "confirmed";
+  const [appointments, userProfiles] = await Promise.all([
+    fetchJson(buildAppointmentsUrl(input), signal).then((data) =>
+      extractList(data).map((item) => normalizeAppointment(item, fallbackStatus)),
+    ),
+    fetchJson(endpoints.userProfiles, signal)
+      .then(extractList)
+      .catch(() => []),
+  ]);
+
+  return hydrateAppointmentClientAvatars(appointments, userProfiles, signal);
+}
 
 export async function getCurrentCabinetProfile(
   signal?: AbortSignal,
