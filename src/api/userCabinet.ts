@@ -403,16 +403,57 @@ const readMediaValue = (...values: unknown[]): unknown => {
     const nestedValue =
       readString(record, [
         "url",
+        "secure_url",
+        "download_url",
         "file",
         "src",
         "href",
         "path",
         "avatar",
+        "avatar_url",
+        "avatarUrl",
         "photo",
+        "photo_url",
+        "photoUrl",
         "image",
+        "image_url",
+        "imageUrl",
         "picture",
+        "profile_photo",
+        "profilePhoto",
+        "profile_photo_url",
+        "profilePhotoUrl",
+        "profile_image",
+        "profileImage",
+        "profile_image_url",
+        "profileImageUrl",
+        "profile_picture",
+        "profilePicture",
+        "thumbnail",
+        "thumbnail_url",
+        "thumbnailUrl",
       ]) ||
-      readMediaValue(record.file, record.image, record.photo, record.avatar, record.picture);
+      readMediaValue(
+        record.file,
+        record.image,
+        record.photo,
+        record.avatar,
+        record.picture,
+        record.profile_photo,
+        record.profilePhoto,
+        record.profile_image,
+        record.profileImage,
+        record.profile_picture,
+        record.profilePicture,
+        record.user,
+        record.profile,
+        record.user_profile,
+        record.userProfile,
+        record.client,
+        record.patient,
+        record.owner,
+        record.account,
+      );
 
     if (nestedValue) return nestedValue;
   }
@@ -615,8 +656,11 @@ const normalizeProfile = (
       readString(source, ["gender", "sex"]) ||
       readString(sourceUser, ["gender", "sex"]),
     education:
-      readString(source, ["education", "education_other", "educationOther", "degree"]) ||
-      readString(sourceUser, ["education", "education_other", "educationOther", "degree"]),
+      readString(source, ["education", "degree"]) ||
+      readString(sourceUser, ["education", "degree"]),
+    educationOther:
+      readString(source, ["education_other", "educationOther", "other_education", "otherEducation"]) ||
+      readString(sourceUser, ["education_other", "educationOther", "other_education", "otherEducation"]),
     hasChildren:
       readString(source, ["has_children", "hasChildren", "children", "raising_children", "raisingChildren"]) ||
       readString(sourceUser, ["has_children", "hasChildren", "children", "raising_children", "raisingChildren"]),
