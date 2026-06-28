@@ -596,6 +596,12 @@ function AppointmentsView({
 
 type SpecialistRecordFilter = "all" | "name" | "date";
 
+type AppointmentFilterRequest = CabinetAppointmentQuery & {
+  localClientKey?: string;
+  localClientName?: string;
+  localDateKey?: string;
+};
+
 const parseAppointmentTimestamp = (appointment: CabinetAppointment) => {
   const rawValue =
     appointment.startsAt ||
@@ -638,8 +644,35 @@ const getAppointmentClientKey = (appointment: CabinetAppointment) =>
     .trim()
     .toLowerCase();
 
+const normalizeFilterValue = (value: string) => value.trim().toLowerCase();
+
+const getAppointmentClientNameKey = (appointment: CabinetAppointment) =>
+  normalizeFilterValue(getAppointmentClientName(appointment));
+
 const getAppointmentDateKey = (appointment: CabinetAppointment) =>
   parseAppointmentDate(appointment.date || appointment.startsAt);
+
+const filterAppointmentsLocally = (
+  appointments: CabinetAppointment[],
+  query: AppointmentFilterRequest,
+) =>
+  appointments.filter((appointment) => {
+    if (query.localClientName || query.localClientKey) {
+      const matchesName =
+        !!query.localClientName &&
+        getAppointmentClientNameKey(appointment) === query.localClientName;
+      const matchesKey =
+        !!query.localClientKey && getAppointmentClientKey(appointment) === query.localClientKey;
+
+      if (!matchesName && !matchesKey) return false;
+    }
+
+    if (query.localDateKey && getAppointmentDateKey(appointment) !== query.localDateKey) {
+      return false;
+    }
+
+    return true;
+  });
 
 type SpecialistNameFilterItem = {
   id: string;
@@ -647,6 +680,8 @@ type SpecialistNameFilterItem = {
   name: string;
   avatar?: string;
   userId?: string;
+  localClientKey?: string;
+  localClientName?: string;
 };
 
 function SpecialistNameFilterModal({
@@ -819,7 +854,7 @@ function SpecialistAppointmentsView({
   cancellingId: string;
   error: string;
   isFiltering: boolean;
-  onFilterChange: (query?: CabinetAppointmentQuery) => void;
+  onFilterChange: (query?: AppointmentFilterRequest) => void;
   onCancel: (appointment: CabinetAppointment) => void;
   onReschedule: (appointment: CabinetAppointment) => void;
 }) {
@@ -829,7 +864,9 @@ function SpecialistAppointmentsView({
     const items = new Map<string, SpecialistNameFilterItem & { sortTime: number }>();
 
     filterSourceAppointments.forEach((appointment) => {
-      const key = getAppointmentClientKey(appointment);
+      const clientKey = getAppointmentClientKey(appointment);
+      const nameKey = getAppointmentClientNameKey(appointment);
+      const key = nameKey || clientKey;
       if (!key) return;
 
       const existing = items.get(key);
@@ -844,6 +881,8 @@ function SpecialistAppointmentsView({
           name: getAppointmentClientName(appointment),
           avatar,
           userId: appointment.clientId || undefined,
+          localClientKey: clientKey || undefined,
+          localClientName: nameKey || undefined,
           sortTime: getAppointmentTime(appointment),
         });
         return;
@@ -851,6 +890,8 @@ function SpecialistAppointmentsView({
 
       if (!existing.avatar && avatar) existing.avatar = avatar;
       if (!existing.userId && appointment.clientId) existing.userId = appointment.clientId;
+      if (!existing.localClientKey && clientKey) existing.localClientKey = clientKey;
+      if (!existing.localClientName && nameKey) existing.localClientName = nameKey;
       existing.sortTime = Math.min(existing.sortTime, getAppointmentTime(appointment));
     });
 
@@ -886,7 +927,11 @@ function SpecialistAppointmentsView({
     "h-10 min-w-[92px] rounded-[30px] px-5 font-montserrat text-[12px] font-medium transition-colors min-[744px]:min-w-[112px]";
 
   return (
-    <section className="relative mx-auto mt-6 w-full min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1180px]">
+    <section
+      className={`relative mx-auto mt-6 w-full min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1180px] ${
+        appointments.length > 0 && appointments.length <= 3 ? "min-[1900px]:pb-[175px]" : ""
+      }`}
+    >
       <div className="relative z-10 flex flex-wrap gap-3 min-[744px]:gap-5">
         <button
           type="button"
@@ -938,7 +983,11 @@ function SpecialistAppointmentsView({
         onSelect={(item) => {
           setFilter("name");
           setActiveFilterModal("");
-          onFilterChange(item.userId ? { user: item.userId } : undefined);
+          onFilterChange({
+            ...(item.userId ? { user: item.userId } : {}),
+            localClientKey: item.localClientKey,
+            localClientName: item.localClientName,
+          });
         }}
       />
 
@@ -953,7 +1002,7 @@ function SpecialistAppointmentsView({
         onSelect={(item) => {
           setFilter("date");
           setActiveFilterModal("");
-          onFilterChange({ date: item.key });
+          onFilterChange({ date: item.key, localDateKey: item.key });
         }}
       />
 
@@ -1822,21 +1871,34 @@ export function UserCabinetPage() {
   };
 
   const handleSpecialistAppointmentFilterChange = async (
-    query: CabinetAppointmentQuery = {},
+    query: AppointmentFilterRequest = {},
   ) => {
+    const { localClientKey, localClientName, localDateKey, ...apiQuery } = query;
+    const hasLocalFallback = Boolean(localClientKey || localClientName || localDateKey);
+    const localQuery = { localClientKey, localClientName, localDateKey };
+
     setAppointmentMutationError("");
     setIsAppointmentFilterLoading(true);
 
     try {
-      const nextAppointments = await getCabinetAppointments(query);
-      setAppointments(nextAppointments);
+      const nextAppointments = await getCabinetAppointments(apiQuery);
+      const filteredAppointments =
+        hasLocalFallback && nextAppointments.length === 0
+          ? filterAppointmentsLocally(allAppointments, localQuery)
+          : nextAppointments;
 
-      if (!query.user && !query.date && !query.completed) {
+      setAppointments(filteredAppointments);
+
+      if (!apiQuery.user && !apiQuery.date && !apiQuery.completed) {
         setAllAppointments(nextAppointments);
       }
     } catch (error) {
       console.error(error);
-      setAppointmentMutationError(labels.loadError);
+      if (hasLocalFallback) {
+        setAppointments(filterAppointmentsLocally(allAppointments, localQuery));
+      } else {
+        setAppointmentMutationError(labels.loadError);
+      }
     } finally {
       setIsAppointmentFilterLoading(false);
     }
