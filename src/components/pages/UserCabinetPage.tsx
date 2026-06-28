@@ -1882,10 +1882,13 @@ export function UserCabinetPage() {
 
     try {
       const nextAppointments = await getCabinetAppointments(apiQuery);
+      const locallyFilteredAppointments = hasLocalFallback
+        ? filterAppointmentsLocally(nextAppointments, localQuery)
+        : nextAppointments;
       const filteredAppointments =
-        hasLocalFallback && nextAppointments.length === 0
+        hasLocalFallback && locallyFilteredAppointments.length === 0
           ? filterAppointmentsLocally(allAppointments, localQuery)
-          : nextAppointments;
+          : locallyFilteredAppointments;
 
       setAppointments(filteredAppointments);
 
