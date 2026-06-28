@@ -1,4 +1,4 @@
-import { Camera } from "lucide-react";
+import { Camera, ChevronDown } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +19,16 @@ type FormState = {
   phone: string;
   city: string;
   birthDate: string;
+  gender: string;
+  education: string;
+  educationOther: string;
+  hasChildren: string;
   about: string;
+};
+
+type SelectOption = {
+  value: string;
+  label: string;
 };
 
 const copy = {
@@ -36,6 +45,15 @@ const copy = {
     city: "Місто*",
     cityPlaceholder: "Місто",
     birthDate: "Дата народження*",
+    gender: "Ваш гендер*",
+    genderPlaceholder: "Виберіть варіант...",
+    education: "Освіта*",
+    educationPlaceholder: "Виберіть варіант...",
+    educationOther: "Вкажіть освіту*",
+    educationOtherPlaceholder: "Ваша освіта",
+    educationOtherError: "Вкажіть вашу освіту.",
+    hasChildren: "Виховую дітей*",
+    hasChildrenPlaceholder: "Так/Ні",
     consent: "Я надаю згоду на обробку персональних даних",
     consentError: "Підтвердіть згоду на обробку персональних даних.",
     about: "Про себе",
@@ -59,6 +77,15 @@ const copy = {
     city: "City*",
     cityPlaceholder: "City",
     birthDate: "Birth date*",
+    gender: "Your gender*",
+    genderPlaceholder: "Choose an option...",
+    education: "Education*",
+    educationPlaceholder: "Choose an option...",
+    educationOther: "Specify education*",
+    educationOtherPlaceholder: "Your education",
+    educationOtherError: "Specify your education.",
+    hasChildren: "Raising children*",
+    hasChildrenPlaceholder: "Yes/No",
     consent: "I consent to personal data processing",
     consentError: "Confirm personal data processing consent.",
     about: "About",
@@ -79,6 +106,71 @@ const yellowButton =
 
 const whiteButton = "rounded-[30px] bg-white font-montserrat font-medium text-[#1C100E]";
 const isEnglishLanguage = (language: string) => language.toLowerCase().startsWith("en");
+const inputClass =
+  "h-[34px] w-full rounded-[18px] border border-[#40213F] bg-[#F0E8F0] px-3 font-montserrat text-[12px] text-[#1C100E] outline-none transition placeholder:text-[#1C100E]/45 focus:ring-2 focus:ring-[#B34D8D]/30 min-[744px]:h-[37px]";
+
+const genderOptions = {
+  ua: [
+    { value: "male", label: "Чоловік" },
+    { value: "female", label: "Жінка" },
+    { value: "other", label: "Інший" },
+    { value: "prefer_not_to_say", label: "Не хочу говорити" },
+  ],
+  en: [
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+    { value: "other", label: "Other" },
+    { value: "prefer_not_to_say", label: "Prefer not to say" },
+  ],
+} satisfies Record<"ua" | "en", SelectOption[]>;
+
+const educationOptions = {
+  ua: [
+    { value: "teacher", label: "Педагог/Педагогиня" },
+    { value: "psychologist", label: "Психолог/Психологиня" },
+    { value: "trauma_pedagogy", label: "Травмопедагог/Травмопедагогиня" },
+    { value: "other", label: "Інша освіта (вказати)" },
+  ],
+  en: [
+    { value: "teacher", label: "Teacher" },
+    { value: "psychologist", label: "Psychologist" },
+    { value: "trauma_pedagogy", label: "Trauma pedagogue" },
+    { value: "other", label: "Other education" },
+  ],
+} satisfies Record<"ua" | "en", SelectOption[]>;
+
+const childrenOptions = {
+  ua: [
+    { value: "yes", label: "Так" },
+    { value: "no", label: "Ні" },
+  ],
+  en: [
+    { value: "yes", label: "Yes" },
+    { value: "no", label: "No" },
+  ],
+} satisfies Record<"ua" | "en", SelectOption[]>;
+
+const normalizeEducationValue = (value?: string) => {
+  const cleanValue = (value || "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (!cleanValue) return "";
+  if (["teacher", "pedagogue", "педагог", "педагог/педагогиня"].includes(cleanValue)) return "teacher";
+  if (["psychologist", "psychology", "психолог", "психолог/психологиня"].includes(cleanValue)) return "psychologist";
+  if (
+    [
+      "trauma_pedagogy",
+      "trauma pedagogy",
+      "trauma pedagogue",
+      "травмопедагог",
+      "травмопедагог/травмопедагогиня",
+    ].includes(cleanValue)
+  ) {
+    return "trauma_pedagogy";
+  }
+  if (["other", "other education", "інша освіта", "інша освіта (вказати)"].includes(cleanValue)) return "other";
+  return "other";
+};
+
+const knownEducationValues = new Set(["teacher", "psychologist", "trauma_pedagogy", "other"]);
 
 const splitFullName = (profile: CabinetProfile | null) => {
   if (!profile) return { firstName: "", lastName: "" };
@@ -93,6 +185,13 @@ const splitFullName = (profile: CabinetProfile | null) => {
 
 const toFormState = (profile: CabinetProfile | null): FormState => {
   const name = splitFullName(profile);
+  const education = normalizeEducationValue(profile?.education);
+  const rawEducation = (profile?.education || "").trim();
+  const educationOther =
+    profile?.educationOther ||
+    (education === "other" && rawEducation && !knownEducationValues.has(rawEducation.toLowerCase())
+      ? rawEducation
+      : "");
 
   return {
     firstName: name.firstName,
@@ -100,6 +199,10 @@ const toFormState = (profile: CabinetProfile | null): FormState => {
     phone: profile?.phone || "",
     city: profile?.city || "",
     birthDate: profile?.birthDate || "",
+    gender: profile?.gender || "",
+    education,
+    educationOther,
+    hasChildren: profile?.hasChildren || "",
     about: profile?.about || "",
   };
 };
@@ -128,8 +231,46 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         required={required}
         placeholder={placeholder}
-        className="h-[34px] w-full rounded-[18px] border border-[#40213F] bg-[#F0E8F0] px-3 font-montserrat text-[12px] text-[#1C100E] outline-none transition placeholder:text-[#1C100E]/45 focus:ring-2 focus:ring-[#B34D8D]/30 min-[744px]:h-[37px]"
+        className={inputClass}
       />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  placeholder,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block font-montserrat text-[#1C100E]">
+      <span className="mb-1 block text-[12px] leading-[1.2] min-[744px]:text-[13px]">{label}</span>
+      <span className="relative block">
+        <select
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          required
+          className={`${inputClass} appearance-none pr-9 ${value ? "" : "text-[#1C100E]/50"}`}
+        >
+          <option value="" disabled>
+            {placeholder}
+          </option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1C100E]" />
+      </span>
     </label>
   );
 }
@@ -141,6 +282,7 @@ export function UserProfileEditPage() {
     () => (isEnglishLanguage(i18n.language) ? copy.en : copy.ua),
     [i18n.language],
   );
+  const localeKey: "ua" | "en" = isEnglishLanguage(i18n.language) ? "en" : "ua";
 
   const [profile, setProfile] = useState<CabinetProfile | null>(null);
   const [form, setForm] = useState<FormState>(() => toFormState(null));
@@ -184,7 +326,11 @@ export function UserProfileEditPage() {
   }, [avatarFile]);
 
   const updateField = (field: keyof FormState) => (value: string) => {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === "education" && value !== "other" ? { educationOther: "" } : {}),
+    }));
   };
 
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -196,6 +342,11 @@ export function UserProfileEditPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!profile || profile.profileKind === "specialist") return;
+
+    if (form.education === "other" && !form.educationOther.trim()) {
+      setError(labels.educationOtherError);
+      return;
+    }
 
     setIsSaving(true);
     setError("");
@@ -308,13 +459,6 @@ export function UserProfileEditPage() {
             required
           />
           <Field
-            label={labels.city}
-            placeholder={labels.cityPlaceholder}
-            value={form.city}
-            onChange={updateField("city")}
-            required
-          />
-          <Field
             label={labels.birthDate}
             placeholder={labels.birthDate}
             value={form.birthDate}
@@ -322,17 +466,49 @@ export function UserProfileEditPage() {
             type="date"
             required
           />
-
-          <label className="block font-montserrat text-[#1C100E]">
-            <span className="mb-1 block text-[12px] leading-[1.2] min-[744px]:text-[13px]">{labels.about}</span>
-            <textarea
-              value={form.about}
-              onChange={(event) => updateField("about")(event.target.value)}
-              placeholder={labels.aboutPlaceholder}
-              rows={3}
-              className="w-full resize-y rounded-[18px] border border-[#40213F] bg-[#F0E8F0] px-3 py-2 font-montserrat text-[12px] text-[#1C100E] outline-none transition placeholder:text-[#1C100E]/45 focus:ring-2 focus:ring-[#B34D8D]/30"
+          <SelectField
+            label={labels.gender}
+            placeholder={labels.genderPlaceholder}
+            value={form.gender}
+            options={genderOptions[localeKey]}
+            onChange={updateField("gender")}
+          />
+          <Field
+            label={labels.city}
+            placeholder={labels.cityPlaceholder}
+            value={form.city}
+            onChange={updateField("city")}
+            required
+          />
+          <SelectField
+            label={labels.education}
+            placeholder={labels.educationPlaceholder}
+            value={form.education}
+            options={educationOptions[localeKey]}
+            onChange={updateField("education")}
+          />
+          {form.education === "other" ? (
+            <Field
+              label={labels.educationOther}
+              placeholder={labels.educationOtherPlaceholder}
+              value={form.educationOther}
+              onChange={updateField("educationOther")}
+              required
             />
-          </label>
+          ) : null}
+          <SelectField
+            label={labels.hasChildren}
+            placeholder={labels.hasChildrenPlaceholder}
+            value={form.hasChildren}
+            options={childrenOptions[localeKey]}
+            onChange={updateField("hasChildren")}
+          />
+          <Field
+            label={labels.about}
+            placeholder={labels.aboutPlaceholder}
+            value={form.about}
+            onChange={updateField("about")}
+          />
 
           {error ? (
             <p className="text-center text-[12px] leading-[1.3] text-[#83105F]">{error}</p>

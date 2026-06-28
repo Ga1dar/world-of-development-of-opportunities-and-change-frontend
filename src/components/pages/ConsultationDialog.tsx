@@ -327,18 +327,25 @@ export function ConsultationDialog({
 
   const renderStatus = () => {
     const isSuccess = step === "success";
+    const isProfileRequired = step === "profileRequired";
     const title = isSuccess
       ? t("consultationDialog.successTitle")
+      : isProfileRequired
+        ? t("consultationDialog.profileRequiredTitle")
       : step === "busy"
         ? t("consultationDialog.busyTitle")
         : t("consultationDialog.errorTitle");
     const description = isSuccess
       ? t("consultationDialog.successDescription")
+      : isProfileRequired
+        ? t("consultationDialog.profileRequiredDescription")
       : step === "busy"
         ? t("consultationDialog.busyDescription")
         : t("consultationDialog.errorDescription");
     const action = isSuccess
       ? t("consultationDialog.myAppointments")
+      : isProfileRequired
+        ? t("consultationDialog.profileRequiredAction")
       : step === "busy"
         ? t("consultationDialog.chooseAnotherTime")
         : t("consultationDialog.tryAgain");
@@ -346,6 +353,12 @@ export function ConsultationDialog({
       if (isSuccess) {
         handleOpenChange(false);
         navigate("/profile?tab=appointments");
+        return;
+      }
+
+      if (isProfileRequired) {
+        handleOpenChange(false);
+        navigate("/user-onboarding");
         return;
       }
 
@@ -574,7 +587,11 @@ export function ConsultationDialog({
           </div>
         )}
 
-        {(step === "success" || step === "busy" || step === "error") && renderStatus()}
+        {(step === "success" ||
+          step === "busy" ||
+          step === "error" ||
+          step === "profileRequired") &&
+          renderStatus()}
       </DialogContent>
     </Dialog>
   );
