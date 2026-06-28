@@ -392,35 +392,75 @@ const withAvatarVersion = (url: string) => {
 const resolveProfileAvatar = (value: unknown, fallback: string) =>
   withAvatarVersion(resolveMediaUrl(value, fallback));
 
+const readMediaValue = (...values: unknown[]): unknown => {
+  for (const value of values) {
+    const directValue = asString(value);
+    if (directValue) return directValue;
+
+    const record = asRecord(value);
+    if (!record) continue;
+
+    const nestedValue =
+      readString(record, [
+        "url",
+        "file",
+        "src",
+        "href",
+        "path",
+        "avatar",
+        "photo",
+        "image",
+        "picture",
+      ]) ||
+      readMediaValue(record.file, record.image, record.photo, record.avatar, record.picture);
+
+    if (nestedValue) return nestedValue;
+  }
+
+  return "";
+};
+
 const readAvatarValue = (profile: RawRecord | null, user: RawRecord | null = null) =>
-  profile?.avatar ??
-  profile?.photo ??
-  profile?.image ??
-  profile?.picture ??
-  profile?.avatar_url ??
-  profile?.avatarUrl ??
-  profile?.photo_url ??
-  profile?.photoUrl ??
-  profile?.image_url ??
-  profile?.imageUrl ??
-  profile?.profile_photo ??
-  profile?.profilePhoto ??
-  profile?.profile_image ??
-  profile?.profileImage ??
-  user?.avatar ??
-  user?.photo ??
-  user?.image ??
-  user?.picture ??
-  user?.avatar_url ??
-  user?.avatarUrl ??
-  user?.photo_url ??
-  user?.photoUrl ??
-  user?.image_url ??
-  user?.imageUrl ??
-  user?.profile_photo ??
-  user?.profilePhoto ??
-  user?.profile_image ??
-  user?.profileImage;
+  readMediaValue(
+    profile?.avatar,
+    profile?.photo,
+    profile?.image,
+    profile?.picture,
+    profile?.file,
+    profile?.avatar_url,
+    profile?.avatarUrl,
+    profile?.photo_url,
+    profile?.photoUrl,
+    profile?.image_url,
+    profile?.imageUrl,
+    profile?.profile_photo,
+    profile?.profilePhoto,
+    profile?.profile_image,
+    profile?.profileImage,
+    profile?.avatar_image,
+    profile?.avatarImage,
+    profile?.image_file,
+    profile?.imageFile,
+    user?.avatar,
+    user?.photo,
+    user?.image,
+    user?.picture,
+    user?.file,
+    user?.avatar_url,
+    user?.avatarUrl,
+    user?.photo_url,
+    user?.photoUrl,
+    user?.image_url,
+    user?.imageUrl,
+    user?.profile_photo,
+    user?.profilePhoto,
+    user?.profile_image,
+    user?.profileImage,
+    user?.avatar_image,
+    user?.avatarImage,
+    user?.image_file,
+    user?.imageFile,
+  );
 
 const readAvatarFromResponse = (data: unknown) => {
   const response = asRecord(data);
@@ -830,16 +870,14 @@ const profileMatchesAppointmentClient = (
     [readString(profile, ["first_name", "firstName"]), readString(profile, ["last_name", "lastName"])]
       .filter(Boolean)
       .join(" ");
-  const hasStrongAppointmentIdentity =
-    !!appointment.clientProfileId || !!appointment.clientId || !!appointment.clientEmail;
+  const appointmentName = appointment.clientName.trim().toLowerCase();
+  const profileName = fullName.trim().toLowerCase();
 
   return (
     (!!appointment.clientProfileId && profileId === appointment.clientProfileId) ||
     (!!appointment.clientId && userId === appointment.clientId) ||
     (!!appointment.clientEmail && email.toLowerCase() === appointment.clientEmail.toLowerCase()) ||
-    (!hasStrongAppointmentIdentity &&
-      !!appointment.clientName &&
-      fullName.toLowerCase() === appointment.clientName.toLowerCase())
+    (!!appointmentName && profileName === appointmentName)
   );
 };
 
@@ -891,7 +929,7 @@ const hydrateAppointmentClientAvatars = async (
       ),
     );
 
-    const [detailedProfiles, profilesByUser] = await Promise.all([
+    const [detailedProfiles, profilesByUser, profileDetailsByUserId] = await Promise.all([
       Promise.all(
         profileIdsToFetch.map((id) =>
           fetchJson(endpoints.userProfile(id), signal)
@@ -906,11 +944,19 @@ const hydrateAppointmentClientAvatars = async (
             .catch(() => null),
         ),
       ),
+      Promise.all(
+        userIdsToFetch.map((id) =>
+          fetchJson(endpoints.userProfile(id), signal)
+            .then(normalizeProfileDetailResponse)
+            .catch(() => null),
+        ),
+      ),
     ]);
     const hydratedProfiles = [
       ...profiles,
       ...detailedProfiles.filter((profile): profile is RawRecord => Boolean(profile)),
       ...profilesByUser.filter((profile): profile is RawRecord => Boolean(profile)),
+      ...profileDetailsByUserId.filter((profile): profile is RawRecord => Boolean(profile)),
     ];
 
     return appointments.map((appointment) => {
@@ -1027,21 +1073,24 @@ const normalizeAppointment = (
     clientName,
     clientEmail,
     clientAvatar: resolveMediaUrl(
-      raw.client_avatar ??
-        raw.clientAvatar ??
-        raw.user_avatar ??
-        raw.userAvatar ??
-        raw.patient_avatar ??
-        raw.patientAvatar ??
-        raw.profile_avatar ??
-        raw.profileAvatar ??
-        raw.client_photo ??
-        raw.clientPhoto ??
-        raw.user_photo ??
-        raw.userPhoto ??
-        raw.patient_photo ??
-        raw.patientPhoto ??
+      readMediaValue(
+        raw.client_avatar,
+        raw.clientAvatar,
+        raw.user_avatar,
+        raw.userAvatar,
+        raw.patient_avatar,
+        raw.patientAvatar,
+        raw.profile_avatar,
+        raw.profileAvatar,
+        raw.client_photo,
+        raw.clientPhoto,
+        raw.user_photo,
+        raw.userPhoto,
+        raw.patient_photo,
+        raw.patientPhoto,
         readAvatarValue(userProfile, readProfileUser(userProfile) || user),
+        readAvatarValue(user, readProfileUser(user) || user),
+      ),
       FALLBACK_AVATAR,
     ),
     date: readString(raw, ["date"]) || readString(slot, ["date"]) || parsed.date,
