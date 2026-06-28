@@ -20,6 +20,7 @@ export type ConsultationBookingPayload = {
 export type ConsultationBookingResult =
   | { status: "success" }
   | { status: "busy" }
+  | { status: "profileRequired" }
   | { status: "error" };
 
 export type ConsultationMutationResult = ConsultationBookingResult;
@@ -200,6 +201,21 @@ const hasBusyMarker = (value: unknown): boolean => {
   return record ? Object.values(record).some(hasBusyMarker) : false;
 };
 
+const hasProfileRequiredMarker = (value: unknown): boolean => {
+  if (typeof value === "string") {
+    return /profile|user[_\s-]?profile|client[_\s-]?profile|complete|fill|запов|проф/i.test(
+      value,
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return value.some(hasProfileRequiredMarker);
+  }
+
+  const record = asRecord(value);
+  return record ? Object.values(record).some(hasProfileRequiredMarker) : false;
+};
+
 export async function getConsultationSlots(
   specialistId: number,
   signal?: AbortSignal,
@@ -323,6 +339,12 @@ export async function bookConsultation(
       if (hasBusyMarker(data)) {
         return { status: "busy" };
       }
+
+      if (hasProfileRequiredMarker(data)) {
+        return { status: "profileRequired" };
+      }
+
+      return { status: "profileRequired" };
     }
 
     return { status: "error" };
