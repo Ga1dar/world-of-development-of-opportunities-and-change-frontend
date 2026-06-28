@@ -62,6 +62,7 @@ function ArticleListCard({
   const [favoritesCount, setFavoritesCount] = useState(article.favoritesCount);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLikesCount(article.likesCount);
     setIsLiked(article.isLiked);
     setIsFavorite(article.isFavorite);

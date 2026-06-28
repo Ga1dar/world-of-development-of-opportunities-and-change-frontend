@@ -30,6 +30,7 @@ export type CabinetProfile = {
   education?: string;
   hasChildren?: string;
   experience?: string;
+  educationOther?: string;
   workHours?: string;
   about?: string;
   isVerified?: boolean;
