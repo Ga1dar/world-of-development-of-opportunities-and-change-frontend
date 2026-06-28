@@ -1,4 +1,4 @@
-import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare, X } from "lucide-react";
+﻿import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -49,79 +49,79 @@ const isCabinetTab = (value: string | null): value is CabinetTab =>
 
 const copy = {
   ua: {
-    title: "Особистий кабінет",
-    loginRequired: "Увійдіть, щоб переглянути особистий кабінет.",
-    login: "Увійти",
-    loading: "Завантажуємо кабінет...",
-    loadError: "Не вдалося завантажити дані кабінету. Перевірте сервер і спробуйте ще раз.",
-    fallbackName: "Користувач",
-    roleUser: "Користувач",
-    roleSpecialist: "Спеціаліст",
-    roleAdmin: "Адміністратор",
-    workSchedule: "Графік роботи:",
-    edit: "Редагувати",
-    about: "Про мене",
-    myAppointments: "Мої записи",
-    favorites: "Обране",
-    calendar: "Календар",
-    appealHistory: "Історія звернень",
-    logout: "Вихід",
-    logoutConfirmTitle: "Ви впевнені,\nщо хочете вийти?",
-    logoutError: "Не вдалося завершити сеанс на сервері, але локально ви вже вийшли.",
-    cancelNote: "Скасовуйте запис щонайменше за 3 години — цінуймо час один одного.",
-    consultation: "Запис на консультацію",
-    toSpecialist: "До психолога",
-    date: "Дата",
-    time: "Час",
-    cancelOrReschedule: "Відмінити або перенести",
-    cancelModalTitle: "Відмінити або перенести запис можна, написавши спеціалісту особисто",
-    cancelModalNote: "Скасовуйте запис щонайменше за 3 години — цінуймо час один одного.",
-    close: "Закрити",
-    repeat: "Повторити",
-    review: "Відгук",
-    completed: "Відбувся",
-    empty: "Тут з'являться ваші записи на консультації.",
-    emptyFavorites: "Обрані матеріали та події з'являться тут.",
-    specialistAppointmentsEmpty: "Записи на консультації з'являться тут.",
-    calendarEmpty: "Календар спеціаліста з'явиться тут.",
-    historyEmpty: "Історія звернень з'явиться тут.",
-    all: "Усі",
-    byName: "За іменем",
-    byDate: "За датою",
-    cancel: "Відмінити",
-    reschedule: "Перенести",
-    specialistRecordsEmpty: "Записи на консультації з'являться тут.",
-    specialistNameFilterEmpty: "Записані користувачі з'являться тут.",
-    cancelAppointmentError: "Не вдалося відмінити запис. Спробуйте ще раз.",
-    emailLabel: "Пошта:",
-    emailMissing: "Відсутня",
-    phoneLabel: "Телефон:",
-    phoneMissing: "Відсутній",
-    cityLabel: "Місто:",
-    cityMissing: "Відсутнє",
-    birthDateLabel: "Дата народження:",
-    birthDateMissing: "Відсутня",
-    educationLabel: "Освіта вища:",
-    educationMissing: "Інформація відсутня",
-    specializationLabel: "Спеціальність:",
-    specializationMissing: "Інформація відсутня",
-    experienceLabel: "Стаж роботи:",
-    experienceMissing: "Інформація відсутня",
-    aboutMissing: "Інформація відсутня",
-    documentsLabel: "Документи:",
-    documentAlt: "Документ спеціаліста",
-    documentsEmpty: "Завантажені документи з'являться тут.",
-    previousMonth: "Попередній місяць",
-    nextMonth: "Наступний місяць",
-    busyTime: "Зайнятий час",
-    freeTime: "Вільний час",
-    addSlots: "Додати слоти",
-    addingSlots: "Додаємо...",
-    slotsSaved: "Слоти додано.",
-    slotsError: "Не вдалося оновити календар. Перевірте дату та спробуйте ще раз.",
-    availableSlots: "Вільні слоти",
-    noAvailableSlots: "На цю дату вільних слотів немає.",
-    deleteSlot: "Видалити слот",
+    title: "РћСЃРѕР±РёСЃС‚РёР№ РєР°Р±С–РЅРµС‚",
+    loginRequired: "РЈРІС–Р№РґС–С‚СЊ, С‰РѕР± РїРµСЂРµРіР»СЏРЅСѓС‚Рё РѕСЃРѕР±РёСЃС‚РёР№ РєР°Р±С–РЅРµС‚.",
+    login: "РЈРІС–Р№С‚Рё",
+    loading: "Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ РєР°Р±С–РЅРµС‚...",
+    loadError: "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё РґР°РЅС– РєР°Р±С–РЅРµС‚Сѓ. РџРµСЂРµРІС–СЂС‚Рµ СЃРµСЂРІРµСЂ С– СЃРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р·.",
+    fallbackName: "РљРѕСЂРёСЃС‚СѓРІР°С‡",
+    roleUser: "РљРѕСЂРёСЃС‚СѓРІР°С‡",
+    roleSpecialist: "РЎРїРµС†С–Р°Р»С–СЃС‚",
+    roleAdmin: "РђРґРјС–РЅС–СЃС‚СЂР°С‚РѕСЂ",
+    workSchedule: "Р“СЂР°С„С–Рє СЂРѕР±РѕС‚Рё:",
+    edit: "Р РµРґР°РіСѓРІР°С‚Рё",
+    about: "РџСЂРѕ РјРµРЅРµ",
+    myAppointments: "РњРѕС— Р·Р°РїРёСЃРё",
+    favorites: "РћР±СЂР°РЅРµ",
+    calendar: "РљР°Р»РµРЅРґР°СЂ",
+    appealHistory: "Р†СЃС‚РѕСЂС–СЏ Р·РІРµСЂРЅРµРЅСЊ",
+    logout: "Р’РёС…С–Рґ",
+    logoutConfirmTitle: "Р’Рё РІРїРµРІРЅРµРЅС–,\nС‰Рѕ С…РѕС‡РµС‚Рµ РІРёР№С‚Рё?",
+    logoutError: "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІРµСЂС€РёС‚Рё СЃРµР°РЅСЃ РЅР° СЃРµСЂРІРµСЂС–, Р°Р»Рµ Р»РѕРєР°Р»СЊРЅРѕ РІРё РІР¶Рµ РІРёР№С€Р»Рё.",
+    cancelNote: "РЎРєР°СЃРѕРІСѓР№С‚Рµ Р·Р°РїРёСЃ С‰РѕРЅР°Р№РјРµРЅС€Рµ Р·Р° 3 РіРѕРґРёРЅРё вЂ” С†С–РЅСѓР№РјРѕ С‡Р°СЃ РѕРґРёРЅ РѕРґРЅРѕРіРѕ.",
+    consultation: "Р—Р°РїРёСЃ РЅР° РєРѕРЅСЃСѓР»СЊС‚Р°С†С–СЋ",
+    toSpecialist: "Р”Рѕ РїСЃРёС…РѕР»РѕРіР°",
+    date: "Р”Р°С‚Р°",
+    time: "Р§Р°СЃ",
+    cancelOrReschedule: "Р’С–РґРјС–РЅРёС‚Рё Р°Р±Рѕ РїРµСЂРµРЅРµСЃС‚Рё",
+    cancelModalTitle: "Р’С–РґРјС–РЅРёС‚Рё Р°Р±Рѕ РїРµСЂРµРЅРµСЃС‚Рё Р·Р°РїРёСЃ РјРѕР¶РЅР°, РЅР°РїРёСЃР°РІС€Рё СЃРїРµС†С–Р°Р»С–СЃС‚Сѓ РѕСЃРѕР±РёСЃС‚Рѕ",
+    cancelModalNote: "РЎРєР°СЃРѕРІСѓР№С‚Рµ Р·Р°РїРёСЃ С‰РѕРЅР°Р№РјРµРЅС€Рµ Р·Р° 3 РіРѕРґРёРЅРё вЂ” С†С–РЅСѓР№РјРѕ С‡Р°СЃ РѕРґРёРЅ РѕРґРЅРѕРіРѕ.",
+    close: "Р—Р°РєСЂРёС‚Рё",
+    repeat: "РџРѕРІС‚РѕСЂРёС‚Рё",
+    review: "Р’С–РґРіСѓРє",
+    completed: "Р’С–РґР±СѓРІСЃСЏ",
+    empty: "РўСѓС‚ Р·'СЏРІР»СЏС‚СЊСЃСЏ РІР°С€С– Р·Р°РїРёСЃРё РЅР° РєРѕРЅСЃСѓР»СЊС‚Р°С†С–С—.",
+    emptyFavorites: "РћР±СЂР°РЅС– РјР°С‚РµСЂС–Р°Р»Рё С‚Р° РїРѕРґС–С— Р·'СЏРІР»СЏС‚СЊСЃСЏ С‚СѓС‚.",
+    specialistAppointmentsEmpty: "Р—Р°РїРёСЃРё РЅР° РєРѕРЅСЃСѓР»СЊС‚Р°С†С–С— Р·'СЏРІР»СЏС‚СЊСЃСЏ С‚СѓС‚.",
+    calendarEmpty: "РљР°Р»РµРЅРґР°СЂ СЃРїРµС†С–Р°Р»С–СЃС‚Р° Р·'СЏРІРёС‚СЊСЃСЏ С‚СѓС‚.",
+    historyEmpty: "Р†СЃС‚РѕСЂС–СЏ Р·РІРµСЂРЅРµРЅСЊ Р·'СЏРІРёС‚СЊСЃСЏ С‚СѓС‚.",
+    all: "РЈСЃС–",
+    byName: "Р—Р° С–РјРµРЅРµРј",
+    byDate: "Р—Р° РґР°С‚РѕСЋ",
+    cancel: "Р’С–РґРјС–РЅРёС‚Рё",
+    reschedule: "РџРµСЂРµРЅРµСЃС‚Рё",
+    specialistRecordsEmpty: "Р—Р°РїРёСЃРё РЅР° РєРѕРЅСЃСѓР»СЊС‚Р°С†С–С— Р·'СЏРІР»СЏС‚СЊСЃСЏ С‚СѓС‚.",
+    specialistNameFilterEmpty: "Р—Р°РїРёСЃР°РЅС– РєРѕСЂРёСЃС‚СѓРІР°С‡С– Р·'СЏРІР»СЏС‚СЊСЃСЏ С‚СѓС‚.",
+    cancelAppointmentError: "РќРµ РІРґР°Р»РѕСЃСЏ РІС–РґРјС–РЅРёС‚Рё Р·Р°РїРёСЃ. РЎРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р·.",
+    emailLabel: "РџРѕС€С‚Р°:",
+    emailMissing: "Р’С–РґСЃСѓС‚РЅСЏ",
+    phoneLabel: "РўРµР»РµС„РѕРЅ:",
+    phoneMissing: "Р’С–РґСЃСѓС‚РЅС–Р№",
+    cityLabel: "РњС–СЃС‚Рѕ:",
+    cityMissing: "Р’С–РґСЃСѓС‚РЅС”",
+    birthDateLabel: "Р”Р°С‚Р° РЅР°СЂРѕРґР¶РµРЅРЅСЏ:",
+    birthDateMissing: "Р’С–РґСЃСѓС‚РЅСЏ",
+    educationLabel: "РћСЃРІС–С‚Р° РІРёС‰Р°:",
+    educationMissing: "Р†РЅС„РѕСЂРјР°С†С–СЏ РІС–РґСЃСѓС‚РЅСЏ",
+    specializationLabel: "РЎРїРµС†С–Р°Р»СЊРЅС–СЃС‚СЊ:",
+    specializationMissing: "Р†РЅС„РѕСЂРјР°С†С–СЏ РІС–РґСЃСѓС‚РЅСЏ",
+    experienceLabel: "РЎС‚Р°Р¶ СЂРѕР±РѕС‚Рё:",
+    experienceMissing: "Р†РЅС„РѕСЂРјР°С†С–СЏ РІС–РґСЃСѓС‚РЅСЏ",
+    aboutMissing: "Р†РЅС„РѕСЂРјР°С†С–СЏ РІС–РґСЃСѓС‚РЅСЏ",
+    documentsLabel: "Р”РѕРєСѓРјРµРЅС‚Рё:",
+    documentAlt: "Р”РѕРєСѓРјРµРЅС‚ СЃРїРµС†С–Р°Р»С–СЃС‚Р°",
+    documentsEmpty: "Р—Р°РІР°РЅС‚Р°Р¶РµРЅС– РґРѕРєСѓРјРµРЅС‚Рё Р·'СЏРІР»СЏС‚СЊСЃСЏ С‚СѓС‚.",
+    previousMonth: "РџРѕРїРµСЂРµРґРЅС–Р№ РјС–СЃСЏС†СЊ",
+    nextMonth: "РќР°СЃС‚СѓРїРЅРёР№ РјС–СЃСЏС†СЊ",
+    busyTime: "Р—Р°Р№РЅСЏС‚РёР№ С‡Р°СЃ",
+    freeTime: "Р’С–Р»СЊРЅРёР№ С‡Р°СЃ",
+    addSlots: "Р”РѕРґР°С‚Рё СЃР»РѕС‚Рё",
+    addingSlots: "Р”РѕРґР°С”РјРѕ...",
+    slotsSaved: "РЎР»РѕС‚Рё РґРѕРґР°РЅРѕ.",
+    slotsError: "РќРµ РІРґР°Р»РѕСЃСЏ РѕРЅРѕРІРёС‚Рё РєР°Р»РµРЅРґР°СЂ. РџРµСЂРµРІС–СЂС‚Рµ РґР°С‚Сѓ С‚Р° СЃРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р·.",
+    availableSlots: "Р’С–Р»СЊРЅС– СЃР»РѕС‚Рё",
+    noAvailableSlots: "РќР° С†СЋ РґР°С‚Сѓ РІС–Р»СЊРЅРёС… СЃР»РѕС‚С–РІ РЅРµРјР°С”.",
+    deleteSlot: "Р’РёРґР°Р»РёС‚Рё СЃР»РѕС‚",
   },
   en: {
     title: "Personal account",
@@ -143,14 +143,14 @@ const copy = {
     logout: "Logout",
     logoutConfirmTitle: "Are you sure\nyou want to log out?",
     logoutError: "Could not finish the server session, but you have been logged out locally.",
-    cancelNote: "Cancel your booking at least 3 hours ahead — let us value each other's time.",
+    cancelNote: "Cancel your booking at least 3 hours ahead вЂ” let us value each other's time.",
     consultation: "Consultation booking",
     toSpecialist: "To psychologist",
     date: "Date",
     time: "Time",
     cancelOrReschedule: "Cancel or reschedule",
     cancelModalTitle: "You can cancel or reschedule a booking by messaging the specialist directly",
-    cancelModalNote: "Cancel your booking at least 3 hours ahead — let us value each other's time.",
+    cancelModalNote: "Cancel your booking at least 3 hours ahead вЂ” let us value each other's time.",
     close: "Close",
     repeat: "Repeat",
     review: "Review",
@@ -210,12 +210,12 @@ const whiteButton =
 
 const normalizeDate = (value: string) => {
   if (!value) return "";
-  if (value.includes(".")) return value.endsWith("р") ? value : `${value}р`;
+  if (value.includes(".")) return value.endsWith("СЂ") ? value : `${value}СЂ`;
 
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
 
-  return `${parsed.toLocaleDateString("uk-UA")}р`;
+  return `${parsed.toLocaleDateString("uk-UA")}СЂ`;
 };
 
 const toDateInputValue = (date: Date) => {
@@ -494,7 +494,7 @@ function AppointmentCard({
       <div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-4 text-[12px] leading-[1.2] min-[744px]:text-[13px]">
         <div>
           <p>{labels.toSpecialist}</p>
-          <p className="mt-1">{appointment.specialistName || "—"}</p>
+          <p className="mt-1">{appointment.specialistName || "вЂ”"}</p>
         </div>
         <div>
           <p>{labels.date}</p>
@@ -504,7 +504,7 @@ function AppointmentCard({
         </div>
         <div>
           <p>{labels.time}</p>
-          <p className="mt-1">{appointment.time || "—"}</p>
+          <p className="mt-1">{appointment.time || "вЂ”"}</p>
         </div>
       </div>
 
@@ -632,7 +632,7 @@ const getAppointmentTime = (appointment: CabinetAppointment) => {
 };
 
 const getAppointmentClientName = (appointment: CabinetAppointment) =>
-  (appointment.clientName || appointment.clientEmail || "—").trim();
+  (appointment.clientName || appointment.clientEmail || "вЂ”").trim();
 
 const getAppointmentClientKey = (appointment: CabinetAppointment) =>
   normalizeFilterValue(
@@ -738,7 +738,7 @@ function SpecialistNameFilterModal({
 
         <img
           src="/Logo1.png"
-          alt="СвіТи"
+          alt="РЎРІС–РўРё"
           className="mx-auto h-auto w-[76px] min-[744px]:w-[82px] min-[1900px]:w-[90px]"
         />
 
@@ -784,16 +784,18 @@ function SpecialistNameFilterModal({
 function SpecialistAppointmentCard({
   appointment,
   labels,
-  isCancelling,
+  isCancelling = false,
   onCancel,
   onReschedule,
 }: {
   appointment: CabinetAppointment;
   labels: typeof copy.ua;
-  isCancelling: boolean;
-  onCancel: (appointment: CabinetAppointment) => void;
-  onReschedule: (appointment: CabinetAppointment) => void;
+  isCancelling?: boolean;
+  onCancel?: (appointment: CabinetAppointment) => void;
+  onReschedule?: (appointment: CabinetAppointment) => void;
 }) {
+  const showActions = Boolean(onCancel && onReschedule);
+
   return (
     <article className="relative z-10 w-full rounded-[18px] bg-[#C8C8C8] p-4 font-montserrat text-[#1C100E] min-[744px]:max-w-[390px] min-[1420px]:max-w-[280px] min-[1900px]:max-w-[360px]">
       <h3 className="text-[15px] font-medium leading-[1.2] min-[744px]:text-[16px]">
@@ -802,7 +804,7 @@ function SpecialistAppointmentCard({
 
       <div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-4 text-[11px] leading-[1.25] min-[744px]:text-[12px]">
         <div>
-          <p>{appointment.clientName || appointment.clientEmail || "—"}</p>
+          <p>{appointment.clientName || appointment.clientEmail || "вЂ”"}</p>
         </div>
         <div>
           <p>{labels.date}</p>
@@ -810,27 +812,31 @@ function SpecialistAppointmentCard({
         </div>
         <div>
           <p>{labels.time}</p>
-          <p className="mt-1">{appointment.time || "—"}</p>
+          <p className="mt-1">{appointment.time || "вЂ”"}</p>
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          disabled={isCancelling}
-          onClick={() => onCancel(appointment)}
-          className={`${whiteButton} h-10 text-[12px] disabled:cursor-wait disabled:opacity-70`}
-        >
-          {labels.cancel}
-        </button>
-        <button
-          type="button"
-          onClick={() => onReschedule(appointment)}
-          className={`${whiteButton} h-10 text-[12px]`}
-        >
-          {labels.reschedule}
-        </button>
-      </div>
+      {showActions ? (
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            disabled={isCancelling}
+            onClick={() => onCancel?.(appointment)}
+            className={`${whiteButton} h-10 text-[12px] disabled:cursor-wait disabled:opacity-70`}
+          >
+            {labels.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => onReschedule?.(appointment)}
+            className={`${whiteButton} h-10 text-[12px]`}
+          >
+            {labels.reschedule}
+          </button>
+        </div>
+      ) : (
+        <p className="mt-5 text-[12px] leading-[1.25] text-[#3D8E4D]">{labels.completed}</p>
+      )}
     </article>
   );
 }
@@ -1041,6 +1047,48 @@ function SpecialistAppointmentsView({
           </p>
         </div>
       )}
+    </section>
+  );
+}
+
+function SpecialistHistoryView({
+  appointments,
+  labels,
+}: {
+  appointments: CabinetAppointment[];
+  labels: typeof copy.ua;
+}) {
+  const sortedAppointments = useMemo(
+    () => [...appointments].sort((a, b) => getAppointmentTime(b) - getAppointmentTime(a)),
+    [appointments],
+  );
+
+  if (!sortedAppointments.length) {
+    return <SpecialistPlaceholderView text={labels.historyEmpty} />;
+  }
+
+  return (
+    <section
+      className={`relative mx-auto mt-6 w-full min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[1260px] min-[1900px]:max-w-[1180px] ${
+        sortedAppointments.length <= 3 ? "min-[1900px]:pb-[230px]" : ""
+      }`}
+    >
+      <img
+        src="/sunForPersonalOfice.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-16 z-0 hidden w-[220px] -translate-x-1/2 opacity-65 min-[744px]:block min-[1023px]:w-[280px]"
+      />
+
+      <div className="relative z-10 mt-5 grid gap-4 min-[744px]:mt-6 min-[1023px]:grid-cols-2 min-[1420px]:grid-cols-3 min-[1900px]:gap-6">
+        {sortedAppointments.map((appointment) => (
+          <SpecialistAppointmentCard
+            key={`${appointment.status}-${appointment.id}`}
+            appointment={appointment}
+            labels={labels}
+          />
+        ))}
+      </div>
     </section>
   );
 }
@@ -1338,7 +1386,7 @@ function SpecialistCalendarView({
                     className="rounded-[30px] border border-[#83105F] px-3 py-1 text-[#83105F] disabled:opacity-60"
                     aria-label={`${labels.deleteSlot} ${slot.time}`}
                   >
-                    {slot.time} ×
+                    {slot.time} Г—
                   </button>
                 ))
               ) : (
@@ -1404,7 +1452,7 @@ function CancelAppointmentDialog({
           className="absolute right-5 top-5 flex h-6 w-6 items-center justify-center font-montserrat text-[18px] leading-none text-[#1C100E]/35"
           aria-label={labels.close}
         >
-          ×
+          Г—
         </button>
 
         <img
@@ -1417,14 +1465,29 @@ function CancelAppointmentDialog({
           {labels.cancelModalTitle}
         </h2>
 
-        <div className="mt-7 flex items-center gap-3 font-montserrat text-[14px] font-medium text-[#1C100E] min-[744px]:mt-6 min-[744px]:text-[16px]">
-          <img
-            src={appointment.specialistAvatar || "/lashenko2.png"}
-            alt={appointment.specialistName}
-            className="h-8 w-8 rounded-full object-cover"
-          />
-          <span>{appointment.specialistName || "—"}</span>
-        </div>
+        {appointment.specialistId ? (
+          <Link
+            to={`/specialists/${appointment.specialistId}`}
+            onClick={onClose}
+            className="mt-7 flex items-center gap-3 rounded-full font-montserrat text-[14px] font-medium text-[#1C100E] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83105F] min-[744px]:mt-6 min-[744px]:text-[16px]"
+          >
+            <img
+              src={appointment.specialistAvatar || "/lashenko2.png"}
+              alt={appointment.specialistName}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+            <span>{appointment.specialistName || "-"}</span>
+          </Link>
+        ) : (
+          <div className="mt-7 flex items-center gap-3 font-montserrat text-[14px] font-medium text-[#1C100E] min-[744px]:mt-6 min-[744px]:text-[16px]">
+            <img
+              src={appointment.specialistAvatar || "/lashenko2.png"}
+              alt={appointment.specialistName}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+            <span>{appointment.specialistName || "-"}</span>
+          </div>
+        )}
 
         <p className="mt-6 max-w-[315px] font-montserrat text-[12px] leading-[1.25] text-[#1C100E]/65 min-[744px]:max-w-[420px] min-[744px]:text-[13px] min-[1900px]:max-w-[520px]">
           {labels.cancelModalNote}
@@ -1444,7 +1507,7 @@ function FavoriteContentCard({
   const kindLabel =
     language === "en"
       ? { event: "Event", article: "Article", video: "Video" }[item.kind]
-      : { event: "Подія", article: "Стаття", video: "Відео" }[item.kind];
+      : { event: "РџРѕРґС–СЏ", article: "РЎС‚Р°С‚С‚СЏ", video: "Р’С–РґРµРѕ" }[item.kind];
 
   return (
     <Link
@@ -1612,7 +1675,7 @@ function SpecialistAboutView({
         />
         <SpecialistDetailLine
           label={labels.workSchedule}
-          value={profile.workHours || "(з 09:00 до 18:00)"}
+          value={profile.workHours || "(Р· 09:00 РґРѕ 18:00)"}
         />
         <SpecialistDetailLine
           label={labels.cityLabel}
@@ -2009,7 +2072,7 @@ export function UserCabinetPage() {
           specialistId={Number.isFinite(specialistId) ? specialistId : 0}
         />
       ) : activeTab === "history" ? (
-        <SpecialistPlaceholderView text={labels.historyEmpty} />
+        <SpecialistHistoryView appointments={completedAppointments} labels={labels} />
       ) : activeTab === "favorites" ? (
         <FavoritesView
           labels={labels}
