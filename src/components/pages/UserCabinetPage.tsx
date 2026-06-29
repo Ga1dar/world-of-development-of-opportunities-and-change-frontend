@@ -1,4 +1,5 @@
-﻿import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare, X } from "lucide-react";
+﻿/* eslint-disable react-hooks/set-state-in-effect */
+import { Bookmark, Camera, ChevronLeft, ChevronRight, Heart, MessageSquare, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -480,6 +481,7 @@ function AppointmentCard({
   onRepeat: (appointment: CabinetAppointment) => void;
 }) {
   const isCompleted = appointment.status === "completed";
+  const specialistHref = getAppointmentSpecialistHref(appointment);
 
   return (
     <article
@@ -513,7 +515,7 @@ function AppointmentCard({
           <button
             type="button"
             onClick={() => onRepeat(appointment)}
-            disabled={!appointment.specialistId}
+            disabled={!specialistHref}
             className={`${whiteButton} h-10 text-[13px] disabled:cursor-not-allowed disabled:opacity-60`}
           >
             {labels.repeat}
@@ -924,6 +926,7 @@ function SpecialistAppointmentsView({
         const byName = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
         return byName || a.sortTime - b.sortTime;
       })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .map(({ sortTime: _sortTime, ...item }) => item);
   }, [filterSourceAppointments]);
   const dateFilterItems = useMemo(() => {
@@ -943,6 +946,7 @@ function SpecialistAppointmentsView({
 
     return Array.from(items.values())
       .sort((a, b) => a.sortTime - b.sortTime)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .map(({ sortTime: _sortTime, ...item }) => item);
   }, [filterSourceAppointments]);
   const activeFilterClass = "border border-[#B34D8D] bg-[#E7C5DA] text-[#83105F]";
@@ -1429,10 +1433,12 @@ function CancelAppointmentDialog({
   appointment,
   labels,
   onClose,
+  onOpenSpecialist,
 }: {
   appointment: CabinetAppointment | null;
   labels: typeof copy.ua;
   onClose: () => void;
+  onOpenSpecialist: (href: string) => void;
 }) {
   useEffect(() => {
     if (!appointment) return undefined;
@@ -1486,10 +1492,10 @@ function CancelAppointmentDialog({
         </h2>
 
         {specialistHref ? (
-          <Link
-            to={specialistHref}
-            onClick={onClose}
-            className="mt-7 flex items-center gap-3 rounded-full font-montserrat text-[14px] font-medium text-[#1C100E] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83105F] min-[744px]:mt-6 min-[744px]:text-[16px]"
+          <button
+            type="button"
+            onClick={() => onOpenSpecialist(specialistHref)}
+            className="mt-7 flex cursor-pointer items-center gap-3 rounded-full font-montserrat text-[14px] font-medium text-[#1C100E] transition hover:text-[#83105F] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83105F] min-[744px]:mt-6 min-[744px]:text-[16px]"
           >
             <img
               src={appointment.specialistAvatar || "/lashenko2.png"}
@@ -1497,7 +1503,7 @@ function CancelAppointmentDialog({
               className="h-8 w-8 rounded-full object-cover"
             />
             <span>{appointment.specialistName || "-"}</span>
-          </Link>
+          </button>
         ) : (
           <div className="mt-7 flex items-center gap-3 font-montserrat text-[14px] font-medium text-[#1C100E] min-[744px]:mt-6 min-[744px]:text-[16px]">
             <img
@@ -2034,6 +2040,11 @@ export function UserCabinetPage() {
     navigate(`${specialistHref}?consultation=1`);
   };
 
+  const handleOpenCancelAppointmentSpecialist = (specialistHref: string) => {
+    setSelectedAppointment(null);
+    navigate(specialistHref);
+  };
+
   return (
     <section className={`${pageMaxWidth} pt-4 pb-16 min-[744px]:pt-0 min-[1023px]:pt-8 min-[1420px]:pt-20 min-[1900px]:pt-24`}>
       {isSpecialistAbout ? (
@@ -2111,6 +2122,7 @@ export function UserCabinetPage() {
         appointment={selectedAppointment}
         labels={labels}
         onClose={() => setSelectedAppointment(null)}
+        onOpenSpecialist={handleOpenCancelAppointmentSpecialist}
       />
 
       <DocumentPreviewDialog
