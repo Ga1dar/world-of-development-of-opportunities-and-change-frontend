@@ -825,6 +825,40 @@ const readSpecialistIdFromBookAgainUrl = (value: string) => {
   }
 };
 
+const readSpecialistReferenceId = (...values: unknown[]) => {
+  for (const value of values) {
+    const directId = readReferenceId(value);
+    if (directId) return directId;
+
+    const record = asRecord(value);
+    if (!record) continue;
+
+    const nestedId =
+      readString(record, [
+        "specialist_id",
+        "specialistId",
+        "specialist_profile_id",
+        "specialistProfileId",
+        "psychologist_id",
+        "psychologistId",
+        "doctor_id",
+        "doctorId",
+        "provider_id",
+        "providerId",
+      ]) ||
+      readReferenceId(record.specialist) ||
+      readReferenceId(record.specialist_profile) ||
+      readReferenceId(record.specialistProfile) ||
+      readReferenceId(record.psychologist) ||
+      readReferenceId(record.doctor) ||
+      readReferenceId(record.provider);
+
+    if (nestedId) return nestedId;
+  }
+
+  return "";
+};
+
 const readAppointmentClientId = (
   raw: RawRecord,
   user: RawRecord | null,
@@ -1014,12 +1048,133 @@ const hydrateAppointmentClientAvatars = async (
     });
   };
 
+const normalizeAppointmentSpecialistLookup = (value: string) =>
+  value
+    .replace(
+      /^\s*(specialist|psychologist|doctor|provider|спеціаліст|специалист|психолог|лікар|врач)\s*[:：-]\s*/i,
+      "",
+    )
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+const normalizeAppointmentMediaLookup = (value: string) => {
+  const normalized = value.split("?")[0].replace(/\\/g, "/").toLowerCase();
+
+  return normalized.endsWith("/user.jpg") || normalized.endsWith("/lashenko2.png")
+    ? ""
+    : normalized;
+};
+
+const readSpecialistProfileLookupKeys = (profile: RawRecord | null) => {
+  const user = readProfileUser(profile);
+  const firstNames = [
+    readString(profile, ["first_name", "firstName", "first_name_ua", "first_name_en"]),
+    readString(user, ["first_name", "firstName", "first_name_ua", "first_name_en"]),
+  ].filter(Boolean);
+  const lastNames = [
+    readString(profile, ["last_name", "lastName", "last_name_ua", "last_name_en"]),
+    readString(user, ["last_name", "lastName", "last_name_ua", "last_name_en"]),
+  ].filter(Boolean);
+  const fullNames = [
+    readString(profile, [
+      "full_name",
+      "fullName",
+      "full_name_ua",
+      "full_name_en",
+      "display_name",
+      "displayName",
+      "name",
+      "name_ua",
+      "name_en",
+      "title",
+      "username",
+    ]),
+    readString(user, [
+      "full_name",
+      "fullName",
+      "full_name_ua",
+      "full_name_en",
+      "display_name",
+      "displayName",
+      "name",
+      "name_ua",
+      "name_en",
+      "username",
+    ]),
+    readString(profile, ["email", "user_email", "userEmail"]),
+    readString(user, ["email", "user_email", "userEmail"]),
+  ];
+  const nameCombinations = firstNames.flatMap((firstName) =>
+    lastNames.flatMap((lastName) => [`${firstName} ${lastName}`, `${lastName} ${firstName}`]),
+  );
+
+  return [...fullNames, ...nameCombinations]
+    .map(normalizeAppointmentSpecialistLookup)
+    .filter((key, index, keys): key is string => Boolean(key) && keys.indexOf(key) === index);
+};
+
+const hydrateAppointmentSpecialistLinks = (
+  appointments: CabinetAppointment[],
+  specialistProfiles: RawRecord[],
+) => {
+  if (!appointments.length || !specialistProfiles.length) return appointments;
+
+  const specialistLookup = specialistProfiles
+    .map((profile) => {
+      const id = readSpecialistReferenceId(profile) || readReferenceId(profile);
+      if (!id) return null;
+
+      const keys = readSpecialistProfileLookupKeys(profile);
+      const avatar = normalizeAppointmentMediaLookup(readProfileAvatar(profile));
+
+      return keys.length || avatar ? { id, keys, avatar } : null;
+    })
+    .filter((item): item is { id: string; keys: string[]; avatar: string } =>
+      Boolean(item),
+    );
+
+  if (!specialistLookup.length) return appointments;
+
+  return appointments.map((appointment) => {
+    if (appointment.specialistId) return appointment;
+
+    const appointmentKeys = [
+      appointment.specialistName,
+      appointment.specialistName.replace(/^Specialist:\s*/i, ""),
+    ]
+      .map(normalizeAppointmentSpecialistLookup)
+      .filter((key): key is string => Boolean(key));
+    const appointmentAvatar = normalizeAppointmentMediaLookup(appointment.specialistAvatar);
+    const matchedSpecialist = specialistLookup.find((specialist) =>
+      appointmentKeys.some((key) => specialist.keys.includes(key)) ||
+      Boolean(appointmentAvatar && specialist.avatar && appointmentAvatar === specialist.avatar),
+    );
+
+    return matchedSpecialist
+      ? { ...appointment, specialistId: matchedSpecialist.id }
+      : appointment;
+  });
+};
+
 const normalizeAppointment = (
   raw: RawRecord,
   fallbackStatus: CabinetAppointment["status"],
 ): CabinetAppointment => {
   const slot = asRecord(raw.slot);
-  const specialist = asRecord(raw.specialist) || asRecord(slot?.specialist);
+  const specialist =
+    asRecord(raw.specialist) ||
+    asRecord(raw.specialist_profile) ||
+    asRecord(raw.specialistProfile) ||
+    asRecord(raw.psychologist) ||
+    asRecord(raw.doctor) ||
+    asRecord(raw.provider) ||
+    asRecord(slot?.specialist) ||
+    asRecord(slot?.specialist_profile) ||
+    asRecord(slot?.specialistProfile) ||
+    asRecord(slot?.psychologist) ||
+    asRecord(slot?.doctor) ||
+    asRecord(slot?.provider);
   const rawUser = asRecord(raw.user);
   const client = asRecord(raw.client);
   const patient = asRecord(raw.patient);
@@ -1084,15 +1239,41 @@ const normalizeAppointment = (
       "specialistId",
       "specialist_profile_id",
       "specialistProfileId",
+      "psychologist_id",
+      "psychologistId",
+      "doctor_id",
+      "doctorId",
+      "provider_id",
+      "providerId",
     ]) ||
-    readReferenceId(raw.specialist) ||
+    readSpecialistReferenceId(
+      raw.specialist,
+      raw.specialist_profile,
+      raw.specialistProfile,
+      raw.psychologist,
+      raw.doctor,
+      raw.provider,
+    ) ||
     readString(slot, [
       "specialist_id",
       "specialistId",
       "specialist_profile_id",
       "specialistProfileId",
+      "psychologist_id",
+      "psychologistId",
+      "doctor_id",
+      "doctorId",
+      "provider_id",
+      "providerId",
     ]) ||
-    readReferenceId(slot?.specialist) ||
+    readSpecialistReferenceId(
+      slot?.specialist,
+      slot?.specialist_profile,
+      slot?.specialistProfile,
+      slot?.psychologist,
+      slot?.doctor,
+      slot?.provider,
+    ) ||
     readSpecialistIdFromBookAgainUrl(bookAgainUrl);
 
   return {
@@ -1165,16 +1346,25 @@ export async function getCabinetAppointments(
   signal?: AbortSignal,
 ): Promise<CabinetAppointment[]> {
   const fallbackStatus = input.completed ? "completed" : "confirmed";
-  const [appointments, userProfiles] = await Promise.all([
+  const [appointments, userProfiles, specialistProfiles] = await Promise.all([
     fetchJson(buildAppointmentsUrl(input), signal).then((data) =>
       extractList(data).map((item) => normalizeAppointment(item, fallbackStatus)),
     ),
     fetchJson(endpoints.userProfiles, signal)
       .then(extractList)
       .catch(() => []),
+    fetchJson(endpoints.specialists, signal)
+      .then(extractList)
+      .catch(() => []),
   ]);
 
-  return hydrateAppointmentClientAvatars(appointments, userProfiles, signal);
+  const appointmentsWithClientAvatars = await hydrateAppointmentClientAvatars(
+    appointments,
+    userProfiles,
+    signal,
+  );
+
+  return hydrateAppointmentSpecialistLinks(appointmentsWithClientAvatars, specialistProfiles);
 }
 
 export async function getCurrentCabinetProfile(
@@ -1275,7 +1465,13 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     };
   }
 
-  const [appointments, completedAppointments, documents, userProfiles] = await Promise.all([
+  const [
+    appointments,
+    completedAppointments,
+    documents,
+    userProfiles,
+    specialistProfiles,
+  ] = await Promise.all([
     fetchJson(`${endpoints.consultationAppointments}?sort_field=date&sort_direction=asc`, signal)
       .then((data) => extractList(data).map((item) => normalizeAppointment(item, "confirmed")))
       .catch(() => []),
@@ -1288,15 +1484,30 @@ export async function getUserCabinetData(signal?: AbortSignal): Promise<CabinetD
     fetchJson(endpoints.userProfiles, signal)
       .then(extractList)
       .catch(() => []),
+    fetchJson(endpoints.specialists, signal)
+      .then(extractList)
+      .catch(() => []),
   ]);
+  const appointmentsWithClientAvatars = await hydrateAppointmentClientAvatars(
+    appointments,
+    userProfiles,
+    signal,
+  );
+  const completedAppointmentsWithClientAvatars = await hydrateAppointmentClientAvatars(
+    completedAppointments,
+    userProfiles,
+    signal,
+  );
 
   return {
     profile,
-    appointments: await hydrateAppointmentClientAvatars(appointments, userProfiles, signal),
-    completedAppointments: await hydrateAppointmentClientAvatars(
-      completedAppointments,
-      userProfiles,
-      signal,
+    appointments: hydrateAppointmentSpecialistLinks(
+      appointmentsWithClientAvatars,
+      specialistProfiles,
+    ),
+    completedAppointments: hydrateAppointmentSpecialistLinks(
+      completedAppointmentsWithClientAvatars,
+      specialistProfiles,
     ),
     documents,
   };
