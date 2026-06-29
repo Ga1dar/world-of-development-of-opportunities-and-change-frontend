@@ -322,7 +322,7 @@ export function UserOnboardingForm({
     <form
       onSubmit={handleSubmit}
       className="user-onboarding-form relative mx-auto w-full max-w-[358px] rounded-[18px] bg-[#F3F2F3] px-4 pb-7 pt-5 font-montserrat text-[#1C100E]
-      min-[744px]:max-h-[calc(100vh-48px)] min-[744px]:max-w-none min-[744px]:overflow-y-auto min-[744px]:rounded-[22px] min-[744px]:pb-12 min-[744px]:pt-8
+      min-[744px]:max-w-none min-[744px]:rounded-[22px] min-[744px]:pb-12 min-[744px]:pt-8
       min-[1420px]:rounded-[30px] min-[1420px]:pb-14 min-[1420px]:pt-9"
     >
       <button
