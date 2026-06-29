@@ -7,6 +7,121 @@ const asRecord = (value: unknown): CurrentUserRecord | null =>
     ? (value as CurrentUserRecord)
     : null;
 
+const ROLE_KEYS = [
+  "role",
+  "user_role",
+  "userRole",
+  "account_type",
+  "accountType",
+  "type",
+  "user_type",
+  "userType",
+];
+
+const SPECIALIST_PROFILE_KEYS = [
+  "specialist_profile",
+  "specialistProfile",
+  "specialist",
+  "specialist_profile_id",
+  "specialistProfileId",
+  "specialist_id",
+  "specialistId",
+  "specialist_profile_data",
+  "specialistProfileData",
+  "specialist_profile_detail",
+  "specialistProfileDetail",
+  "specialist_info",
+  "specialistInfo",
+  "profile_specialist",
+  "profileSpecialist",
+  "psychologist_profile",
+  "psychologistProfile",
+  "therapist_profile",
+  "therapistProfile",
+];
+
+const USER_PROFILE_KEYS = [
+  "user_profile",
+  "userProfile",
+  "user_profile_data",
+  "userProfileData",
+];
+
+const PROFILE_ID_KEYS = ["id", "pk", "uuid", "profile_id", "profileId"];
+
+const readRecordString = (record: CurrentUserRecord | null, keys: string[]) => {
+  if (!record) return "";
+
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
+  }
+
+  return "";
+};
+
+const readRecordId = (record: CurrentUserRecord | null) =>
+  readRecordString(record, PROFILE_ID_KEYS);
+
+const isSpecialistRoleValue = (role: string) =>
+  role.includes("specialist") ||
+  role.includes("psychologist") ||
+  role.includes("therapist") ||
+  role.includes("спеціаліст") ||
+  role.includes("специалист") ||
+  role.includes("фахів") ||
+  role.includes("психолог");
+
+const looksLikeSpecialistProfile = (profile: CurrentUserRecord | null) => {
+  if (!profile) return false;
+
+  return [
+    "specialization",
+    "specialisation",
+    "specialty",
+    "profession",
+    "experience",
+    "work_experience",
+    "is_verified",
+    "isVerified",
+  ].some((key) => profile[key] !== undefined);
+};
+
+const attachEnvelopeProfile = (
+  user: CurrentUserRecord,
+  envelope: CurrentUserRecord,
+): CurrentUserRecord => {
+  const profile = asRecord(envelope.profile);
+  if (!profile) return user;
+
+  const role = (
+    readRecordString(user, ROLE_KEYS) || readRecordString(envelope, ROLE_KEYS)
+  ).toLowerCase();
+  const hasSpecialistField =
+    SPECIALIST_PROFILE_KEYS.some((key) => envelope[key] !== undefined) ||
+    SPECIALIST_PROFILE_KEYS.some((key) => user[key] !== undefined);
+  const profileId = readRecordId(profile);
+
+  if (isSpecialistRoleValue(role) || hasSpecialistField || looksLikeSpecialistProfile(profile)) {
+    return {
+      ...user,
+      profile: user.profile ?? profile,
+      specialist_profile: user.specialist_profile ?? profile,
+      specialistProfile: user.specialistProfile ?? profile,
+      specialist_profile_id: user.specialist_profile_id ?? profileId,
+      specialistProfileId: user.specialistProfileId ?? profileId,
+    };
+  }
+
+  return {
+    ...user,
+    profile: user.profile ?? profile,
+    user_profile: user.user_profile ?? profile,
+    userProfile: user.userProfile ?? profile,
+  };
+};
+
 export const normalizeCurrentUserResponse = (value: unknown): CurrentUserRecord | null => {
   if (Array.isArray(value)) {
     return asRecord(value[0]);
@@ -18,9 +133,9 @@ export const normalizeCurrentUserResponse = (value: unknown): CurrentUserRecord 
   if (
     record.id !== undefined ||
     record.email !== undefined ||
-    record.role !== undefined ||
-    record.specialist_profile !== undefined ||
-    record.user_profile !== undefined
+    ROLE_KEYS.some((key) => record[key] !== undefined) ||
+    SPECIALIST_PROFILE_KEYS.some((key) => record[key] !== undefined) ||
+    USER_PROFILE_KEYS.some((key) => record[key] !== undefined)
   ) {
     return record;
   }
@@ -28,7 +143,7 @@ export const normalizeCurrentUserResponse = (value: unknown): CurrentUserRecord 
   for (const key of ["results", "data", "user", "current_user", "currentUser"]) {
     const nested = record[key];
     const normalized = normalizeCurrentUserResponse(nested);
-    if (normalized) return normalized;
+    if (normalized) return attachEnvelopeProfile(normalized, record);
   }
 
   return null;
@@ -56,7 +171,7 @@ const readString = (record: CurrentUserRecord | null, keys: string[]) => {
 const isAdminRecord = (record: CurrentUserRecord | null) => {
   if (!record) return false;
 
-  const role = readString(record, ["role", "user_role", "userRole"]).toLowerCase();
+  const role = readString(record, ROLE_KEYS).toLowerCase();
 
   return (
     readBoolean(record, ["is_staff", "isStaff", "staff", "is_superuser"]) ||
@@ -69,14 +184,14 @@ const isAdminRecord = (record: CurrentUserRecord | null) => {
 const hasSpecialistProfile = (record: CurrentUserRecord | null) => {
   if (!record) return false;
 
-  if (record.is_verified === true) return true;
+  const role = readString(record, ROLE_KEYS).toLowerCase();
+  if (isSpecialistRoleValue(role)) {
+    return true;
+  }
 
-  const directProfile =
-    record.specialist_profile ??
-    record.specialistProfile ??
-    record.specialist ??
-    record.specialist_id ??
-    record.specialistProfileId;
+  const directProfile = SPECIALIST_PROFILE_KEYS
+    .map((key) => record[key])
+    .find((value) => value !== null && value !== undefined && value !== false);
 
   if (directProfile === null || directProfile === undefined || directProfile === false) {
     return false;
