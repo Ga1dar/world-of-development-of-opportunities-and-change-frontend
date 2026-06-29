@@ -644,6 +644,24 @@ const getAppointmentClientKey = (appointment: CabinetAppointment) =>
 
 const normalizeFilterValue = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
 
+const readSpecialistIdFromBookingUrl = (value?: string) => {
+  if (!value) return "";
+
+  try {
+    return new URL(value, window.location.origin).searchParams.get("specialist") || "";
+  } catch {
+    const match = value.match(/[?&]specialist=([^&]+)/);
+    return match ? decodeURIComponent(match[1]) : "";
+  }
+};
+
+const getAppointmentSpecialistHref = (appointment: CabinetAppointment | null) => {
+  const specialistId =
+    appointment?.specialistId?.trim() || readSpecialistIdFromBookingUrl(appointment?.bookAgainUrl);
+
+  return specialistId ? `/specialists/${encodeURIComponent(specialistId)}` : "";
+};
+
 const getAppointmentClientNameKey = (appointment: CabinetAppointment) =>
   normalizeFilterValue(getAppointmentClientName(appointment));
 
@@ -1429,6 +1447,8 @@ function CancelAppointmentDialog({
 
   if (!appointment) return null;
 
+  const specialistHref = getAppointmentSpecialistHref(appointment);
+
   return (
     <div
       className="fixed inset-0 z-[250] flex items-start justify-center bg-[#1C100E]/35 px-0 pt-11 backdrop-blur-[1px]
@@ -1452,7 +1472,7 @@ function CancelAppointmentDialog({
           className="absolute right-5 top-5 flex h-6 w-6 items-center justify-center font-montserrat text-[18px] leading-none text-[#1C100E]/35"
           aria-label={labels.close}
         >
-          Г—
+          <X aria-hidden="true" className="h-4 w-4" />
         </button>
 
         <img
@@ -1465,9 +1485,9 @@ function CancelAppointmentDialog({
           {labels.cancelModalTitle}
         </h2>
 
-        {appointment.specialistId ? (
+        {specialistHref ? (
           <Link
-            to={`/specialists/${appointment.specialistId}`}
+            to={specialistHref}
             onClick={onClose}
             className="mt-7 flex items-center gap-3 rounded-full font-montserrat text-[14px] font-medium text-[#1C100E] transition hover:text-[#83105F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83105F] min-[744px]:mt-6 min-[744px]:text-[16px]"
           >
@@ -2007,9 +2027,11 @@ export function UserCabinetPage() {
   };
 
   const handleRepeatAppointment = (appointment: CabinetAppointment) => {
-    if (!appointment.specialistId) return;
+    const specialistHref = getAppointmentSpecialistHref(appointment);
 
-    navigate(`/specialists/${appointment.specialistId}?consultation=1`);
+    if (!specialistHref) return;
+
+    navigate(`${specialistHref}?consultation=1`);
   };
 
   return (
