@@ -14,6 +14,31 @@ export function UserOnboardingPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 744px)");
+    let previousOverflow = "";
+
+    const syncBodyScroll = () => {
+      if (mediaQuery.matches) {
+        if (!previousOverflow) {
+          previousOverflow = document.body.style.overflow;
+        }
+        document.body.style.overflow = "hidden";
+        return;
+      }
+
+      document.body.style.overflow = previousOverflow;
+    };
+
+    syncBodyScroll();
+    mediaQuery.addEventListener("change", syncBodyScroll);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncBodyScroll);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
 
     getCurrentCabinetProfile(controller.signal)
@@ -57,7 +82,7 @@ export function UserOnboardingPage() {
       <div
         className="relative z-[210] flex min-h-[510px] w-full items-start justify-center bg-[#F0E8F0] px-4 pb-7 pt-0
         min-[744px]:fixed min-[744px]:inset-0 min-[744px]:z-[240] min-[744px]:items-start min-[744px]:overflow-y-auto min-[744px]:bg-[#1C100E]/30 min-[744px]:px-8 min-[744px]:py-12 min-[744px]:backdrop-blur-[1px]
-        min-[1023px]:items-center min-[1023px]:py-14 min-[1420px]:py-16 min-[1900px]:py-20"
+        min-[1023px]:py-14 min-[1420px]:py-16 min-[1900px]:py-20"
       >
         {isLoading ? (
           <div className="mt-16 font-montserrat text-[14px] text-[#1C100E]/65">
