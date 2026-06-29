@@ -126,6 +126,49 @@ const asString = (value: unknown, fallback = "") => {
   return fallback;
 };
 
+const ROLE_KEYS = [
+  "role",
+  "user_role",
+  "userRole",
+  "account_type",
+  "accountType",
+  "type",
+  "user_type",
+  "userType",
+];
+
+const SPECIALIST_PROFILE_KEYS = [
+  "specialist_profile",
+  "specialistProfile",
+  "specialist",
+  "specialist_profile_data",
+  "specialistProfileData",
+  "specialist_profile_detail",
+  "specialistProfileDetail",
+  "specialist_profile_info",
+  "specialistProfileInfo",
+  "specialist_info",
+  "specialistInfo",
+  "profile_specialist",
+  "profileSpecialist",
+  "psychologist_profile",
+  "psychologistProfile",
+  "therapist_profile",
+  "therapistProfile",
+];
+
+const SPECIALIST_PROFILE_ID_KEYS = [
+  "specialist_profile_id",
+  "specialistProfileId",
+  "specialist_id",
+  "specialistId",
+];
+
+const PROFILE_REFERENCE_ID_KEYS = [
+  "profile_id",
+  "profileId",
+];
+
 const PHONE_COUNTRY_CODES = ["380", "420", "49", "48", "1"] as const;
 
 const normalizeNationalPhoneDigits = (countryCode: string, nationalNumber: string) => {
@@ -284,6 +327,50 @@ const readString = (record: RawRecord | null, keys: string[]) => {
   return "";
 };
 
+const readRoleValue = (record: RawRecord | null) => readString(record, ROLE_KEYS).toLowerCase();
+
+const hasSpecialistRole = (record: RawRecord | null) => {
+  const role = readRoleValue(record);
+
+  return (
+    role.includes("specialist") ||
+    role.includes("psychologist") ||
+    role.includes("therapist") ||
+    role.includes("спеціаліст") ||
+    role.includes("специалист") ||
+    role.includes("фахів") ||
+    role.includes("психолог")
+  );
+};
+
+const readSpecialistField = (record: RawRecord | null): unknown => {
+  if (!record) return undefined;
+
+  for (const key of [...SPECIALIST_PROFILE_KEYS, ...SPECIALIST_PROFILE_ID_KEYS]) {
+    const value = record[key];
+    if (value !== null && value !== undefined && value !== false && asString(value) !== "") {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const readEmbeddedSpecialistProfile = (record: RawRecord | null) => {
+  if (!record) return null;
+
+  for (const key of SPECIALIST_PROFILE_KEYS) {
+    const profile = asRecord(record[key]);
+    if (profile) return profile;
+  }
+
+  if (hasSpecialistRole(record)) {
+    return asRecord(record.profile);
+  }
+
+  return null;
+};
+
 const parseJsonResponse = (response: Response) => response.json().catch(() => null);
 
 const stringifyResponseDetails = (data: unknown) => {
@@ -310,40 +397,44 @@ const readReferenceId = (value: unknown): string => {
   const record = asRecord(value);
   if (!record) return "";
 
-  return (
-    readString(record, [
-      "id",
-      "pk",
-      "uuid",
-      "profile_id",
-      "profileId",
-      "user_profile_id",
-      "userProfileId",
-      "specialist_profile_id",
-      "specialistProfileId",
-    ]) ||
-    readReferenceId(record.profile) ||
-    readReferenceId(record.user_profile) ||
-    readReferenceId(record.userProfile) ||
-    readReferenceId(record.specialist_profile) ||
-    readReferenceId(record.specialistProfile)
-  );
+  const directId = readString(record, [
+    "id",
+    "pk",
+    "uuid",
+    "profile_id",
+    "profileId",
+    "user_profile_id",
+    "userProfileId",
+    "specialist_profile_id",
+    "specialistProfileId",
+    "specialist_id",
+    "specialistId",
+  ]);
+
+  if (directId) return directId;
+
+  for (const key of ["profile", "user_profile", "userProfile", ...SPECIALIST_PROFILE_KEYS]) {
+    const nestedId = readReferenceId(record[key]);
+    if (nestedId) return nestedId;
+  }
+
+  return "";
 };
 
 const readSpecialistProfileId = (currentUser: RawRecord | null) => {
   if (!currentUser) return "";
 
-  return (
-    readReferenceId(currentUser.specialist_profile) ||
-    readReferenceId(currentUser.specialistProfile) ||
-    readReferenceId(currentUser.specialist) ||
-    readReferenceId(currentUser.specialist_profile_id) ||
-    readReferenceId(currentUser.specialist_id) ||
-    readReferenceId(currentUser.specialistProfileId) ||
-    (readString(currentUser, ["role"]).toLowerCase().includes("specialist")
-      ? readReferenceId(currentUser.profile_id) || readReferenceId(currentUser.profileId)
-      : "")
-  );
+  const directProfileId = readReferenceId(readSpecialistField(currentUser));
+  if (directProfileId) return directProfileId;
+
+  if (!hasSpecialistRole(currentUser)) return "";
+
+  for (const key of ["profile", ...PROFILE_REFERENCE_ID_KEYS]) {
+    const profileId = readReferenceId(currentUser[key]);
+    if (profileId) return profileId;
+  }
+
+  return "";
 };
 
 const readUserProfileId = (currentUser: RawRecord | null) => {
@@ -530,15 +621,11 @@ const fetchJson = async (url: string, signal?: AbortSignal) => {
 };
 
 const hasSpecialistProfile = (currentUser: RawRecord | null) => {
-  if (currentUser?.is_verified === true || currentUser?.isVerified === true) return true;
+  if (!currentUser) return false;
+  if (hasSpecialistRole(currentUser)) return true;
   if (readSpecialistProfileId(currentUser)) return true;
 
-  const profile =
-    currentUser?.specialist_profile ??
-    currentUser?.specialistProfile ??
-    currentUser?.specialist ??
-    currentUser?.specialist_id ??
-    currentUser?.specialistProfileId;
+  const profile = readSpecialistField(currentUser);
 
   if (profile === null || profile === undefined || profile === false) return false;
   if (typeof profile === "number") return profile > 0;
@@ -558,8 +645,7 @@ const getProfileKind = (
     return "admin";
   }
 
-  const role = readString(currentUser, ["role"]).toLowerCase();
-  if (specialistProfile || hasSpecialistProfile(currentUser) || role.includes("specialist")) {
+  if (specialistProfile || hasSpecialistProfile(currentUser)) {
     return "specialist";
   }
 
@@ -599,9 +685,9 @@ const normalizeProfile = (
     readString(sourceUser, ["email", "user_email", "userEmail"]) ||
     readString(currentUser, ["email"]);
   const role =
-    readString(currentUser, ["role"]) ||
-    readString(sourceUser, ["role"]) ||
-    readString(source, ["role"]) ||
+    readString(currentUser, ROLE_KEYS) ||
+    readString(sourceUser, ROLE_KEYS) ||
+    readString(source, ROLE_KEYS) ||
     profileKind;
   const profession =
     readString(source, [
@@ -976,8 +1062,37 @@ const normalizeProfileDetailResponse = (data: unknown) => {
     asRecord(response?.profile) ||
     asRecord(response?.user_profile) ||
     asRecord(response?.userProfile) ||
+    asRecord(response?.specialist_profile) ||
+    asRecord(response?.specialistProfile) ||
+    asRecord(response?.specialist) ||
     response
   );
+};
+
+const withSpecialistProfileOnCurrentUser = (
+  currentUser: RawRecord | null,
+  specialistProfile: RawRecord | null,
+) => {
+  if (!currentUser && !specialistProfile) return null;
+
+  const next: RawRecord = { ...(currentUser || {}) };
+  const profileId = readReferenceId(specialistProfile);
+
+  if (!hasSpecialistRole(next)) {
+    next.role = "specialist";
+  }
+
+  if (specialistProfile) {
+    next.specialist_profile = next.specialist_profile ?? specialistProfile;
+    next.specialistProfile = next.specialistProfile ?? specialistProfile;
+  }
+
+  if (profileId) {
+    next.specialist_profile_id = next.specialist_profile_id ?? profileId;
+    next.specialistProfileId = next.specialistProfileId ?? profileId;
+  }
+
+  return next;
 };
 
 const readFirstProfileFromResponse = (data: unknown) => {
@@ -1416,10 +1531,7 @@ export async function getCurrentCabinetProfile(
   }
 
   try {
-    const currentRole = readString(currentUser, ["role"]).toLowerCase();
-    const directSpecialist =
-      asRecord(currentUser?.specialist_profile ?? currentUser?.specialistProfile) ||
-      (currentRole.includes("specialist") ? asRecord(currentUser?.profile) : null);
+    const directSpecialist = readEmbeddedSpecialistProfile(currentUser);
     const directSpecialistId = readSpecialistProfileId(currentUser);
 
     if (directSpecialistId) {
@@ -1566,7 +1678,24 @@ export async function updateSpecialistProfile(
     throw new Error(`Profile update failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 
-  return response.json().catch(() => null);
+  const data = await response.json().catch(() => null);
+  const createdProfile = normalizeProfileDetailResponse(data);
+
+  try {
+    const currentUser =
+      normalizeCurrentUserResponse(await fetchJson(endpoints.me)) || getStoredCurrentUser();
+    const enrichedUser = withSpecialistProfileOnCurrentUser(currentUser, createdProfile);
+    if (enrichedUser) {
+      storeCurrentUser(enrichedUser);
+    }
+  } catch {
+    const enrichedUser = withSpecialistProfileOnCurrentUser(getStoredCurrentUser(), createdProfile);
+    if (enrichedUser) {
+      storeCurrentUser(enrichedUser);
+    }
+  }
+
+  return data;
 }
 
 export async function createSpecialistProfile(input: SpecialistProfileCreateInput) {
@@ -1606,7 +1735,24 @@ export async function createSpecialistProfile(input: SpecialistProfileCreateInpu
     throw new Error(`Profile creation failed: ${response.status}${details ? ` ${details}` : ""}`);
   }
 
-  return response.json().catch(() => null);
+  const data = await response.json().catch(() => null);
+  const createdProfile = normalizeProfileDetailResponse(data);
+
+  try {
+    const currentUser =
+      normalizeCurrentUserResponse(await fetchJson(endpoints.me)) || getStoredCurrentUser();
+    const enrichedUser = withSpecialistProfileOnCurrentUser(currentUser, createdProfile);
+    if (enrichedUser) {
+      storeCurrentUser(enrichedUser);
+    }
+  } catch {
+    const enrichedUser = withSpecialistProfileOnCurrentUser(getStoredCurrentUser(), createdProfile);
+    if (enrichedUser) {
+      storeCurrentUser(enrichedUser);
+    }
+  }
+
+  return data;
 }
 
 export async function updateUserProfile(profileId: string, input: UserProfileUpdateInput) {
