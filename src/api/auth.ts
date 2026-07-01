@@ -92,7 +92,8 @@ const attachEnvelopeProfile = (
   user: CurrentUserRecord,
   envelope: CurrentUserRecord,
 ): CurrentUserRecord => {
-  const profile = asRecord(envelope.profile);
+  const profile =
+    asRecord(envelope.profile) || (looksLikeSpecialistProfile(envelope) ? envelope : null);
   if (!profile) return user;
 
   const role = (
@@ -137,7 +138,7 @@ export const normalizeCurrentUserResponse = (value: unknown): CurrentUserRecord 
     SPECIALIST_PROFILE_KEYS.some((key) => record[key] !== undefined) ||
     USER_PROFILE_KEYS.some((key) => record[key] !== undefined)
   ) {
-    return record;
+    return attachEnvelopeProfile(record, record);
   }
 
   for (const key of ["results", "data", "user", "current_user", "currentUser"]) {

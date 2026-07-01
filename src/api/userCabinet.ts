@@ -343,6 +343,23 @@ const hasSpecialistRole = (record: RawRecord | null) => {
   );
 };
 
+const looksLikeSpecialistProfile = (profile: RawRecord | null) => {
+  if (!profile) return false;
+
+  return [
+    "specialization",
+    "specialisation",
+    "specialty",
+    "speciality",
+    "profession",
+    "experience",
+    "work_experience",
+    "workExperience",
+    "is_verified",
+    "isVerified",
+  ].some((key) => profile[key] !== undefined);
+};
+
 const readSpecialistField = (record: RawRecord | null): unknown => {
   if (!record) return undefined;
 
@@ -364,8 +381,14 @@ const readEmbeddedSpecialistProfile = (record: RawRecord | null) => {
     if (profile) return profile;
   }
 
-  if (hasSpecialistRole(record)) {
-    return asRecord(record.profile);
+  if (looksLikeSpecialistProfile(record)) {
+    return record;
+  }
+
+  const profile = asRecord(record.profile);
+
+  if (hasSpecialistRole(record) || looksLikeSpecialistProfile(profile)) {
+    return profile;
   }
 
   return null;
@@ -440,10 +463,15 @@ const readSpecialistProfileId = (currentUser: RawRecord | null) => {
 const readUserProfileId = (currentUser: RawRecord | null) => {
   if (!currentUser) return "";
 
+  const profile = asRecord(currentUser.profile);
+  const profileId = looksLikeSpecialistProfile(profile)
+    ? ""
+    : readReferenceId(currentUser.profile);
+
   return (
     readReferenceId(currentUser.user_profile) ||
     readReferenceId(currentUser.userProfile) ||
-    readReferenceId(currentUser.profile) ||
+    profileId ||
     readReferenceId(currentUser.profile_id) ||
     readReferenceId(currentUser.profileId) ||
     readReferenceId(currentUser.user_profile_id) ||
@@ -624,6 +652,7 @@ const hasSpecialistProfile = (currentUser: RawRecord | null) => {
   if (!currentUser) return false;
   if (hasSpecialistRole(currentUser)) return true;
   if (readSpecialistProfileId(currentUser)) return true;
+  if (looksLikeSpecialistProfile(currentUser)) return true;
 
   const profile = readSpecialistField(currentUser);
 
@@ -832,6 +861,39 @@ const normalizeDocument = (raw: RawRecord): CabinetDocument => {
   };
 };
 
+const normalizeMatchValue = (value: string) =>
+  value.trim().replace(/\s+/g, " ").toLowerCase();
+
+const readPersonNameKey = (record: RawRecord | null) => {
+  if (!record) return "";
+
+  const profile =
+    asRecord(record.profile) ||
+    asRecord(record.user_profile) ||
+    asRecord(record.userProfile) ||
+    asRecord(record.specialist_profile) ||
+    asRecord(record.specialistProfile);
+  const user =
+    asRecord(record.user) ||
+    asRecord(record.owner) ||
+    asRecord(record.account);
+  const directName =
+    readString(record, ["full_name", "fullName", "name"]) ||
+    readString(profile, ["full_name", "fullName", "name"]) ||
+    readString(user, ["full_name", "fullName", "name"]);
+  const firstName =
+    readString(record, ["first_name", "firstName"]) ||
+    readString(profile, ["first_name", "firstName"]) ||
+    readString(user, ["first_name", "firstName"]);
+  const lastName =
+    readString(record, ["last_name", "lastName"]) ||
+    readString(profile, ["last_name", "lastName"]) ||
+    readString(user, ["last_name", "lastName"]);
+  const fullName = directName || [firstName, lastName].filter(Boolean).join(" ");
+
+  return fullName ? normalizeMatchValue(fullName) : "";
+};
+
 const matchesCurrentUser = (profile: RawRecord, currentUser: RawRecord | null) => {
   if (!currentUser) return true;
 
@@ -870,13 +932,16 @@ const matchesCurrentUser = (profile: RawRecord, currentUser: RawRecord | null) =
   const profileUsername =
     readString(profile, ["username", "user_username", "userUsername"]) ||
     readString(profileUser, ["username"]);
+  const currentName = readPersonNameKey(currentUser);
+  const profileName = readPersonNameKey(profile);
 
   return (
     !currentId ||
     (!!currentSpecialistId && readString(profile, ["id"]) === currentSpecialistId) ||
     profileUserId === currentId ||
     (!!currentEmail && profileEmail.toLowerCase() === currentEmail.toLowerCase()) ||
-    (!!currentUsername && profileUsername === currentUsername)
+    (!!currentUsername && profileUsername === currentUsername) ||
+    (!!currentName && profileName === currentName)
   );
 };
 
@@ -1504,7 +1569,12 @@ export async function getCurrentCabinetProfile(
   }
 
   try {
-    const directUserProfile = asRecord(currentUser?.user_profile ?? currentUser?.userProfile ?? currentUser?.profile);
+    const directProfile = asRecord(currentUser?.profile);
+    const directUserProfile = asRecord(
+      currentUser?.user_profile ??
+        currentUser?.userProfile ??
+        (looksLikeSpecialistProfile(directProfile) ? null : directProfile),
+    );
     const directUserProfileId = readUserProfileId(currentUser);
 
     if (directUserProfileId) {
