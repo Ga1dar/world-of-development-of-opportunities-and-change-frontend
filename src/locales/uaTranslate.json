@@ -35,8 +35,8 @@
     "Разом ми можемо більше. Разом ми — сила."
   ],
   "modeError": {
-    "login": "'Невдалося увійти. Перевірте email та спробуйте ще раз.'",
-    "registered": "'Невдалося зареєструватися. Перевірте email та спробуйте ще раз.'"
+    "login": "'Не вдалося увійти. Перевірте email та спробуйте ще раз.'",
+    "registered": "'Не вдалося зареєструватися. Перевірте email та спробуйте ще раз.'"
   },
   "loginSetError": "'Сталася невідома помилка. Спробуйте ще раз.'",
   "buttonText": {
@@ -136,6 +136,11 @@
   "specialistHigherEducation": "Освіта вища:",
   "specialistSpecialty": "Спеціальність:",
   "specialistWorkExperience": "Стаж роботи",
+  "specialistAboutSelf": "Про себе:",
+  "specialistDocuments": "Документи:",
+  "specialistReadMore": "Дивитись ще...",
+  "specialistReadLess": "Згорнути",
+  "specialistPhone": "Тел.",
   "specialistConsultationNote": "Для того, щоб записатися на консультацію до спеціаліста, потрібно зареєструватись.",
   "consultationDialog": {
     "introTitle": "Бажаєте записатися на консультацію",

@@ -4,6 +4,7 @@ import { endpoints } from "./endpoints";
 export type Specialist = {
   id: number;
   photo: string;
+  documents: SpecialistDocument[];
   nameUa: string;
   nameEn: string;
   roleUa: string;
@@ -20,12 +21,35 @@ export type Specialist = {
   email?: string;
 };
 
+export type SpecialistDocument = {
+  id: string;
+  title: string;
+  fileUrl: string;
+};
+
 type RawSpecialist = Record<string, unknown>;
 
 const fallbackSpecialists: Specialist[] = [
   {
     id: 1,
     photo: "/lashenko2.png",
+    documents: [
+      {
+        id: "fallback-document-1",
+        title: "Document 1",
+        fileUrl: "/20260118_192016_Leistungsnachweis.pdf",
+      },
+      {
+        id: "fallback-document-2",
+        title: "Document 2",
+        fileUrl: "/20260118_192016_Leistungsnachweis.pdf",
+      },
+      {
+        id: "fallback-document-3",
+        title: "Document 3",
+        fileUrl: "/20260118_192016_Leistungsnachweis.pdf",
+      },
+    ],
     nameUa: "Ляшенко Альона",
     nameEn: "Alona Liashenko",
     roleUa: "Кризова психологиня, травмопедагогиня, тренерка з травмопедагогіки",
@@ -56,6 +80,7 @@ const fallbackSpecialists: Specialist[] = [
   {
     id: 2,
     photo: "/romanova2.jpg",
+    documents: [],
     nameUa: "Романова Ганна",
     nameEn: "Hanna Romanova",
     roleUa: "Травмопедагогиня",
@@ -78,6 +103,7 @@ const fallbackSpecialists: Specialist[] = [
   {
     id: 3,
     photo: "/andruschenko1.jpg",
+    documents: [],
     nameUa: "Наталія Андрущенко",
     nameEn: "Nataliia Andrushchenko",
     roleUa: "Координаторка",
@@ -162,6 +188,37 @@ const readString = (raw: RawSpecialist, keys: string[]) => {
   return "";
 };
 
+const readMediaValue = (...values: unknown[]): unknown => {
+  for (const value of values) {
+    const directValue = asString(value);
+    if (directValue) return directValue;
+
+    const record = asRecord(value);
+    if (!record) continue;
+
+    const nestedValue =
+      readString(record, [
+        "url",
+        "secure_url",
+        "download_url",
+        "file",
+        "document",
+        "src",
+        "href",
+        "path",
+        "file_url",
+        "fileUrl",
+        "document_url",
+        "documentUrl",
+      ]) ||
+      readMediaValue(record.file, record.document, record.url);
+
+    if (nestedValue) return nestedValue;
+  }
+
+  return "";
+};
+
 const getApiOrigin = () => {
   try {
     return API_URL ? new URL(API_URL).origin : "";
@@ -183,6 +240,78 @@ const resolveImageUrl = (value: unknown, fallback: string) => {
   }
 
   return apiOrigin ? new URL(image, `${apiOrigin}/`).toString() : image;
+};
+
+const getFileNameFromUrl = (url: string) => {
+  const cleanUrl = url.split(/[?#]/)[0] || "";
+  const fileName = cleanUrl.split("/").filter(Boolean).pop() || "";
+
+  try {
+    return decodeURIComponent(fileName);
+  } catch {
+    return fileName;
+  }
+};
+
+const normalizeDocument = (raw: RawSpecialist, index: number): SpecialistDocument | null => {
+  const fileRecord = asRecord(raw.file) || asRecord(raw.document);
+  const fileUrl = resolveImageUrl(
+    readMediaValue(
+      raw.file,
+      raw.document,
+      raw.url,
+      raw.file_url,
+      raw.fileUrl,
+      raw.document_url,
+      raw.documentUrl,
+      raw.path,
+    ),
+    "",
+  );
+
+  if (!fileUrl) return null;
+
+  const title =
+    readString(raw, ["title", "name", "filename", "file_name", "fileName"]) ||
+    readString(fileRecord || {}, ["title", "name", "filename", "file_name", "fileName"]) ||
+    getFileNameFromUrl(fileUrl) ||
+    `Document ${index + 1}`;
+
+  return {
+    id: readString(raw, ["id", "uuid", "pk"]) || `${title}-${index}`,
+    title,
+    fileUrl,
+  };
+};
+
+const normalizeDocuments = (value: unknown): SpecialistDocument[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item, index) => {
+      const record = asRecord(item);
+
+      if (record) return normalizeDocument(record, index);
+
+      const fileUrl = resolveImageUrl(item, "");
+      if (!fileUrl) return null;
+
+      return {
+        id: `${fileUrl}-${index}`,
+        title: getFileNameFromUrl(fileUrl) || `Document ${index + 1}`,
+        fileUrl,
+      };
+    })
+    .filter((item): item is SpecialistDocument => Boolean(item));
+};
+
+const readDocuments = (...values: unknown[]) => {
+  for (const value of values) {
+    const documents = normalizeDocuments(value);
+    if (documents.length) return documents;
+  }
+
+  return [];
 };
 
 const normalizeSpecialist = (
@@ -236,6 +365,13 @@ const normalizeSpecialist = (
     ]) ||
     readString(raw, ["role", "position", "specialisation", "specialization", "speciality", "profession"]) ||
     "";
+  const documents = readDocuments(
+    raw.documents,
+    raw.uploaded_documents,
+    raw.uploadedDocuments,
+    raw.certificates,
+    raw.diplomas,
+  );
 
   return {
     id: asNumber(raw.id, fallback.id || index + 1),
@@ -243,6 +379,7 @@ const normalizeSpecialist = (
       raw.photo ?? raw.avatar ?? raw.image ?? raw.picture ?? raw.photo_url,
       "/user.jpg",
     ),
+    documents: documents.length ? documents.slice(0, 3) : fallback.documents,
     nameUa,
     nameEn,
     roleUa,

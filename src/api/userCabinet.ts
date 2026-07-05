@@ -107,7 +107,18 @@ export type CabinetAppointmentQuery = {
   user?: string;
   date?: string;
   completed?: boolean;
+  page?: number;
+  pageSize?: number;
   sortDirection?: "asc" | "desc";
+};
+
+export type CabinetAppointmentPage = {
+  appointments: CabinetAppointment[];
+  count: number;
+  next: string;
+  previous: string;
+  page: number;
+  pageSize: number;
 };
 
 const FALLBACK_AVATAR = "/user.jpg";
@@ -124,6 +135,11 @@ const asString = (value: unknown, fallback = "") => {
   if (typeof value === "string") return value.trim();
   if (typeof value === "number") return String(value);
   return fallback;
+};
+
+const asNonNegativeNumber = (value: unknown, fallback: number) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : fallback;
 };
 
 const ROLE_KEYS = [
@@ -549,6 +565,12 @@ const readMediaValue = (...values: unknown[]): unknown => {
         "profileImageUrl",
         "profile_picture",
         "profilePicture",
+        "profile_picture_url",
+        "profilePictureUrl",
+        "picture_url",
+        "pictureUrl",
+        "file_url",
+        "fileUrl",
         "thumbnail",
         "thumbnail_url",
         "thumbnailUrl",
@@ -565,6 +587,12 @@ const readMediaValue = (...values: unknown[]): unknown => {
         record.profileImage,
         record.profile_picture,
         record.profilePicture,
+        record.profile_picture_url,
+        record.profilePictureUrl,
+        record.picture_url,
+        record.pictureUrl,
+        record.file_url,
+        record.fileUrl,
         record.user,
         record.profile,
         record.user_profile,
@@ -598,6 +626,14 @@ const readAvatarValue = (profile: RawRecord | null, user: RawRecord | null = nul
     profile?.profilePhoto,
     profile?.profile_image,
     profile?.profileImage,
+    profile?.profile_picture,
+    profile?.profilePicture,
+    profile?.profile_picture_url,
+    profile?.profilePictureUrl,
+    profile?.picture_url,
+    profile?.pictureUrl,
+    profile?.file_url,
+    profile?.fileUrl,
     profile?.avatar_image,
     profile?.avatarImage,
     profile?.image_file,
@@ -617,6 +653,14 @@ const readAvatarValue = (profile: RawRecord | null, user: RawRecord | null = nul
     user?.profilePhoto,
     user?.profile_image,
     user?.profileImage,
+    user?.profile_picture,
+    user?.profilePicture,
+    user?.profile_picture_url,
+    user?.profilePictureUrl,
+    user?.picture_url,
+    user?.pictureUrl,
+    user?.file_url,
+    user?.fileUrl,
     user?.avatar_image,
     user?.avatarImage,
     user?.image_file,
@@ -1105,7 +1149,9 @@ const profileMatchesAppointmentClient = (
 
   return (
     (!!appointment.clientProfileId && profileId === appointment.clientProfileId) ||
+    (!!appointment.clientProfileId && userId === appointment.clientProfileId) ||
     (!!appointment.clientId && userId === appointment.clientId) ||
+    (!!appointment.clientId && profileId === appointment.clientId) ||
     (!!appointment.clientEmail && email.toLowerCase() === appointment.clientEmail.toLowerCase()) ||
     (!!appointmentName && profileName === appointmentName)
   );
@@ -1306,19 +1352,18 @@ const hydrateAppointmentSpecialistLinks = (
       if (!id) return null;
 
       const keys = readSpecialistProfileLookupKeys(profile);
-      const avatar = normalizeAppointmentMediaLookup(readProfileAvatar(profile));
+      const avatar = readProfileAvatar(profile);
+      const avatarKey = normalizeAppointmentMediaLookup(avatar);
 
-      return keys.length || avatar ? { id, keys, avatar } : null;
+      return keys.length || avatarKey ? { id, keys, avatar, avatarKey } : null;
     })
-    .filter((item): item is { id: string; keys: string[]; avatar: string } =>
+    .filter((item): item is { id: string; keys: string[]; avatar: string; avatarKey: string } =>
       Boolean(item),
     );
 
   if (!specialistLookup.length) return appointments;
 
   return appointments.map((appointment) => {
-    if (appointment.specialistId) return appointment;
-
     const appointmentKeys = [
       appointment.specialistName,
       appointment.specialistName.replace(/^Specialist:\s*/i, ""),
@@ -1327,13 +1372,18 @@ const hydrateAppointmentSpecialistLinks = (
       .filter((key): key is string => Boolean(key));
     const appointmentAvatar = normalizeAppointmentMediaLookup(appointment.specialistAvatar);
     const matchedSpecialist = specialistLookup.find((specialist) =>
+      (!!appointment.specialistId && specialist.id === appointment.specialistId) ||
       appointmentKeys.some((key) => specialist.keys.includes(key)) ||
-      Boolean(appointmentAvatar && specialist.avatar && appointmentAvatar === specialist.avatar),
+      Boolean(appointmentAvatar && specialist.avatarKey && appointmentAvatar === specialist.avatarKey),
     );
 
-    return matchedSpecialist
-      ? { ...appointment, specialistId: matchedSpecialist.id }
-      : appointment;
+    if (!matchedSpecialist) return appointment;
+
+    return {
+      ...appointment,
+      specialistId: appointment.specialistId || matchedSpecialist.id,
+      specialistAvatar: matchedSpecialist.avatar || appointment.specialistAvatar,
+    };
   });
 };
 
@@ -1517,19 +1567,49 @@ const buildAppointmentsUrl = (input: CabinetAppointmentQuery = {}) => {
 
   if (input.user) params.set("user", input.user);
   if (input.date) params.set("date", input.date);
+  if (input.page && input.page > 0) params.set("page", String(input.page));
+  if (input.pageSize && input.pageSize > 0) {
+    params.set("page_size", String(input.pageSize));
+  }
 
   return `${endpoint}?${params.toString()}`;
 };
 
-export async function getCabinetAppointments(
+const readAppointmentPageMeta = (
+  data: unknown,
+  appointments: CabinetAppointment[],
+  page: number,
+  pageSize: number,
+): Omit<CabinetAppointmentPage, "appointments"> => {
+  const record = asRecord(data);
+
+  return {
+    count: record
+      ? asNonNegativeNumber(record.count ?? record.total ?? record.total_count, appointments.length)
+      : appointments.length,
+    next: record ? asString(record.next) : "",
+    previous: record ? asString(record.previous) : "",
+    page,
+    pageSize,
+  };
+};
+
+export async function getCabinetAppointmentsPage(
   input: CabinetAppointmentQuery = {},
   signal?: AbortSignal,
-): Promise<CabinetAppointment[]> {
+): Promise<CabinetAppointmentPage> {
   const fallbackStatus = input.completed ? "completed" : "confirmed";
+  const page = input.page && input.page > 0 ? input.page : 1;
+  const pageSize = input.pageSize && input.pageSize > 0 ? input.pageSize : 20;
   const [appointments, userProfiles, specialistProfiles] = await Promise.all([
-    fetchJson(buildAppointmentsUrl(input), signal).then((data) =>
-      extractList(data).map((item) => normalizeAppointment(item, fallbackStatus)),
-    ),
+    fetchJson(buildAppointmentsUrl(input), signal).then((data) => {
+      const items = extractList(data).map((item) => normalizeAppointment(item, fallbackStatus));
+
+      return {
+        appointments: items,
+        meta: readAppointmentPageMeta(data, items, page, pageSize),
+      };
+    }),
     fetchJson(endpoints.userProfiles, signal)
       .then(extractList)
       .catch(() => []),
@@ -1539,12 +1619,26 @@ export async function getCabinetAppointments(
   ]);
 
   const appointmentsWithClientAvatars = await hydrateAppointmentClientAvatars(
-    appointments,
+    appointments.appointments,
     userProfiles,
     signal,
   );
 
-  return hydrateAppointmentSpecialistLinks(appointmentsWithClientAvatars, specialistProfiles);
+  return {
+    ...appointments.meta,
+    appointments: hydrateAppointmentSpecialistLinks(
+      appointmentsWithClientAvatars,
+      specialistProfiles,
+    ),
+  };
+}
+
+export async function getCabinetAppointments(
+  input: CabinetAppointmentQuery = {},
+  signal?: AbortSignal,
+): Promise<CabinetAppointment[]> {
+  const page = await getCabinetAppointmentsPage(input, signal);
+  return page.appointments;
 }
 
 export async function getCurrentCabinetProfile(

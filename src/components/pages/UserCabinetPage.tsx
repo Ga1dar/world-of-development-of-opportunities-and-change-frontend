@@ -6,9 +6,11 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { LogIn } from "./LogIn";
 import {
   getCabinetAppointments,
+  getCabinetAppointmentsPage,
   getUserCabinetData,
   updateProfileAvatar,
   type CabinetAppointment,
+  type CabinetAppointmentPage,
   type CabinetAppointmentQuery,
   type CabinetDocument,
   type CabinetProfile,
@@ -24,10 +26,6 @@ import {
 import {
   cancelConsultationAppointment,
   CONSULTATION_TIME_OPTIONS,
-  consultationLocalTimeToIso,
-  createConsultationSlots,
-  deleteConsultationSlot,
-  getConsultationSlots,
 } from "../../api/consultations";
 import type { ConsultationSlot } from "../../api/consultations";
 import { RescheduleAppointmentDialog } from "./RescheduleAppointmentDialog";
@@ -86,6 +84,10 @@ const copy = {
     specialistAppointmentsEmpty: "Записи на консультації з'являться тут.",
     calendarEmpty: "Календар спеціаліста з'явиться тут.",
     historyEmpty: "Історія звернень з'явиться тут.",
+    historyLoading: "Завантажуємо історію звернень...",
+    historyPreviousPage: "Назад",
+    historyNextPage: "Далі",
+    historyPageLabel: "Сторінка",
     all: "Усі",
     byName: "За іменем",
     byDate: "За датою",
@@ -102,8 +104,22 @@ const copy = {
     cityMissing: "Відсутнє",
     birthDateLabel: "Дата народження:",
     birthDateMissing: "Відсутня",
+    genderLabel: "Гендер:",
+    genderMissing: "Відсутній",
+    genderMale: "Чоловік",
+    genderFemale: "Жінка",
+    genderOther: "Інший",
+    genderPreferNotToSay: "Не хочу говорити",
     educationLabel: "Освіта вища:",
     educationMissing: "Інформація відсутня",
+    educationTeacher: "Педагог/Педагогиня",
+    educationPsychologist: "Психолог/Психологиня",
+    educationTraumaPedagogy: "Травмопедагог/Травмопедагогиня",
+    educationOtherLabel: "Інша освіта:",
+    hasChildrenLabel: "Виховую дітей:",
+    hasChildrenMissing: "Інформація відсутня",
+    yes: "Так",
+    no: "Ні",
     specializationLabel: "Спеціальність:",
     specializationMissing: "Інформація відсутня",
     experienceLabel: "Стаж роботи:",
@@ -161,6 +177,10 @@ const copy = {
     specialistAppointmentsEmpty: "Consultation bookings will appear here.",
     calendarEmpty: "The specialist calendar will appear here.",
     historyEmpty: "Request history will appear here.",
+    historyLoading: "Loading request history...",
+    historyPreviousPage: "Back",
+    historyNextPage: "Next",
+    historyPageLabel: "Page",
     all: "All",
     byName: "By name",
     byDate: "By date",
@@ -177,8 +197,22 @@ const copy = {
     cityMissing: "Missing",
     birthDateLabel: "Birth date:",
     birthDateMissing: "Missing",
+    genderLabel: "Gender:",
+    genderMissing: "Missing",
+    genderMale: "Male",
+    genderFemale: "Female",
+    genderOther: "Other",
+    genderPreferNotToSay: "Prefer not to say",
     educationLabel: "Higher education:",
     educationMissing: "Information is missing",
+    educationTeacher: "Teacher",
+    educationPsychologist: "Psychologist",
+    educationTraumaPedagogy: "Trauma pedagogue",
+    educationOtherLabel: "Other education:",
+    hasChildrenLabel: "Raising children:",
+    hasChildrenMissing: "Information is missing",
+    yes: "Yes",
+    no: "No",
     specializationLabel: "Specialization:",
     specializationMissing: "Information is missing",
     experienceLabel: "Experience:",
@@ -208,15 +242,22 @@ const yellowButton =
 
 const whiteButton =
   "rounded-[30px] bg-white font-montserrat font-medium text-[#1C100E]";
+const SPECIALIST_HISTORY_PAGE_SIZE = 10;
+
+const addDateDaySpacing = (value: string) =>
+  value.replace(/^(\d{1,2}\.\d{1,2}\.\d{4})(\S)/, "$1 $2");
 
 const normalizeDate = (value: string) => {
   if (!value) return "";
-  if (value.includes(".")) return value.endsWith("СЂ") ? value : `${value}СЂ`;
+  if (value.includes(".")) {
+    const spacedValue = addDateDaySpacing(value);
+    return spacedValue.endsWith("СЂ") ? spacedValue : `${spacedValue} СЂ`;
+  }
 
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
 
-  return `${parsed.toLocaleDateString("uk-UA")}СЂ`;
+  return `${parsed.toLocaleDateString("uk-UA")} СЂ`;
 };
 
 const toDateInputValue = (date: Date) => {
@@ -304,6 +345,80 @@ function roleLabel(role: string, labels: typeof copy.ua) {
 
   return labels.roleUser;
 }
+
+const normalizeChoiceKey = (value?: string) =>
+  (value || "").trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+
+const formatGender = (value: string | undefined, labels: typeof copy.ua) => {
+  const normalizedValue = normalizeChoiceKey(value);
+  if (!normalizedValue) return labels.genderMissing;
+
+  if (["male", "man", "чоловік", "чоловiк"].includes(normalizedValue)) {
+    return labels.genderMale;
+  }
+
+  if (["female", "woman", "жінка", "жiнка"].includes(normalizedValue)) {
+    return labels.genderFemale;
+  }
+
+  if (["prefer not to say", "not specified", "не хочу говорити"].includes(normalizedValue)) {
+    return labels.genderPreferNotToSay;
+  }
+
+  if (["other", "інший", "iнший"].includes(normalizedValue)) {
+    return labels.genderOther;
+  }
+
+  return value || labels.genderMissing;
+};
+
+const formatEducation = (profile: CabinetProfile, labels: typeof copy.ua) => {
+  const normalizedValue = normalizeChoiceKey(profile.education);
+  if (!normalizedValue) return labels.educationMissing;
+
+  if (["teacher", "pedagogue", "педагог", "педагог/педагогиня"].includes(normalizedValue)) {
+    return labels.educationTeacher;
+  }
+
+  if (
+    ["psychologist", "psychology", "психолог", "психолог/психологиня"].includes(
+      normalizedValue,
+    )
+  ) {
+    return labels.educationPsychologist;
+  }
+
+  if (
+    [
+      "trauma pedagogy",
+      "trauma pedagogue",
+      "травмопедагог",
+      "травмопедагог/травмопедагогиня",
+    ].includes(normalizedValue)
+  ) {
+    return labels.educationTraumaPedagogy;
+  }
+
+  if (normalizedValue === "other" && profile.educationOther) {
+    return profile.educationOther;
+  }
+
+  return profile.education || labels.educationMissing;
+};
+
+const formatBooleanChoice = (
+  value: string | undefined,
+  labels: typeof copy.ua,
+  missingLabel: string,
+) => {
+  const normalizedValue = normalizeChoiceKey(value);
+  if (!normalizedValue) return missingLabel;
+
+  if (["true", "1", "yes", "так", "та"].includes(normalizedValue)) return labels.yes;
+  if (["false", "0", "no", "ні", "нi"].includes(normalizedValue)) return labels.no;
+
+  return value || missingLabel;
+};
 
 function ProfileCard({
   profile,
@@ -1076,17 +1191,33 @@ function SpecialistAppointmentsView({
 function SpecialistHistoryView({
   appointments,
   labels,
+  pagination,
+  isLoading,
+  error,
+  onPageChange,
 }: {
   appointments: CabinetAppointment[];
   labels: typeof copy.ua;
+  pagination: Pick<CabinetAppointmentPage, "count" | "next" | "previous" | "page" | "pageSize">;
+  isLoading: boolean;
+  error: string;
+  onPageChange: (page: number) => void;
 }) {
   const sortedAppointments = useMemo(
     () => [...appointments].sort((a, b) => getAppointmentTime(b) - getAppointmentTime(a)),
     [appointments],
   );
+  const visibleAppointments = sortedAppointments.slice(0, pagination.pageSize);
+  const totalPages = Math.max(1, Math.ceil(pagination.count / pagination.pageSize));
+  const canGoPrevious = Boolean(pagination.previous) || pagination.page > 1;
+  const canGoNext = Boolean(pagination.next) || pagination.page < totalPages;
+
+  if (isLoading && !sortedAppointments.length) {
+    return <SpecialistPlaceholderView text={labels.historyLoading} />;
+  }
 
   if (!sortedAppointments.length) {
-    return <SpecialistPlaceholderView text={labels.historyEmpty} />;
+    return <SpecialistPlaceholderView text={error || labels.historyEmpty} />;
   }
 
   return (
@@ -1103,7 +1234,7 @@ function SpecialistHistoryView({
       />
 
       <div className="relative z-10 mt-5 grid gap-4 min-[744px]:mt-6 min-[1023px]:grid-cols-2 min-[1420px]:grid-cols-3 min-[1900px]:gap-6">
-        {sortedAppointments.map((appointment) => (
+        {visibleAppointments.map((appointment) => (
           <SpecialistAppointmentCard
             key={`${appointment.status}-${appointment.id}`}
             appointment={appointment}
@@ -1111,20 +1242,47 @@ function SpecialistHistoryView({
           />
         ))}
       </div>
+
+      {error ? (
+        <p className="relative z-10 mt-5 text-center font-montserrat text-[12px] leading-[1.3] text-[#83105F]">
+          {error}
+        </p>
+      ) : null}
+
+      {pagination.count > pagination.pageSize ? (
+        <div className="relative z-10 mt-7 flex items-center justify-center gap-4 font-montserrat">
+          <button
+            type="button"
+            disabled={!canGoPrevious || isLoading}
+            onClick={() => onPageChange(Math.max(1, pagination.page - 1))}
+            className={`${whiteButton} h-10 min-w-[104px] px-5 text-[12px] disabled:cursor-not-allowed disabled:opacity-45`}
+          >
+            {labels.historyPreviousPage}
+          </button>
+          <span className="min-w-[86px] text-center text-[12px] text-[#1C100E]/70">
+            {labels.historyPageLabel} {pagination.page} / {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={!canGoNext || isLoading}
+            onClick={() => onPageChange(Math.min(totalPages, pagination.page + 1))}
+            className={`${whiteButton} h-10 min-w-[104px] px-5 text-[12px] disabled:cursor-not-allowed disabled:opacity-45`}
+          >
+            {labels.historyNextPage}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }
-
 function SpecialistCalendarView({
   appointments,
   labels,
   language,
-  specialistId,
 }: {
   appointments: CabinetAppointment[];
   labels: typeof copy.ua;
   language: string;
-  specialistId: number;
 }) {
   const locale = isEnglishLanguage(language) ? "en-US" : "uk-UA";
   const today = useMemo(() => new Date(), []);
@@ -1160,118 +1318,11 @@ function SpecialistCalendarView({
   const weekDays = useMemo(() => getWeekDays(locale), [locale]);
   const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth]);
   const selectedBusyTimes = busyMap.get(selectedDate) || new Set<string>();
-  const [availableSlots, setAvailableSlots] = useState<ConsultationSlot[]>([]);
-  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
-  const [isSlotsLoading, setIsSlotsLoading] = useState(false);
-  const [isSlotsSaving, setIsSlotsSaving] = useState(false);
-  const [slotsNotice, setSlotsNotice] = useState("");
-  const [slotsError, setSlotsError] = useState("");
-  const availableMap = useMemo(() => {
-    const map = new Map<string, ConsultationSlot[]>();
-
-    availableSlots.forEach((slot) => {
-      const list = map.get(slot.date) || [];
-      list.push(slot);
-      map.set(slot.date, list);
-    });
-
-    map.forEach((list) => list.sort((a, b) => a.time.localeCompare(b.time)));
-
-    return map;
-  }, [availableSlots]);
-  const selectedAvailableSlots = useMemo(
-    () => availableMap.get(selectedDate) || [],
-    [availableMap, selectedDate],
-  );
-  const selectedAvailableTimes = useMemo(
-    () => new Set(selectedAvailableSlots.map((slot) => slot.time)),
-    [selectedAvailableSlots],
-  );
-
-  const loadAvailableSlots = useCallback(async (signal?: AbortSignal) => {
-    if (!Number.isInteger(specialistId) || specialistId <= 0) return;
-
-    setIsSlotsLoading(true);
-    setSlotsError("");
-
-    try {
-      const slots = await getConsultationSlots(specialistId, signal);
-      setAvailableSlots(slots);
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      setSlotsError(labels.slotsError);
-    } finally {
-      setIsSlotsLoading(false);
-    }
-  }, [labels.slotsError, specialistId]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadAvailableSlots(controller.signal);
-    return () => controller.abort();
-  }, [loadAvailableSlots]);
-
-  useEffect(() => {
-    setSelectedTimes([]);
-    setSlotsNotice("");
-    setSlotsError("");
-  }, [selectedDate]);
 
   const moveMonth = (direction: -1 | 1) => {
     setVisibleMonth(
       (current) => new Date(current.getFullYear(), current.getMonth() + direction, 1),
     );
-  };
-
-  const toggleTime = (time: string) => {
-    if (selectedBusyTimes.has(time) || selectedAvailableTimes.has(time)) return;
-
-    setSelectedTimes((current) =>
-      current.includes(time)
-        ? current.filter((item) => item !== time)
-        : [...current, time].sort((a, b) => a.localeCompare(b)),
-    );
-  };
-
-  const handleCreateSlots = async () => {
-    if (!selectedTimes.length || isSlotsSaving) return;
-
-    setIsSlotsSaving(true);
-    setSlotsError("");
-    setSlotsNotice("");
-
-    const startTimes = selectedTimes
-      .map((time) => consultationLocalTimeToIso(selectedDate, time))
-      .filter(Boolean);
-    const result = await createConsultationSlots(startTimes);
-
-    if (result.status === "success") {
-      setSelectedTimes([]);
-      setSlotsNotice(labels.slotsSaved);
-      await loadAvailableSlots();
-    } else {
-      setSlotsError(labels.slotsError);
-    }
-
-    setIsSlotsSaving(false);
-  };
-
-  const handleDeleteSlot = async (slotId: number) => {
-    if (isSlotsSaving) return;
-
-    setIsSlotsSaving(true);
-    setSlotsError("");
-    setSlotsNotice("");
-
-    const result = await deleteConsultationSlot(slotId);
-
-    if (result.status === "success") {
-      setAvailableSlots((current) => current.filter((slot) => slot.id !== slotId));
-    } else {
-      setSlotsError(labels.slotsError);
-    }
-
-    setIsSlotsSaving(false);
   };
 
   return (
@@ -1312,7 +1363,6 @@ function SpecialistCalendarView({
             {monthDays.map(({ date, currentMonth }) => {
               const value = toDateInputValue(date);
               const isBusy = busyMap.has(value);
-              const hasAvailable = availableMap.has(value);
               const isSelected = value === selectedDate;
 
               return (
@@ -1324,8 +1374,6 @@ function SpecialistCalendarView({
                   className={`flex aspect-square min-h-8 items-center justify-center rounded-full text-[12px] leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F] min-[744px]:text-[13px] ${
                     isBusy
                       ? "bg-[#83105F] text-white"
-                      : hasAvailable
-                        ? "border border-[#83105F] bg-white text-[#83105F]"
                       : isSelected
                         ? "ring-1 ring-[#83105F] text-[#1C100E]"
                         : currentMonth
@@ -1352,69 +1400,21 @@ function SpecialistCalendarView({
           <div className="mt-3 flex gap-2 overflow-x-auto pb-2 min-[744px]:max-h-[330px] min-[744px]:flex-col min-[744px]:overflow-y-auto min-[744px]:overflow-x-hidden min-[744px]:pr-2">
             {CONSULTATION_TIME_OPTIONS.map((time) => {
               const isBusy = selectedBusyTimes.has(time);
-              const isAvailable = selectedAvailableTimes.has(time);
-              const isSelected = selectedTimes.includes(time);
 
               return (
-                <button
+                <span
                   key={time}
-                  type="button"
-                  disabled={isBusy || isAvailable}
-                  onClick={() => toggleTime(time)}
-                  title={isBusy ? labels.busyTime : isAvailable ? labels.freeTime : undefined}
+                  title={isBusy ? labels.busyTime : undefined}
                   className={`flex h-8 min-w-[64px] shrink-0 items-center justify-center rounded-[30px] px-4 text-[12px] font-medium min-[744px]:w-full ${
                     isBusy
                       ? "bg-[#83105F] text-white"
-                      : isAvailable
-                        ? "border border-[#83105F] bg-white text-[#83105F]"
-                        : isSelected
-                          ? "bg-[#40213F] text-white"
                       : "bg-white text-[#1C100E]"
                   }`}
                 >
                   {time}
-                </button>
+                </span>
               );
             })}
-          </div>
-
-          <button
-            type="button"
-            disabled={!selectedTimes.length || isSlotsSaving}
-            onClick={() => void handleCreateSlots()}
-            className={`${yellowButton} mt-4 flex h-10 w-full items-center justify-center px-4 text-[12px] disabled:cursor-not-allowed disabled:opacity-60`}
-          >
-            {isSlotsSaving ? labels.addingSlots : labels.addSlots}
-          </button>
-          {isSlotsLoading ? (
-            <p className="mt-3 text-[11px] text-[#1C100E]/55">{labels.loading}</p>
-          ) : null}
-          {slotsNotice ? (
-            <p className="mt-3 text-[11px] text-[#37A357]">{slotsNotice}</p>
-          ) : null}
-          {slotsError ? (
-            <p className="mt-3 text-[11px] text-[#83105F]">{slotsError}</p>
-          ) : null}
-          <div className="mt-5 rounded-[18px] bg-white p-3 text-[12px]">
-            <p className="font-medium">{labels.availableSlots}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {selectedAvailableSlots.length ? (
-                selectedAvailableSlots.map((slot) => (
-                  <button
-                    key={slot.id}
-                    type="button"
-                    onClick={() => void handleDeleteSlot(slot.id)}
-                    disabled={isSlotsSaving}
-                    className="rounded-[30px] border border-[#83105F] px-3 py-1 text-[#83105F] disabled:opacity-60"
-                    aria-label={`${labels.deleteSlot} ${slot.time}`}
-                  >
-                    {slot.time} Г—
-                  </button>
-                ))
-              ) : (
-                <span className="text-[#1C100E]/55">{labels.noAvailableSlots}</span>
-              )}
-            </div>
           </div>
         </div>
 
@@ -1671,7 +1671,8 @@ function SpecialistAboutView({
   onPreviewDocument: (document: CabinetDocument) => void;
 }) {
   const displayName = profile.fullName || labels.fallbackName;
-  const displayDocuments = documents.slice(0, 3);
+  const uploadedDocuments = documents.filter((document) => document.fileUrl);
+  const displayDocuments = (uploadedDocuments.length ? uploadedDocuments : documents).slice(0, 3);
 
   return (
     <section className="mx-auto flex w-full flex-col items-center rounded-[22px] bg-[#F8F8F8] px-4 py-7 font-montserrat text-[#1C100E] min-[744px]:max-w-[640px] min-[744px]:px-14 min-[744px]:py-9 min-[1023px]:max-w-[720px] min-[1420px]:max-w-[760px] min-[1900px]:max-w-[880px] min-[1900px]:px-22">
@@ -1698,10 +1699,6 @@ function SpecialistAboutView({
         <SpecialistDetailLine
           label={labels.phoneLabel}
           value={profile.phone || labels.phoneMissing}
-        />
-        <SpecialistDetailLine
-          label={labels.workSchedule}
-          value={profile.workHours || "(з 09:00 до 18:00)"}
         />
         <SpecialistDetailLine
           label={labels.cityLabel}
@@ -1767,7 +1764,22 @@ function AboutView({ profile, labels }: { profile: CabinetProfile; labels: typeo
       label: labels.birthDateLabel,
       value: profile.birthDate ? normalizeDate(profile.birthDate) : labels.birthDateMissing,
     },
-  ];
+    { label: labels.genderLabel, value: formatGender(profile.gender, labels) },
+    { label: labels.educationLabel, value: formatEducation(profile, labels) },
+    {
+      label: labels.educationOtherLabel,
+      value: profile.educationOther || "",
+      isOptional: true,
+    },
+    {
+      label: labels.hasChildrenLabel,
+      value: formatBooleanChoice(
+        profile.hasChildren,
+        labels,
+        labels.hasChildrenMissing,
+      ),
+    },
+  ].filter((item) => !item.isOptional || item.value);
 
   return (
     <section className="mx-auto mt-10 w-full rounded-[22px] bg-[#F8F8F8] px-6 py-8 font-montserrat text-[#1C100E] min-[744px]:max-w-[684px] min-[1023px]:max-w-[880px] min-[1420px]:max-w-[742px] min-[1900px]:max-w-[1028px]">
@@ -1804,6 +1816,15 @@ export function UserCabinetPage() {
   const [appointments, setAppointments] = useState<CabinetAppointment[]>([]);
   const [allAppointments, setAllAppointments] = useState<CabinetAppointment[]>([]);
   const [completedAppointments, setCompletedAppointments] = useState<CabinetAppointment[]>([]);
+  const [historyPagination, setHistoryPagination] = useState<
+    Pick<CabinetAppointmentPage, "count" | "next" | "previous" | "page" | "pageSize">
+  >({
+    count: 0,
+    next: "",
+    previous: "",
+    page: 1,
+    pageSize: SPECIALIST_HISTORY_PAGE_SIZE,
+  });
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
   const [favoriteItems, setFavoriteItems] = useState<FavoriteContentItem[]>([]);
   const [activeTab, setActiveTab] = useState<CabinetTab>("appointments");
@@ -1814,6 +1835,8 @@ export function UserCabinetPage() {
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState("");
   const [appointmentMutationError, setAppointmentMutationError] = useState("");
   const [isAppointmentFilterLoading, setIsAppointmentFilterLoading] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1847,6 +1870,43 @@ export function UserCabinetPage() {
     return mergeFavoriteContentItems(cachedFavoriteItems, serverItems);
   };
 
+  const loadSpecialistHistoryPage = useCallback(
+    async (page: number, signal?: AbortSignal) => {
+      setIsHistoryLoading(true);
+      setHistoryError("");
+
+      try {
+        const historyPage = await getCabinetAppointmentsPage(
+          {
+            completed: true,
+            page,
+            pageSize: SPECIALIST_HISTORY_PAGE_SIZE,
+            sortDirection: "desc",
+          },
+          signal,
+        );
+
+        if (signal?.aborted) return;
+
+        setCompletedAppointments(historyPage.appointments);
+        setHistoryPagination({
+          count: historyPage.count,
+          next: historyPage.next,
+          previous: historyPage.previous,
+          page: historyPage.page,
+          pageSize: historyPage.pageSize,
+        });
+      } catch (error) {
+        if (signal?.aborted) return;
+        console.error(error);
+        setHistoryError(labels.loadError);
+      } finally {
+        if (!signal?.aborted) setIsHistoryLoading(false);
+      }
+    },
+    [labels.loadError],
+  );
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -1859,12 +1919,25 @@ export function UserCabinetPage() {
           getUserCabinetData(controller.signal),
           loadFavoriteItems(),
         ]);
+        const isLoadedSpecialist = data.profile?.profileKind === "specialist";
+
         setProfile(data.profile);
         setAppointments(data.appointments);
         setAllAppointments(data.appointments);
-        setCompletedAppointments(data.completedAppointments);
+        setCompletedAppointments(isLoadedSpecialist ? [] : data.completedAppointments);
+        setHistoryPagination({
+          count: isLoadedSpecialist ? 0 : data.completedAppointments.length,
+          next: "",
+          previous: "",
+          page: 1,
+          pageSize: SPECIALIST_HISTORY_PAGE_SIZE,
+        });
         setDocuments(data.documents);
         setFavoriteItems(favorites);
+
+        if (isLoadedSpecialist) {
+          await loadSpecialistHistoryPage(1, controller.signal);
+        }
       } catch {
         setError(labels.loadError);
       } finally {
@@ -1875,7 +1948,7 @@ export function UserCabinetPage() {
     void loadCabinet();
 
     return () => controller.abort();
-  }, [labels.loadError, language]);
+  }, [labels.loadError, language, loadSpecialistHistoryPage]);
 
   useEffect(() => {
     let isMounted = true;
@@ -2102,10 +2175,16 @@ export function UserCabinetPage() {
           appointments={appointments}
           labels={labels}
           language={i18n.language}
-          specialistId={Number.isFinite(specialistId) ? specialistId : 0}
         />
       ) : activeTab === "history" ? (
-        <SpecialistHistoryView appointments={completedAppointments} labels={labels} />
+        <SpecialistHistoryView
+          appointments={completedAppointments}
+          labels={labels}
+          pagination={historyPagination}
+          isLoading={isHistoryLoading}
+          error={historyError}
+          onPageChange={(page) => void loadSpecialistHistoryPage(page)}
+        />
       ) : activeTab === "favorites" ? (
         <FavoritesView
           labels={labels}
