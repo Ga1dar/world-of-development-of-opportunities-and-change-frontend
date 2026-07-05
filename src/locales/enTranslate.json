@@ -136,6 +136,11 @@
   "specialistHigherEducation": "Higher education:",
   "specialistSpecialty": "Specialty:",
   "specialistWorkExperience": "Work experience",
+  "specialistAboutSelf": "About:",
+  "specialistDocuments": "Documents:",
+  "specialistReadMore": "Read more...",
+  "specialistReadLess": "Collapse",
+  "specialistPhone": "Phone:",
   "specialistConsultationNote": "To book a consultation with a specialist, please register.",
   "consultationDialog": {
     "introTitle": "Would you like to book a consultation",
