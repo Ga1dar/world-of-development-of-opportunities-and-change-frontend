@@ -1671,8 +1671,7 @@ function SpecialistAboutView({
   onPreviewDocument: (document: CabinetDocument) => void;
 }) {
   const displayName = profile.fullName || labels.fallbackName;
-  const uploadedDocuments = documents.filter((document) => document.fileUrl);
-  const displayDocuments = (uploadedDocuments.length ? uploadedDocuments : documents).slice(0, 3);
+  const displayDocuments = documents.slice(0, 3);
 
   return (
     <section className="mx-auto flex w-full flex-col items-center rounded-[22px] bg-[#F8F8F8] px-4 py-7 font-montserrat text-[#1C100E] min-[744px]:max-w-[640px] min-[744px]:px-14 min-[744px]:py-9 min-[1023px]:max-w-[720px] min-[1420px]:max-w-[760px] min-[1900px]:max-w-[880px] min-[1900px]:px-22">
