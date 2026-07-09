@@ -121,6 +121,19 @@ function SpecialistDocuments({
   );
 }
 
+const isPlaceholderDocument = (document: SpecialistDocument) => {
+  const normalizedUrl = document.fileUrl.split(/[?#]/)[0].replace(/\\/g, "/").toLowerCase();
+  const fileName = normalizedUrl.split("/").filter(Boolean).pop() || "";
+  const normalizedTitle = document.title.trim().toLowerCase();
+
+  return (
+    !document.fileUrl ||
+    fileName === "document.png" ||
+    fileName.includes("placeholder") ||
+    normalizedTitle === "document"
+  );
+};
+
 export function SpecialistProfil() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -211,7 +224,9 @@ export function SpecialistProfil() {
     };
   }, [isUkrainian, specialist]);
 
-  const documents = specialist?.documents.slice(0, 3) || [];
+  const allDocuments = specialist?.documents || [];
+  const uploadedDocuments = allDocuments.filter((document) => !isPlaceholderDocument(document));
+  const documents = (uploadedDocuments.length ? uploadedDocuments : allDocuments).slice(0, 3);
   const canToggleDetails = Boolean(localized?.about.length || documents.length);
   const showExtendedDetails = isExpanded || false;
 
@@ -318,17 +333,17 @@ export function SpecialistProfil() {
               />
             </div>
 
-            {canToggleDetails ? (
+            {canToggleDetails && !isExpanded ? (
               <button
                 type="button"
-                onClick={() => setIsExpanded((current) => !current)}
+                onClick={() => setIsExpanded(true)}
                 className="ml-auto mt-6 flex h-9 items-center justify-end rounded-[30px]
                 px-0 text-right font-montserrat text-[14px] font-medium text-[#1C100E]
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40213F]
                 min-[744px]:text-[16px] min-[1023px]:hidden"
                 aria-expanded={isExpanded}
               >
-                {isExpanded ? t("specialistReadLess") : t("specialistReadMore")}
+                {t("specialistReadMore")}
               </button>
             ) : null}
 
